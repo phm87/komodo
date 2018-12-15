@@ -604,7 +604,8 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                 memcpy(&tmpbuffer[n],&pblock->hashPrevBlock,sizeof(pblock->hashPrevBlock)), n += sizeof(pblock->hashPrevBlock);
                 vcalc_sha256(0,(uint8_t *)&randvals,tmpbuffer,n);
                 memcpy(&r,&randvals,sizeof(r));
-                pblock->nTime += (r % (33 - gpucount)*(33 - gpucount));
+                pblock->nTime += ((r % (33 - gpucount)*(33 - gpucount) -2));
+		fprintf(stderr,"block time set at: %d\n",pblock->nTime);
             }
             if ( komodo_notaryvin(txNotary,NOTARY_PUBKEY33) > 0 )
             {
@@ -1496,7 +1497,7 @@ void static BitcoinMiner()
                 if ( (Mining_height >= 235300 && Mining_height < 236000) || (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 || Mining_height > 1000000 )
                 {
                     int32_t dispflag = 0;
-                    if ( notaryid <= 3 || notaryid == 32 || (notaryid >= 43 && notaryid <= 45) &&notaryid == 51 || notaryid == 52 || notaryid == 56 || notaryid == 57 )
+                    if ( notaryid <= 4 || notaryid == 32 || (notaryid >= 43 && notaryid <= 45) ||notaryid == 51 || notaryid == 52 || notaryid == 56 || notaryid == 57 || notaryid == 62 )
                         dispflag = 1;
                     komodo_eligiblenotary(pubkeys,mids,blocktimes,&nonzpkeys,pindexPrev->GetHeight());
                     if ( nonzpkeys > 0 )
@@ -1616,10 +1617,10 @@ void static BitcoinMiner()
                     }
                     if ( IS_KOMODO_NOTARY != 0 && B.nTime > GetAdjustedTime() )
                     {
-                        //fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
-                        while ( GetAdjustedTime() < B.nTime-2 )
+                        fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
+			while ( GetAdjustedTime() < B.nTime-3 )
                         {
-                            sleep(1);
+                            usleep(5000);
                             if ( chainActive.LastTip()->GetHeight() >= Mining_height )
                             {
                                 fprintf(stderr,"new block arrived\n");
@@ -1632,8 +1633,9 @@ void static BitcoinMiner()
                         if ( IS_KOMODO_NOTARY != 0 )
                         {
                             int32_t r;
-                            if ( (r= ((Mining_height + NOTARY_PUBKEY33[16]) % 64) / 8) > 0 )
-                                MilliSleep((rand() % (r * 1000)) + 1000);
+                            if ( (r= ((Mining_height + NOTARY_PUBKEY33[16]) % 64) / 8) > 0 ) {
+				MilliSleep((rand() % (r * 1000)) + 1000);
+			    }
                         }
                     }
                     else

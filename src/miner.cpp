@@ -148,7 +148,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
     CPubKey pk = CPubKey();
     std::vector<std::vector<unsigned char>> vAddrs;
     txnouttype txT;
-    if (Solver(scriptPubKeyIn, txT, vAddrs))
+    if ( scriptPubKeyIn.size() > 0 && Solver(scriptPubKeyIn, txT, vAddrs))
     {
         if (txT == TX_PUBKEY)
             pk = CPubKey(vAddrs[0]);
@@ -463,8 +463,6 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
             CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), stakeHeight);
 
-            //if ( blocktime > pindexPrev->GetMedianTimePast()+60 )
-            //    blocktime = pindexPrev->GetMedianTimePast() + 60;
             if (ASSETCHAINS_LWMAPOS != 0)
             {
                 uint32_t nBitsPOS;
@@ -479,6 +477,9 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             }
             else
             {
+                blocktime = GetAdjustedTime();
+                //if ( blocktime > pindexPrev->GetMedianTimePast()+60 )
+                //    blocktime = pindexPrev->GetMedianTimePast() + 60;
                 siglen = komodo_staked(txStaked, pblock->nBits, &blocktime, &txtime, &utxotxid, &utxovout, &utxovalue, utxosig);
             }
 
@@ -737,7 +738,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     }
     else
     {
-        if (!isStake)
+        //if ( !isStake || ASSETCHAINS_STAKED != 0 )
         {
             if (!reservekey.GetReservedKey(pubkey))
             {

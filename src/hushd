@@ -8,10 +8,17 @@ cd $DIR
 # TESTING VALUES
 NAME=HUSHT
 PUBKEY=0392cd7cbdc188de147fa13b38d97ea2e4d612300100fcea14d200907b05f707e8
-CCENABLE=42
 
 # chain params
 SUPPLY=6250000
+
+# CryptoConditions settings
+FAUCET=228
+HEIR=234
+CHANNEL=235
+ORACLE=236
+GATEWAY=241
+CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
 
 # TODO: support KOMODOD env var to use custom binary
 ./komodod -ac_name=$NAME -ac_sapling=1          \

@@ -28,6 +28,7 @@ CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
     -ac_eras=3 -ac_blocktime=150                \
     -ac_cc=2 -ac_ccenable=$CCENABLE             \
     -ac_founders=1 -ac_supply=$SUPPLY           \
-    -ac_founders_reward=0,125000000,67500000    \
+    -ac_perc=10000000                           \
     -ac_pubkey=$PUBKEY  "$@"
+# -addnode=195.201.20.230 -addnode=195.201.137.5
 

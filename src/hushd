@@ -11,6 +11,7 @@ PUBKEY=0392cd7cbdc188de147fa13b38d97ea2e4d612300100fcea14d200907b05f707e8
 
 # chain params
 SUPPLY=6250000
+FOUNDERS=500
 
 # CryptoConditions settings
 FAUCET=228
@@ -27,7 +28,7 @@ CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
     -ac_end=128,340000,0                        \
     -ac_eras=3 -ac_blocktime=150                \
     -ac_cc=2 -ac_ccenable=$CCENABLE             \
-    -ac_founders=576 -ac_supply=$SUPPLY         \
+    -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
     -ac_perc=10000000                           \
     -ac_pubkey=$PUBKEY  "$@"
 # -addnode=195.201.20.230 -addnode=195.201.137.5

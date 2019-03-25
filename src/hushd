@@ -20,6 +20,7 @@ CHANNEL=235
 ORACLE=236
 GATEWAY=241
 CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
+CLIENTNAME=TransientMangrove
 
 # TODO: support KOMODOD env var to use custom binary
 ./komodod -ac_name=$NAME -ac_sapling=1          \
@@ -30,6 +31,7 @@ CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
     -ac_cc=2 -ac_ccenable=$CCENABLE             \
     -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
     -ac_perc=10000000                           \
+    -ac_clientname=$CLIENTNAME                  \
     -ac_pubkey=$PUBKEY  "$@"
 # -addnode=195.201.20.230 -addnode=195.201.137.5
 

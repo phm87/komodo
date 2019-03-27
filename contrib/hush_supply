@@ -8,9 +8,11 @@ my $satoshis = 100_000_000;
 my $amount   = int(12.5*$satoshis);
 my $halvings = 0;
 
+# Usage: ./hush_supply &> supply.csv
+
 # Use this to calculate when supply hits a certain value
 #while ($supply <= 21_000_000*$satoshis) {
-# Use this to calculat when block rewards end
+# Use this to calculate when block rewards end
 while ($halvings <= 64 && $amount >= 1) {
     $block++;
     if ($block < 5) {

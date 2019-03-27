@@ -2,25 +2,28 @@
 use warnings;
 use strict;
 
-my $supply = 0.0;
-my $block  = 0;
-my $amount = 12.5;
+my $supply   = 0.0;
+my $block    = 0;
+my $satoshis = 100_000_000;
+my $amount   = int(12.5*$satoshis);
 my $halvings = 0;
 
-while ($supply <= 21_000_000) {
-#while ($halvings <= 64 && $amount >= 1e-8) {
+# Use this to calculate when supply hits a certain value
+#while ($supply <= 21_000_000*$satoshis) {
+# Use this to calculat when block rewards end
+while ($halvings <= 64 && $amount >= 1) {
     $block++;
     if ($block < 5) {
-        $amount = 40_000;
+        $amount = 40_000 * $satoshis;
     } else {
         # Halving every 840000 blocks
         if ($block % 840_000 == 0) {
             $amount /= 2;
             $halvings++;
         }
-        $amount = 12.5 / (2**$halvings);
+        $amount = int(12.5*$satoshis) / (2**$halvings);
     }
     $supply += $amount;
     # block, current supply, block reward amount, number of halvings
-    print "$block,$supply,$amount,$halvings\n";
+    printf "%s,%s,%s,%s\n", $block,$supply / $satoshis, $amount / $satoshis, $halvings;
 }

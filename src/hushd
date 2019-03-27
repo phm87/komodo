@@ -12,6 +12,9 @@ PUBKEY=0392cd7cbdc188de147fa13b38d97ea2e4d612300100fcea14d200907b05f707e8
 # chain params
 SUPPLY=6250000
 FOUNDERS=500
+HALVING=129,340000,840000
+END=128,340000,5422111
+CLIENTNAME=TransientMangrove
 
 # CryptoConditions settings
 FAUCET=228
@@ -20,13 +23,12 @@ CHANNEL=235
 ORACLE=236
 GATEWAY=241
 CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
-CLIENTNAME=TransientMangrove
 
 # TODO: support KOMODOD env var to use custom binary
 ./komodod -ac_name=$NAME -ac_sapling=1          \
     -ac_reward=0,1250000000,675000000           \
-    -ac_halving=129,340000,840000               \
-    -ac_end=128,340000,0                        \
+    -ac_halving=$HALVING                        \
+    -ac_end=$END                                \
     -ac_eras=3 -ac_blocktime=150                \
     -ac_cc=2 -ac_ccenable=$CCENABLE             \
     -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \

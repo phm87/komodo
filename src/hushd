@@ -16,7 +16,7 @@ HALVING=129,340000,840000
 END=128,340000,5422111
 CLIENTNAME=TransientMangrove
 
-# CryptoConditions settings
+# CryptoConditions/Custom Consensus settings
 FAUCET=228
 HEIR=234
 CHANNEL=235
@@ -33,7 +33,7 @@ CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
     -ac_cc=2 -ac_ccenable=$CCENABLE             \
     -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
     -ac_perc=10000000                           \
-    -ac_clientname=$CLIENTNAME                  \
+    -clientname=$CLIENTNAME                     \
     -ac_pubkey=$PUBKEY  "$@"
 # -addnode=195.201.20.230 -addnode=195.201.137.5
 

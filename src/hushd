@@ -7,14 +7,15 @@ cd $DIR
 
 # TESTING VALUES, DO NOT USE EXCEPT FOR DEVELOPMENT
 NAME=HUSHT
-PUBKEY=0392cd7cbdc188de147fa13b38d97ea2e4d612300100fcea14d200907b05f707e8
+# this corresponds to FR address RHushEyeDm7XwtaTWtyCbjGQumYyV8vMjn
+SCRIPT=76a9145eb10cf64f2bab1b457f1f25e658526155928fac88ac
 
 # chain params
 SUPPLY=6250000
 FOUNDERS=500
 HALVING=129,340000,840000
 END=128,340000,5422111
-CLIENTNAME=TransientMangrove
+CLIENTNAME=GoldenSandtrout
 
 # CryptoConditions/Custom Consensus settings
 FAUCET=228
@@ -34,6 +35,4 @@ CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
     -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
     -ac_perc=10000000                           \
     -clientname=$CLIENTNAME                     \
-    -ac_pubkey=$PUBKEY  "$@"
-# -addnode=195.201.20.230 -addnode=195.201.137.5
-
+    -ac_script=$SCRIPT  "$@"

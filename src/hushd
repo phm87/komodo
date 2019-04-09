@@ -25,14 +25,14 @@ ORACLE=236
 GATEWAY=241
 CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
 
-# TODO: support KOMODOD env var to use custom binary
-./komodod -ac_name=$NAME -ac_sapling=1          \
-    -ac_reward=0,1250000000,675000000           \
-    -ac_halving=$HALVING                        \
-    -ac_end=$END                                \
-    -ac_eras=3 -ac_blocktime=150                \
-    -ac_cc=2 -ac_ccenable=$CCENABLE             \
-    -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
-    -ac_perc=10000000                           \
-    -clientname=$CLIENTNAME                     \
-    -ac_script=$SCRIPT  "$@"
+KMD=${KOMODOD:-./komodod}
+$KMD -ac_name=$NAME -ac_sapling=1                \
+     -ac_reward=0,1250000000,675000000           \
+     -ac_halving=$HALVING                        \
+     -ac_end=$END                                \
+     -ac_eras=3 -ac_blocktime=150                \
+     -ac_cc=2 -ac_ccenable=$CCENABLE             \
+     -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
+     -ac_perc=10000000                           \
+     -clientname=$CLIENTNAME                     \
+     -ac_script=$SCRIPT  "$@"

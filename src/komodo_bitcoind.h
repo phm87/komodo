@@ -1208,13 +1208,44 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
         return(0);
 
-    int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
+    int32_t i,j,n=0,txn_count,halvings; int64_t nSubsidy; uint64_t commission,total = 0;
     txn_count = pblock->vtx.size();
+    //int32_t starting_commission = 125000000, HALVING1 = 340000,  INTERVAL = 840000;
+    int32_t starting_commission = 125000000, HALVING1 = 340,  INTERVAL = 840;
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
         //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
+        if ((strcmp(ASSETCHAINS_SYMBOL, "HUSH") != 0) || (strcmp(ASSETCHAINS_SYMBOL, "HUSHT3") != 0)) {
+            // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it ourselves.
+            // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
+            // but to tell the AC params, I need to say "11% of 11.25" is 1.25
+            // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
+            if (height < HALVING1) {
+                commission = starting_commission;
+            } else if (height < HALVING1+1*INTERVAL) {
+                commission = starting_commission / 2;
+            } else if (height < HALVING1+2*INTERVAL) {
+                commission = starting_commission / 4;
+            } else if (height < HALVING1+3*INTERVAL) {
+                commission = starting_commission / 8;
+            } else if (height < HALVING1+4*INTERVAL) {
+                commission = starting_commission / 16;
+            } else if (height < HALVING1+5*INTERVAL) {
+                commission = starting_commission / 32;
+            } else if (height < HALVING1+6*INTERVAL) {
+                commission = starting_commission / 64;
+            } else if (height < HALVING1+7*INTERVAL) {
+                commission = starting_commission / 128;
+            } else if (height < HALVING1+8*INTERVAL) {
+                commission = starting_commission / 256;
+            } else if (height < HALVING1+9*INTERVAL) {
+                // HUSH should never hit the 9th halving, but yolo
+                commission = starting_commission / 512;
+            }
+        }
+
         if ( ASSETCHAINS_FOUNDERS > 1 )
         {
             if ( (height % ASSETCHAINS_FOUNDERS) == 0 )

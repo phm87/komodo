@@ -5,18 +5,24 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-# TESTING VALUES, DO NOT USE EXCEPT FOR DEVELOPMENT
-NAME=HUSHT
-PUBKEY=0392cd7cbdc188de147fa13b38d97ea2e4d612300100fcea14d200907b05f707e8
+# NOT FINALIZED, but very close to our production chainparams
+NAME=HUSH
+# this corresponds to FR address RHushEyeDm7XwtaTWtyCbjGQumYyV8vMjn
+SCRIPT=76a9145eb10cf64f2bab1b457f1f25e658526155928fac88ac
 
-# chain params
+# Chain parameters
+ERAS=3
+BLOCKTIME=150
 SUPPLY=6250000
-FOUNDERS=500
+FOUNDERS=1
+REWARD=0,1125000000,562500000
+PERC=11111111
 HALVING=129,340000,840000
+# TODO: Re-verify our end block
 END=128,340000,5422111
-CLIENTNAME=TransientMangrove
+CLIENTNAME=GoldenSandtrout
 
-# CryptoConditions/Custom Consensus settings
+# CryptoConditions/Custom Consensus params
 FAUCET=228
 HEIR=234
 CHANNEL=235
@@ -24,16 +30,15 @@ ORACLE=236
 GATEWAY=241
 CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
 
-# TODO: support KOMODOD env var to use custom binary
-./komodod -ac_name=$NAME -ac_sapling=1          \
-    -ac_reward=0,1250000000,675000000           \
-    -ac_halving=$HALVING                        \
-    -ac_end=$END                                \
-    -ac_eras=3 -ac_blocktime=150                \
-    -ac_cc=2 -ac_ccenable=$CCENABLE             \
-    -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
-    -ac_perc=10000000                           \
-    -clientname=$CLIENTNAME                     \
-    -ac_pubkey=$PUBKEY  "$@"
-# -addnode=195.201.20.230 -addnode=195.201.137.5
-
+KMD=${KOMODOD:-./komodod}
+$KMD -ac_name=$NAME -ac_sapling=1                \
+     -ac_reward=$REWARD                          \
+     -ac_halving=$HALVING                        \
+     -ac_end=$END                                \
+     -ac_eras=$ERAS                              \
+     -ac_blocktime=$BLOCKTIME                    \
+     -ac_cc=2 -ac_ccenable=$CCENABLE             \
+     -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
+     -ac_perc=$PERC                              \
+     -clientname=$CLIENTNAME                     \
+     -ac_script=$SCRIPT  "$@"

@@ -1215,7 +1215,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         // prod values
         //int32_t starting_commission = 125000000, HALVING1 = 340000,  INTERVAL = 840000, TRANSITION = 129, BR_END = 5422111;
         // testnet values
-        int64_t starting_commission = 125000000, HALVING1 = 34,  INTERVAL = 84, TRANSITION = 129, BR_END = 500;
+        int64_t starting_commission = 125000000, HALVING1 = 142,  INTERVAL = 84, TRANSITION = 29, BR_END = 500;
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
         fprintf(stderr,"ORIG  ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
@@ -1227,7 +1227,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
 
             // Transition period of 128 blocks has BR=FR=0
-            if (height < 129)     {
+            if (height < TRANSITION) {
                 commission = 0;
             } else if (height < HALVING1) {
                 commission = starting_commission;

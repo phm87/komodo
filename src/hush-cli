@@ -5,6 +5,6 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-NAME=HUSHT3
+NAME=HUSHT4
 
 ./komodo-cli -ac_name=$NAME "$@"

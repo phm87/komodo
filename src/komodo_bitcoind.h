@@ -1227,7 +1227,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             // Transition period of 128 blocks has no FR
             if (height < 129)     {
                 commission = 0;
-            else if (height < HALVING1) {
+            } else if (height < HALVING1) {
                 commission = starting_commission;
             } else if (height < HALVING1+1*INTERVAL) {
                 commission = starting_commission / 2;

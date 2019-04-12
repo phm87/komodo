@@ -1212,7 +1212,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     txn_count = pblock->vtx.size();
     // HUSH prod values
     //int32_t starting_commission = 125000000, HALVING1 = 340000,  INTERVAL = 840000;
-    int64_t starting_commission = 125000000, HALVING1 = 340,  INTERVAL = 840;
+    int64_t starting_commission = 125000000, HALVING1 = 340,  INTERVAL = 840, TRANSITION = 129;
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
@@ -1223,7 +1223,11 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
             // but to tell the AC params, I need to say "11% of 11.25" is 1.25
             // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
-            if (height < HALVING1) {
+
+            // Transition period of 128 blocks has no FR
+            if (height < 129)     {
+                commission = 0;
+            else if (height < HALVING1) {
                 commission = starting_commission;
             } else if (height < HALVING1+1*INTERVAL) {
                 commission = starting_commission / 2;

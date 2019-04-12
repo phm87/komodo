@@ -2057,7 +2057,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
         checktoshis = komodo_commission(pblock,height);
         if ( checktoshis >= 10000 && pblock->vtx[0].vout.size() < 2 )
         {
-            //fprintf(stderr,"komodo_checkcommission vsize.%d height.%d commission %.8f\n",(int32_t)pblock->vtx[0].vout.size(),height,(double)checktoshis/COIN);
+            fprintf(stderr,"komodo_checkcommission vsize.%d height.%d commission %.8f\n",(int32_t)pblock->vtx[0].vout.size(),height,(double)checktoshis/COIN);
             return(-1);
         }
         else if ( checktoshis != 0 )

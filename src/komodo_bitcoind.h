@@ -1210,13 +1210,14 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 
     int32_t i,j,n=0,txn_count,halvings; int64_t nSubsidy; uint64_t commission,total = 0;
     txn_count = pblock->vtx.size();
+    // HUSH prod values
     //int32_t starting_commission = 125000000, HALVING1 = 340000,  INTERVAL = 840000;
-    int32_t starting_commission = 125000000, HALVING1 = 340,  INTERVAL = 840;
+    int64_t starting_commission = 125000000, HALVING1 = 340,  INTERVAL = 840;
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
-        //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
+        fprintf(stderr,"ORIG  ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         if ((strcmp(ASSETCHAINS_SYMBOL, "HUSH") != 0) || (strcmp(ASSETCHAINS_SYMBOL, "HUSHT3") != 0)) {
             // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it ourselves.
             // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
@@ -1245,6 +1246,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
                 commission = starting_commission / 512;
             }
         }
+        fprintf(stderr,"AFTER ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
 
         if ( ASSETCHAINS_FOUNDERS > 1 )
         {
@@ -1282,7 +1284,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     }
     if ( commission < 10000 )
         commission = 0;
-    //fprintf(stderr,"-> %.8f\n",(double)commission/COIN);
+    fprintf(stderr,"-> %.8f\n",(double)commission/COIN);
     return(commission);
 }
 

@@ -1216,14 +1216,15 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         // prod values
+        // NOTE: ac_end specifies the first block with 0 reward, not the last block with a reward!
         //int32_t starting_commission = 125000000, HALVING1 = 340000,  INTERVAL = 840000, TRANSITION = 129, BR_END = 5422111;
         // testnet values
-        int64_t starting_commission = 125000000, HALVING1 = 34,  INTERVAL = 84, TRANSITION = 29, BR_END = 500;
+        int64_t starting_commission = 125000000, HALVING1 = 34,  INTERVAL = 84, TRANSITION = 29;
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
-        fprintf(stderr,"ORIG  ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
+        //fprintf(stderr,"ORIG  ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
 
-        if ((strcmp(ASSETCHAINS_SYMBOL, "HUSH") != 0) || (strcmp(ASSETCHAINS_SYMBOL, "HUSHT6") != 0)) {
+        if ((strcmp(ASSETCHAINS_SYMBOL, "HUSH") != 0) || (strcmp(ASSETCHAINS_SYMBOL, "HUSHT7") != 0)) {
             // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it ourselves.
             // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
             // but to tell the AC params, I need to say "11% of 11.25" is 1.25
@@ -1249,13 +1250,8 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             } else if (height < HALVING1+7*INTERVAL) {
                 commission = starting_commission / 128; // Block 6220000
             }
-
-            // enforce the end of FR when BR ends
-            if (height > BR_END) {
-                commission = 0;
-            }
         }
-        fprintf(stderr,"AFTER ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
+        //fprintf(stderr,"AFTER ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
 
         if ( ASSETCHAINS_FOUNDERS > 1 )
         {

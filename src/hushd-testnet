@@ -15,6 +15,7 @@ BLOCKTIME=10
 SUPPLY=6250000
 FOUNDERS=1
 CLIENTNAME=GoldenSandtrout
+PERC=11111111
 
 # CryptoConditions/Custom Consensus params
 FAUCET=228
@@ -28,6 +29,7 @@ CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
 KMD=${KOMODOD:-./komodod}
 $KMD -ac_name=$NAME -ac_sapling=1                \
      -ac_blocktime=$BLOCKTIME                    \
+     -ac_perc=$PERC                              \
      -ac_cc=2 -ac_ccenable=$CCENABLE             \
      -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
      -clientname=$CLIENTNAME                     \

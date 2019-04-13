@@ -1208,13 +1208,52 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
         return(0);
 
-    int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
+    int32_t i,j,n=0,txn_count,halvings; int64_t nSubsidy; uint64_t commission,total = 0;
     txn_count = pblock->vtx.size();
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
+        // prod values
+        //int32_t starting_commission = 125000000, HALVING1 = 340000,  INTERVAL = 840000, TRANSITION = 129, BR_END = 5422111;
+        // testnet values
+        int64_t starting_commission = 125000000, HALVING1 = 34,  INTERVAL = 84, TRANSITION = 29, BR_END = 500;
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
-        //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
+        fprintf(stderr,"ORIG  ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
+
+        if ((strcmp(ASSETCHAINS_SYMBOL, "HUSH") != 0) || (strcmp(ASSETCHAINS_SYMBOL, "HUSHT6") != 0)) {
+            // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it ourselves.
+            // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
+            // but to tell the AC params, I need to say "11% of 11.25" is 1.25
+            // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
+            // Transition period of 128 blocks has BR=FR=0
+            if (height < TRANSITION) {
+                commission = 0;
+            } else if (height < HALVING1) {
+                commission = starting_commission;
+            } else if (height < HALVING1+1*INTERVAL) {
+                commission = starting_commission / 2;
+            } else if (height < HALVING1+2*INTERVAL) {
+                commission = starting_commission / 4;
+            } else if (height < HALVING1+3*INTERVAL) {
+                commission = starting_commission / 8;
+            } else if (height < HALVING1+4*INTERVAL) {
+                commission = starting_commission / 16;
+            } else if (height < HALVING1+5*INTERVAL) {
+                commission = starting_commission / 32;
+            } else if (height < HALVING1+6*INTERVAL) { // Block 5380000
+                // Block reward will go to zero between 7th+8th halvings
+                commission = starting_commission / 64;
+            } else if (height < HALVING1+7*INTERVAL) {
+                commission = starting_commission / 128; // Block 6220000
+            }
+
+            // enforce the end of FR when BR ends
+            if (height > BR_END) {
+                commission = 0;
+            }
+        }
+        fprintf(stderr,"AFTER ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
+
         if ( ASSETCHAINS_FOUNDERS > 1 )
         {
             if ( (height % ASSETCHAINS_FOUNDERS) == 0 )
@@ -1251,7 +1290,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     }
     if ( commission < 10000 )
         commission = 0;
-    //fprintf(stderr,"-> %.8f\n",(double)commission/COIN);
+    fprintf(stderr,"-> %.8f\n",(double)commission/COIN);
     return(commission);
 }
 
@@ -2024,7 +2063,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
         checktoshis = komodo_commission(pblock,height);
         if ( checktoshis >= 10000 && pblock->vtx[0].vout.size() < 2 )
         {
-            //fprintf(stderr,"komodo_checkcommission vsize.%d height.%d commission %.8f\n",(int32_t)pblock->vtx[0].vout.size(),height,(double)checktoshis/COIN);
+            fprintf(stderr,"komodo_checkcommission vsize.%d height.%d commission %.8f\n",(int32_t)pblock->vtx[0].vout.size(),height,(double)checktoshis/COIN);
             return(-1);
         }
         else if ( checktoshis != 0 )

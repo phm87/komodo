@@ -5,22 +5,22 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-# NOT FINALIZED, but very close to our production chainparams
-NAME=HUSH
+# TESTING VALUES, DO NOT USE EXCEPT FOR DEVELOPMENT
+NAME=HUSHT6
 # this corresponds to FR address RHushEyeDm7XwtaTWtyCbjGQumYyV8vMjn
 SCRIPT=76a9145eb10cf64f2bab1b457f1f25e658526155928fac88ac
 
 # Chain parameters
 ERAS=3
-BLOCKTIME=150
+BLOCKTIME=10
 SUPPLY=6250000
 FOUNDERS=1
 REWARD=0,1125000000,562500000
+HALVING=29,34,84
+END=28,34,500
 PERC=11111111
-HALVING=129,340000,840000
-# TODO: Re-verify our end block
-END=128,340000,5422111
 CLIENTNAME=GoldenSandtrout
+PERC=11111111
 
 # CryptoConditions/Custom Consensus params
 FAUCET=228
@@ -28,7 +28,6 @@ HEIR=234
 CHANNEL=235
 ORACLE=236
 GATEWAY=241
-DILITHIUM=
 CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
 
 KMD=${KOMODOD:-./komodod}
@@ -38,6 +37,7 @@ $KMD -ac_name=$NAME -ac_sapling=1                \
      -ac_end=$END                                \
      -ac_eras=$ERAS                              \
      -ac_blocktime=$BLOCKTIME                    \
+     -ac_perc=$PERC                              \
      -ac_cc=2 -ac_ccenable=$CCENABLE             \
      -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
      -ac_perc=$PERC                              \

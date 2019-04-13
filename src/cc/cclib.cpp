@@ -52,6 +52,8 @@ std::string MYCCLIBNAME = (char *)"sudoku";
 void komodo_netevent(std::vector<uint8_t> payload) {}
 #endif
 
+extern std::string MYCCLIBNAME;
+
 char *CClib_name() { return((char *)MYCCLIBNAME.c_str()); }
 
 struct CClib_rpcinfo
@@ -193,7 +195,7 @@ cJSON *cclib_reparse(int32_t *nump,char *jsonstr) // assumes origparams will be 
 UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
 {
     UniValue result(UniValue::VOBJ); uint64_t txfee = 10000; int32_t m; cJSON *params = cclib_reparse(&m,jsonstr);
-    //fprintf(stderr,"method.(%s) -> (%s)\n",jsonstr!=0?jsonstr:"",params!=0?jprint(params,0):"");
+    fprintf(stderr,"method.(%s) -> (%s)\n",jsonstr!=0?jsonstr:"",params!=0?jprint(params,0):"");
 #ifdef BUILD_ROGUE
     if ( cp->evalcode == EVAL_ROGUE )
     {
@@ -349,7 +351,7 @@ UniValue CClib_info(struct CCcontract_info *cp)
 UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
 {
     UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx; cJSON *params;
-    //printf("CClib params.(%s)\n",jsonstr!=0?jsonstr:"");
+//printf("CClib params.(%s)\n",jsonstr!=0?jsonstr:"");
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
         if ( cp->evalcode == CClib_methods[i].evalcode && strcmp(method,CClib_methods[i].method) == 0 )
@@ -367,7 +369,7 @@ UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
         }
     }
     result.push_back(Pair("result","error"));
-    result.push_back(Pair("method",CClib_methods[i].method));
+    result.push_back(Pair("method",method));
     result.push_back(Pair("error","method not found"));
     return(result);
 }
@@ -480,7 +482,7 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             else if ( (hash[0] & 0xff) != 0 || (hash[31] & 0xff) != 0 )
                 return eval->Invalid("invalid faucetget txid");
             Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
-            SetCCtxids(txids,destaddr);
+            SetCCtxids(txids,destaddr,tx.vout[i].scriptPubKey.IsPayToCryptoCondition());
             for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
             {
                 //int height = it->first.blockHeight;
@@ -499,12 +501,12 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
     }
 }
 
-int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs,char *cmpaddr)
+int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs,char *cmpaddr,int32_t CCflag)
 {
     char coinaddr[64]; int64_t threshold,nValue,price,totalinputs = 0,txfee = 10000; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,CCflag!=0?true:false);
     if ( maxinputs > CC_MAXVINS )
         maxinputs = CC_MAXVINS;
     if ( maxinputs != 0 )
@@ -540,7 +542,7 @@ int64_t AddCClibtxfee(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
     char coinaddr[64]; int64_t nValue,txfee = 10000; uint256 txid,hashBlock; CTransaction vintx; int32_t vout;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -594,7 +596,7 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
         return("");
     cclibpk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddCClibInputs(cp,mtx,cclibpk,nValue+txfee,60,cp->unspendableCCaddr)) > 0 )
+    if ( (inputs= AddCClibInputs(cp,mtx,cclibpk,nValue+txfee,60,cp->unspendableCCaddr,1)) > 0 )
     {
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);
@@ -691,6 +693,7 @@ int32_t cclib_parsehash(uint8_t *hash32,cJSON *item,int32_t len)
 #include "customcc.cpp"
 
 #elif BUILD_GAMESCC
+#include "rogue/cursesd.c"
 #include "gamescc.cpp"
 
 #else

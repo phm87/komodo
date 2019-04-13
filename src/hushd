@@ -21,6 +21,7 @@ HALVING=129,340000,840000
 # TODO: Re-verify our end block
 END=128,340000,5422111
 CLIENTNAME=GoldenSandtrout
+SEEDNODE=188.165.212.101
 
 # CryptoConditions/Custom Consensus params
 FAUCET=228
@@ -31,6 +32,9 @@ GATEWAY=241
 DILITHIUM=
 CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
 
+#NOTE: This is not compatible with upstream KMD komodod,
+# but you can reuse one hush3 komodod binary in various
+# directories/repos on one server, to save disk space
 KMD=${KOMODOD:-./komodod}
 $KMD -ac_name=$NAME -ac_sapling=1                \
      -ac_reward=$REWARD                          \
@@ -42,4 +46,5 @@ $KMD -ac_name=$NAME -ac_sapling=1                \
      -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
      -ac_perc=$PERC                              \
      -clientname=$CLIENTNAME                     \
+     -addnode=$SEEDNODE                          \
      -ac_script=$SCRIPT  "$@"

@@ -1224,7 +1224,6 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it manually
             // 10% of 12.5 is 1.25 but to tell the AC params, I need to say "11% of 11.25" is 1.25
             // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
-
             // Transition period of 128 blocks has BR=FR=0
             if (height < TRANSITION) {
                 commission = 0;

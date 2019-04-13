@@ -11,9 +11,14 @@ NAME=HUSHT5
 SCRIPT=76a9145eb10cf64f2bab1b457f1f25e658526155928fac88ac
 
 # Chain parameters
+ERAS=3
 BLOCKTIME=10
 SUPPLY=6250000
 FOUNDERS=1
+REWARD=0,1125000000,562500000
+HALVING=29,34,84
+END=28,34,500
+PERC=11111111
 CLIENTNAME=GoldenSandtrout
 
 # CryptoConditions/Custom Consensus params
@@ -27,6 +32,11 @@ CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
 
 KMD=${KOMODOD:-./komodod}
 $KMD -ac_name=$NAME -ac_sapling=1                \
+     -ac_halving=$HALVING                        \
+     -ac_eras=$ERAS                              \
+     -ac_perc=$PERC                              \
+     -ac_end=$END                                \
+     -ac_reward=$REWARD                          \
      -ac_blocktime=$BLOCKTIME                    \
      -ac_cc=2 -ac_ccenable=$CCENABLE             \
      -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \

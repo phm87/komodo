@@ -21,6 +21,7 @@ END=28,34,501
 PERC=11111111
 CLIENTNAME=GoldenSandtrout
 PERC=11111111
+SEEDNODE=188.165.212.101
 
 # CryptoConditions/Custom Consensus params
 FAUCET=228
@@ -42,4 +43,5 @@ $KMD -ac_name=$NAME -ac_sapling=1                \
      -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
      -ac_perc=$PERC                              \
      -clientname=$CLIENTNAME                     \
+     -addnode=$SEEDNODE                          \
      -ac_script=$SCRIPT  "$@"

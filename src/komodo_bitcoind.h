@@ -1220,7 +1220,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
         fprintf(stderr,"ORIG  ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
 
-        if ((strcmp(ASSETCHAINS_SYMBOL, "HUSH") != 0) || (strcmp(ASSETCHAINS_SYMBOL, "HUSHT5") != 0)) {
+        if ((strcmp(ASSETCHAINS_SYMBOL, "HUSH") != 0) || (strcmp(ASSETCHAINS_SYMBOL, "HUSHT6") != 0)) {
             // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it ourselves.
             // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
             // but to tell the AC params, I need to say "11% of 11.25" is 1.25

@@ -1570,39 +1570,96 @@ uint64_t komodo_max_money()
 
 uint64_t komodo_ac_block_subsidy(int nHeight)
 {
+    // we have to find our era, start from beginning reward, and determine current subsidy
+    int64_t numerator, denominator, subsidy = 0;
+    int64_t subsidyDifference;
+    int32_t numhalvings, curEra = 0, sign = 1;
+    static uint64_t cached_subsidy; static int32_t cached_numhalvings; static int cached_era;
+
+    // check for backwards compat, older chains with no explicit rewards had 0.0001 block reward
+    if ( ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] == 0 )
+        subsidy = 10000;
+    else if ( (ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] != 0) || ASSETCHAINS_ENDSUBSIDY[0] != 0 )
+    {
+        // if we have an end block in the first era, find our current era
+        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 )
+        {
+            for ( curEra = 0; curEra <= ASSETCHAINS_LASTERA; curEra++ )
+            {
+                if ( ASSETCHAINS_ENDSUBSIDY[curEra] > nHeight || ASSETCHAINS_ENDSUBSIDY[curEra] == 0 )
+                    break;
+            }
+        }
+        if ( curEra <= ASSETCHAINS_LASTERA )
+        {
+            int64_t nStart = curEra ? ASSETCHAINS_ENDSUBSIDY[curEra - 1] : 0;
+            subsidy = (int64_t)ASSETCHAINS_REWARD[curEra];
+            if ( subsidy || (curEra != ASSETCHAINS_LASTERA && ASSETCHAINS_REWARD[curEra + 1] != 0) )
+            {
+                if ( ASSETCHAINS_HALVING[curEra] != 0 )
+                {
+                    if ( (numhalvings = ((nHeight - nStart) / ASSETCHAINS_HALVING[curEra])) > 0 )
+                    {
+                        if ( ASSETCHAINS_DECAY[curEra] == 0 )
+                            subsidy >>= numhalvings;
+                        else if ( ASSETCHAINS_DECAY[curEra] == 100000000 && ASSETCHAINS_ENDSUBSIDY[curEra] != 0 )
+                        {
+                            if ( curEra == ASSETCHAINS_LASTERA )
+                            {
+                                subsidyDifference = subsidy;
+                            }
+                            else
+                            {
+                                // Ex: -ac_eras=3 -ac_reward=0,384,24 -ac_end=1440,260640,0 -ac_halving=1,1440,2103840 -ac_decay 100000000,97750000,0
+                                subsidyDifference = subsidy - ASSETCHAINS_REWARD[curEra + 1];
+                                if (subsidyDifference < 0)
+                                {
+                                    sign = -1;
+                                    subsidyDifference *= sign;
+                                }
+                            }
+                            denominator = ASSETCHAINS_ENDSUBSIDY[curEra] - nStart;
+                            numerator = denominator - ((ASSETCHAINS_ENDSUBSIDY[curEra] - nHeight) + ((nHeight - nStart) % ASSETCHAINS_HALVING[curEra]));
+                            subsidy = subsidy - sign * ((subsidyDifference * numerator) / denominator);
+                        }
+                        else
+                        {
+                            if ( cached_subsidy > 0 && cached_era == curEra && cached_numhalvings == numhalvings )
+                                subsidy = cached_subsidy;
+                            else
+                            {
+                                for (int i=0; i < numhalvings && subsidy != 0; i++)
+                                    subsidy = (subsidy * ASSETCHAINS_DECAY[curEra]) / 100000000;
+                                cached_subsidy = subsidy;
+                                cached_numhalvings = numhalvings;
+                                cached_era = curEra;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     uint32_t magicExtra = ASSETCHAINS_STAKED ? ASSETCHAINS_MAGIC : (ASSETCHAINS_MAGIC & 0xffffff);
-    //TODO: unify with values in komodo_bitcoind.h
-    int64_t subsidy = 0, starting_subsidy = 1125000000, HALVING1 = 34,  INTERVAL = 84, TRANSITION = 29, BR_END = 500;
-
-    if ( nHeight == 1 ) {
-        subsidy = ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
-    } else if (nHeight < TRANSITION) {
-        subsidy = 0;
-    } else if (nHeight < HALVING1) {
-        subsidy = starting_subsidy;
-    } else if (nHeight < HALVING1+1*INTERVAL) {
-        subsidy = starting_subsidy / 2;
-    } else if (nHeight < HALVING1+2*INTERVAL) {
-        subsidy = starting_subsidy / 4;
-    } else if (nHeight < HALVING1+3*INTERVAL) {
-        subsidy = starting_subsidy / 8;
-    } else if (nHeight < HALVING1+4*INTERVAL) {
-        subsidy = starting_subsidy / 16;
-    } else if (nHeight < HALVING1+5*INTERVAL) {
-        subsidy = starting_subsidy / 32;
-    } else if (nHeight < HALVING1+6*INTERVAL) {
-        subsidy = starting_subsidy / 64;
-    } else if (nHeight < HALVING1+7*INTERVAL) {
-        subsidy = starting_subsidy / 128;
-    } else if (nHeight < HALVING1+8*INTERVAL) {
-        subsidy = starting_subsidy / 256;
+    if ( ASSETCHAINS_SUPPLY > 10000000000 ) // over 10 billion?
+    {
+        if ( nHeight <= ASSETCHAINS_SUPPLY/1000000000 )
+        {
+            subsidy += (uint64_t)1000000000 * COIN;
+            if ( nHeight == 1 )
+                subsidy += (ASSETCHAINS_SUPPLY % 1000000000)*COIN + magicExtra;
+        }
     }
-
-    // enforce the end of subsidy
-    if (nHeight > BR_END) {
-       subsidy = 0;
+    else if ( nHeight == 1 )
+    {
+        if ( ASSETCHAINS_LASTERA == 0 )
+            subsidy = ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
+        else
+            subsidy += ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
     }
-
+    else if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
+        return(0);
+    // LABS fungible chains, cannot have any block reward!
     return(subsidy);
 }
 

@@ -27,18 +27,17 @@ HEIR=234
 CHANNEL=235
 ORACLE=236
 GATEWAY=241
-DILITHIUM=
 CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
 
 KMD=${KOMODOD:-./komodod}
 $KMD -ac_name=$NAME -ac_sapling=1                \
-     -ac_halving=$HALVING                        \
-     -ac_eras=$ERAS                              \
-     -ac_perc=$PERC                              \
-     -ac_end=$END                                \
      -ac_reward=$REWARD                          \
+     -ac_halving=$HALVING                        \
+     -ac_end=$END                                \
+     -ac_eras=$ERAS                              \
      -ac_blocktime=$BLOCKTIME                    \
      -ac_cc=2 -ac_ccenable=$CCENABLE             \
      -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
+     -ac_perc=$PERC                              \
      -clientname=$CLIENTNAME                     \
      -ac_script=$SCRIPT  "$@"

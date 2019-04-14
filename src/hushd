@@ -5,7 +5,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-# NOT FINALIZED, but very close to our production chainparams
+# ALMOST! FINALIZED
 NAME=HUSH
 # this corresponds to FR address RHushEyeDm7XwtaTWtyCbjGQumYyV8vMjn
 SCRIPT=76a9145eb10cf64f2bab1b457f1f25e658526155928fac88ac
@@ -18,7 +18,7 @@ FOUNDERS=1
 REWARD=0,1125000000,562500000
 PERC=11111111
 HALVING=129,340000,840000
-# TODO: Re-verify our end block
+# NOTE: keep in sync with komodo_bitcoind.h
 END=128,340000,5422111
 CLIENTNAME=GoldenSandtrout
 SEEDNODE=188.165.212.101

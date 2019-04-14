@@ -22,6 +22,7 @@ HALVING=129,340000,840000
 END=128,340000,5422111
 CLIENTNAME=GoldenSandtrout
 SEEDNODE=188.165.212.101
+CCLIB=hush3
 
 # CryptoConditions/Custom Consensus params
 FAUCET=228
@@ -47,4 +48,5 @@ $KMD -ac_name=$NAME -ac_sapling=1                \
      -ac_perc=$PERC                              \
      -clientname=$CLIENTNAME                     \
      -addnode=$SEEDNODE                          \
+     -ac_cclib=$CCLIB                            \
      -ac_script=$SCRIPT  "$@"

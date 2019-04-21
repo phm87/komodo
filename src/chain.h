@@ -361,7 +361,7 @@ public:
 
     inline int32_t GetHeight() const
     {
-        return this->chainPower.nHeight;
+        return this->chainPower ? this->chainPower.nHeight : 0;
     }
 
     CDiskBlockPos GetBlockPos() const {

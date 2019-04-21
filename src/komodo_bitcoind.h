@@ -57,7 +57,7 @@ void init_string(struct return_string *s)
     if ( s->ptr == NULL )
     {
         fprintf(stderr,"init_string malloc() failed\n");
-        exit(-1);
+        StartShutdown();
     }
     s->ptr[0] = '\0';
 }
@@ -94,7 +94,7 @@ size_t accumulatebytes(void *ptr,size_t size,size_t nmemb,struct return_string *
     if ( s->ptr == NULL )
     {
         fprintf(stderr, "accumulate realloc() failed\n");
-        exit(-1);
+        StartShutdown();
     }
     memcpy(s->ptr+s->len,ptr,size*nmemb);
     s->ptr[new_len] = '\0';
@@ -371,7 +371,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     {
         sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
-        //printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,KMDUSERPASS);
+ //printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,KMDUSERPASS);
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
         //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
@@ -446,6 +446,18 @@ int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,
         printf("%02x",((uint8_t *)&hash)[i]);
     printf(" opreturn from [%s] ht.%d MISMATCHED\n",ASSETCHAINS_SYMBOL,height);
     return(-1);
+}
+
+void komodo_reconsiderblock(uint256 blockhash)
+{
+    char params[256],*jsonstr,*hexstr;
+    sprintf(params,"[\"%s\"]",blockhash.ToString().c_str());
+    if ( (jsonstr= komodo_issuemethod(ASSETCHAINS_USERPASS,(char *)"reconsiderblock",params,ASSETCHAINS_RPCPORT)) != 0 )
+    {
+        //fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> (%s)\n",params,ASSETCHAINS_USERPASS,ASSETCHAINS_RPCPORT,jsonstr);
+        free(jsonstr);
+    }
+    //fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> NULL\n",params,ASSETCHAINS_USERPASS,ASSETCHAINS_RPCPORT);
 }
 
 int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
@@ -1079,6 +1091,17 @@ int32_t komodo_blockheight(uint256 hash)
     return(0);
 }
 
+uint32_t komodo_blocktime(uint256 hash)
+{
+    BlockMap::const_iterator it; CBlockIndex *pindex = 0;
+    if ( (it = mapBlockIndex.find(hash)) != mapBlockIndex.end() )
+    {
+        if ( (pindex= it->second) != 0 )
+            return(pindex->nTime);
+    }
+    return(0);
+}
+
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {
     int32_t notarized_height,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; CBlockIndex *notary,*pindex;
@@ -1269,8 +1292,9 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             else commission = 0;
         }
     }
-    else
+    else if ( pblock != 0 )
     {
+        txn_count = pblock->vtx.size();
         for (i=0; i<txn_count; i++)
         {
             n = pblock->vtx[i].vout.size();
@@ -1882,7 +1906,7 @@ uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
     // Because of reorgs we cannot use the notarized height value. 
     // We need to basically guess here and just pay some static amount.
     // Has the unwanted effect of varying coin emission, but cannot be helped.
-    fprintf(stderr, "era.%i paying total of %lu\n",curEra, ASSETCHAINS_NOTARY_PAY[curEra]);
+    //fprintf(stderr, "era.%i paying total of %lu\n",curEra, ASSETCHAINS_NOTARY_PAY[curEra]);
     ret = ASSETCHAINS_NOTARY_PAY[curEra] / notarycount;
     return(ret);
 }
@@ -1897,13 +1921,8 @@ int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *sc
     if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
     {
         memcpy(scriptbuf,script,len);
-        if ( komodo_voutupdate(true,&isratification,0,scriptbuf,len,height,uint256(),1,1,&voutmask,&specialtx,&notarizedheight,0,1,0,timestamp) == -2 )
+        if ( komodo_voutupdate(true,&isratification,0,scriptbuf,len,height,uint256(),1,1,&voutmask,&specialtx,&notarizedheight,0,1,0,timestamp) != -2 )
         {
-            fprintf(stderr, ">>>>>>VALID NOTARIZATION ht.%i\n",notarizedheight);
-        }
-        else
-        {
-            // This should no longer happen. Unless notaries are making actual invalid notarizations.
             fprintf(stderr, "<<<<<<INVALID NOTARIZATION ht.%i\n",notarizedheight);
             return(0);
         }
@@ -2056,7 +2075,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
     }
     if ( matches != 0 && matches == NotarisationNotaries.size() && totalsats == total )
     {
-        fprintf(stderr, "Validated coinbase matches notarisation in tx position 1.\n" );
+        //fprintf(stderr, "Validated coinbase matches notarisation in tx position 1.\n" );
         return(totalsats);
     }
     return(0);

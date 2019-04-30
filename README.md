@@ -42,7 +42,7 @@ with `t1` and now they begin with `R`.
 To see what an old HUSH v2 address looks like on the new chain, this online tool
 can be used: https://dexstats.info/addressconverter.php
 
-or this command line tool: https://github.com/MyHush/hush3/blob/duke/contrib/convert\_address.py
+or this command line tool: https://github.com/MyHush/hush3/blob/duke/contrib/convert_address.py
 
 
 ### Using an old wallet.dat
@@ -104,11 +104,10 @@ your funds safe:
  * ALWAYS ACCESS VIA https://
  * DO NOT USE FROM PUBLIC WIFI
  * DO NOT USE ON A COMPUTER OTHER PEOPLE USE
+ * BACK UP YOUR SEED PHRASE (multiple paper copies)
 
 Even if you follow all those rules, due to web wallets relying on DNS and IP
-addresss, there are still potential attacks. You have been warned.
-
-    https://wallet.myhush.org
+addresss, there are still potential attacks. You have been warned: https://wallet.myhush.org
 
 The source code for the Hush web wallet is here: https://github.com/MyHush/myhushwallet
 

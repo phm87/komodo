@@ -24,9 +24,26 @@ There are many channels, some you might enjoy are #general, #support and #mining
 ## Claiming Funds From Old Hush Wallets
 
 Hush migrated to a new mainnet after Block 500,000 on the old Hush blockchain.
-All funds in all addresses as of Block 500,000 were transported to our new chain.
+Funds in addresses as of Block 500,000 were transported to our new chain. About
+31,000 addresses with at least 0.00000001 HUSH were transported to the new Hush
+mainnet.
 
 To claim funds on the new chain, there are few options.
+
+### Funds on exchanges
+
+Firstly, no bueno! Not your keys, not your coins. It's best not to store coins
+on exchanges. But in this case, you lucked out! There is nothing to do to claim
+new coins if you have coins on an exchange that supports the new Hush chain.
+The exchange will follow the instructions from the next section and you will
+magically have funds on the new chain. Note that old Hush addresses started
+with `t1` and now they begin with `R`.
+
+To see what an old HUSH v2 address looks like on the new chain, this online tool
+can be used: https://dexstats.info/addressconverter.php
+
+or this command line tool: https://github.com/MyHush/hush3/blob/duke/contrib/convert\_address.py
+
 
 ### Using an old wallet.dat
 

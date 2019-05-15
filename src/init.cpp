@@ -1243,6 +1243,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     FILE* file = fopen(pathLockFile.string().c_str(), "a"); // empty lock file; created if it doesn't exist.
     if (file) fclose(file);
 
+
+    fprintf(stderr,"Attempting to obtain lock %s\n", pathLockFile.string().c_str());
     try {
         static boost::interprocess::file_lock lock(pathLockFile.string().c_str());
         if (!lock.try_lock())
@@ -1251,11 +1253,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError(strprintf(_("Cannot obtain a lock on data directory %s. Komodo is probably already running.") + " %s.", strDataDir, e.what()));
     }
 
+    fprintf(stderr,"About to create pidfile\n");
 #ifndef _WIN32
     CreatePidFile(GetPidFile(), getpid());
 #endif
+    fprintf(stderr,"created pidfile\n");
     if (GetBoolArg("-shrinkdebugfile", !fDebug))
         ShrinkDebugFile();
+    fprintf(stderr,"past shrinkdebugfile\n");
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     LogPrintf("Komodo version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
 

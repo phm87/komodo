@@ -746,8 +746,12 @@ void CreatePidFile(const boost::filesystem::path &path, pid_t pid)
     FILE* file = fopen(path.string().c_str(), "w");
     if (file)
     {
+        fprintf(stderr,"Creating pid file %s\n", path.string().c_str());
         fprintf(file, "%d\n", pid);
         fclose(file);
+    } else {
+        fprintf(stderr,"Unable to make a pidfile %s !\n", path.string().c_str());
+        exit(1);
     }
 }
 #endif
@@ -878,6 +882,7 @@ void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length) {
 
 void ShrinkDebugFile()
 {
+    fprintf(stderr,"Shrinking %s\n", GetDataDir().c_str() );
     // Scroll debug.log if it's getting too big
     boost::filesystem::path pathLog = GetDataDir() / "debug.log";
     FILE* file = fopen(pathLog.string().c_str(), "r");

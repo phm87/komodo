@@ -115,7 +115,7 @@ The source code for the Hush web wallet is here: https://github.com/MyHush/myhus
 Installing
 ----------
 
-See [INSTALL.md](https://github.com/MyHush/hush/blob/master/INSTALL.md).
+See [INSTALL.md](https://github.com/MyHush/hush3/blob/master/INSTALL.md).
 
 
 License

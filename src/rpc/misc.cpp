@@ -243,13 +243,13 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("prevMoMheight", prevMoMheight));
     obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
     obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
-    //txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
-    //if ( txid_height > 0 )
-    //    obj.push_back(Pair("notarizedtxid_height", txid_height));
-    //else obj.push_back(Pair("notarizedtxid_height", "mempool"));
-    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
-    //    obj.push_back(Pair("KMDnotarized_height", kmdnotarized_height));
-    //obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height + 1) : 0));
+    txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
+    if ( txid_height > 0 )
+        obj.push_back(Pair("notarizedtxid_height", txid_height));
+    else obj.push_back(Pair("notarizedtxid_height", "mempool"));
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        obj.push_back(Pair("KMDnotarized_height", kmdnotarized_height));
+    obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height + 1) : 0));
     //fprintf(stderr,"after notarized_confirms %u\n",(uint32_t)time(NULL));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {

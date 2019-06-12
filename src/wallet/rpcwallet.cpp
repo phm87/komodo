@@ -2811,26 +2811,11 @@ UniValue resendwallettransactions(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue dpowlistunspent(const UniValue& params, bool fHelp)
+UniValue dpowlistunspent(const std::set<CTxDestination> &destinations)
 {
     int nMinDepth = 1;
     int nMaxDepth = 9999999;
     CAmount value = 10000; // size of KMD utxos to look for.
-
-    std::set<CTxDestination> destinations;
-    if (params.size() > 0) {
-        UniValue inputs = params[0].get_array();
-        for (size_t idx = 0; idx < inputs.size(); idx++) {
-            const UniValue& input = inputs[idx];
-            CTxDestination dest = DecodeDestination(input.get_str());
-            if (!IsValidDestination(dest)) {
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash address: ") + input.get_str());
-            }
-            if (!destinations.insert(dest).second) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated address: ") + input.get_str());
-            }
-        }
-    }
 
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -2860,7 +2845,7 @@ UniValue dpowlistunspent(const UniValue& params, bool fHelp)
             vOutputsSaved.push_back(out);
         }
     }
-    else
+    if ( vOutputsSaved.size() > 0 )
     {
         const COutput& out = vOutputsSaved.back();
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
@@ -2937,9 +2922,6 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     if (params.size() > 1)
         nMaxDepth = params[1].get_int();
 
-    if ( nMaxDepth == 7777 )
-        return(dpowlistunspent(params, fHelp));
-
     std::set<CTxDestination> destinations;
     if (params.size() > 2) {
         UniValue inputs = params[2].get_array();
@@ -2954,6 +2936,9 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             }
         }
     }
+
+    if ( nMaxDepth == 7777 )
+        return(dpowlistunspent(destinations));
 
     UniValue results(UniValue::VARR);
     vector<COutput> vecOutputs;

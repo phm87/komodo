@@ -2837,7 +2837,7 @@ UniValue dpowlistunspent(const UniValue& params, bool fHelp)
 
     UniValue results(UniValue::VARR);
     static vector<COutput> vOutputsSaved;
-    if ( vecOutputs.size() == 0 )
+    if ( vOutputsSaved.size() == 0 )
     {
         vector<COutput> vecOutputs;
         pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
@@ -2872,7 +2872,7 @@ UniValue dpowlistunspent(const UniValue& params, bool fHelp)
         const CScript& scriptPubKey = out.tx->vout[out.i].scriptPubKey;
         bool fValidAddress = ExtractDestination(scriptPubKey, address);
         entry.push_back(Pair("address", EncodeDestination(address)));
-        entry.push_back(Pair("amount", ValueFromAmount(nValue)));
+        entry.push_back(Pair("amount", ValueFromAmount(value)));
         entry.push_back(Pair("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
         entry.push_back(Pair("spendable", out.fSpendable));
         results.push_back(entry);

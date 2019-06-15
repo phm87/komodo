@@ -43,14 +43,12 @@ is deemed necessary and appropriate to the circumstances. Maintainers are
 obligated to maintain confidentiality with regard to the reporter of an
 incident.
 
-You may send reports to [our Conduct email](mailto:developer@komodoplatform.com).
+You may send reports to [our Conduct email](mailto:myhushteam@gmail.com).
 
 If you wish to contact specific maintainers directly, the following have made
 themselves available for conduct issues:
 
-- Benny Fairbank (benny at komodoplatform.com)
-- Support Team (support at komodoplatform.com)
-- ca333 (ca333 at komodoplatform.com)
+- Duke Leto : https://keybase.io/dukeleto
 
 This Code of Conduct is adapted from the [Contributor Covenant][homepage],
 version 1.3.0, available at
@@ -58,4 +56,3 @@ version 1.3.0, available at
 
 [homepage]: https://www.contributor-covenant.org
 [version]: https://www.contributor-covenant.org/version/1/3/0/
-

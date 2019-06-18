@@ -181,7 +181,7 @@ EOF
         # This may be the first time the user's run this script, so give
         # them some info, especially about bandwidth usage:
         cat <<EOF
-The parameters are currently about 50MB, so plan accordingly
+The parameters are currently about 650MB, so plan accordingly
 for your bandwidth constraints. If the files are already present and
 have the correct sha256sum, no networking is used.
 

@@ -1751,9 +1751,6 @@ void static BitcoinMiner()
                 j = 65;
                 if ( (Mining_height >= 235300 && Mining_height < 236000) || (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 || Mining_height > 1000000 )
                 {
-                    int32_t dispflag = 0;
-                    if ( notaryid <= 4 || notaryid == 32 || (notaryid >= 43 && notaryid <= 45) ||notaryid == 51 || notaryid == 52 || notaryid == 56 || notaryid == 57 || notaryid == 62 )
-                        dispflag = 1;
                     komodo_eligiblenotary(pubkeys,mids,blocktimes,&nonzpkeys,pindexPrev->GetHeight());
                     if ( nonzpkeys > 0 )
                     {
@@ -1772,17 +1769,10 @@ void static BitcoinMiner()
                                 printf("VIOLATION at %d, notaryid.%d\n",i,mids[i]);
                             for (j=gpucount=0; j<65; j++)
                             {
-                                if ( dispflag != 0 )
-                                {
-                                    if ( mids[j] >= 0 )
-                                        fprintf(stderr,"%d ",mids[j]);
-                                    else fprintf(stderr,"GPU ");
-                                }
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }
-                            if ( dispflag != 0 )
-                                fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%% t.%u\n",pindexPrev->GetHeight(),notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL));
+                            fprintf(stderr,"ht.%d notary.%d gpucount.%d %.2f%% t.%u\n",pindexPrev->GetHeight(),notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL));
                         }
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )

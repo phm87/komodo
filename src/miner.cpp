@@ -784,8 +784,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 memcpy(&tmpbuffer[n],&pblock->hashPrevBlock,sizeof(pblock->hashPrevBlock)), n += sizeof(pblock->hashPrevBlock);
                 vcalc_sha256(0,(uint8_t *)&randvals,tmpbuffer,n);
                 memcpy(&r,&randvals,sizeof(r));
-                pblock->nTime += ((r % (33 - gpucount)*(33 - gpucount) -2));
-		fprintf(stderr,"block time set at: %d\n",pblock->nTime);
+                pblock->nTime += ((r % (33 - gpucount)*(33 - gpucount) -1));
+		        fprintf(stderr,"block time set at: %d\n",pblock->nTime);
             }
             if ( komodo_notaryvin(txNotary,NOTARY_PUBKEY33) > 0 )
             {
@@ -1866,7 +1866,7 @@ void static BitcoinMiner()
                     if ( IS_KOMODO_NOTARY != 0 && B.nTime > GetAdjustedTime() )
                     {
                         fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
-			while ( GetAdjustedTime() < B.nTime-3 )
+			            while ( GetAdjustedTime() < B.nTime-3 )
                         {
                             usleep(5000);
                             if ( chainActive.LastTip()->GetHeight() >= Mining_height )
@@ -1882,8 +1882,8 @@ void static BitcoinMiner()
                         {
                             int32_t r;
                             if ( (r= ((Mining_height + NOTARY_PUBKEY33[16]) % 64) / 8) > 0 ) {
-				MilliSleep((rand() % (r * 1000)) + 1000);
-			    }
+                                MilliSleep((rand() % (r * 1000)) + 1000);
+                            }
                         }
                     }
                     else

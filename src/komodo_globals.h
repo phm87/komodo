@@ -53,6 +53,7 @@ uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],ASSETCHAINS_OVERRI
 bool VERUS_MINTBLOCKS;
 std::vector<uint8_t> Mineropret;
 std::vector<std::string> vWhiteListAddress;
+bool fWalletFilter = false;
 char NOTARYADDRS[64][64];
 char NOTARY_ADDRESSES[NUM_KMD_SEASONS][64][64];
 

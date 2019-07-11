@@ -13,7 +13,6 @@ fi
 
 SAPLING_SPEND_NAME='sapling-spend.params'
 SAPLING_OUTPUT_NAME='sapling-output.params'
-SAPLING_SPROUT_GROTH16_NAME='sprout-groth16.params'
 URL="https://z.cash/downloads"
 IPFS="/ipfs/QmZKKx7Xup7LiAtFRhYsE1M7waXcv9ir9eCECyXAFGxhEo"
 
@@ -182,7 +181,7 @@ EOF
         # This may be the first time the user's run this script, so give
         # them some info, especially about bandwidth usage:
         cat <<EOF
-The parameters are currently about 750MB, so plan accordingly
+The parameters are currently about 50MB, so plan accordingly
 for your bandwidth constraints. If the files are already present and
 have the correct sha256sum, no networking is used.
 
@@ -197,7 +196,6 @@ EOF
     # Sapling parameters:
     fetch_params "$SAPLING_SPEND_NAME" "$PARAMS_DIR/$SAPLING_SPEND_NAME" "8e48ffd23abb3a5fd9c5589204f32d9c31285a04b78096ba40a79b75677efc13"
     fetch_params "$SAPLING_OUTPUT_NAME" "$PARAMS_DIR/$SAPLING_OUTPUT_NAME" "2f0ebbcbb9bb0bcffe95a397e7eba89c29eb4dde6191c339db88570e3f3fb0e4"
-    fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
 
 }
 

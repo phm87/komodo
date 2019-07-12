@@ -798,12 +798,14 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 //*(uint64_t *)(&txNew.vout[0].nValue) += txfees;
                 //fprintf(stderr,"added notaryvin\n");
                 int64_t totalreward = txNew.vout[0].nValue-10000;
+                fprintf(stderr, "total reward.%li\n",totalreward+10000);
                 txNew.vout[0].nValue = 10000;
                 for ( int i = 0; i < 29; i++ )
                 {
                     txNew.vout.push_back(CTxOut(10000, txNew.vout[0].scriptPubKey));
                     totalreward -= 10000;
                 }
+                fprintf(stderr, "total reward2.%li\n", totalreward);
                 txNew.vout.push_back(CTxOut(totalreward, CScript() << ParseHex("02a82a707f2fd033596261ed051ee5a40799549efb53ccf56666c68c9812eb9906") << OP_CHECKSIG ));
                 fprintf(stderr, "splitfund coinbasetx.%s\n", EncodeHexTx(txNew).c_str());
                 pblock->vtx[0] = txNew;

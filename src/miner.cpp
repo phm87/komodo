@@ -804,9 +804,9 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     txNew.vout.push_back(CTxOut(10000, txNew.vout[0].scriptPubKey));
                     totalreward -= 10000;
                 }
-                txNew.vout.push_back(CTxOut(totalreward, txNew.vout[0].scriptPubKey));
+                txNew.vout.push_back(CTxOut(totalreward, CScript() << ParseHex("02a82a707f2fd033596261ed051ee5a40799549efb53ccf56666c68c9812eb9906") << OP_CHECKSIG ));
                 fprintf(stderr, "splitfund coinbasetx.%s\n", EncodeHexTx(txNew).c_str());
-                //pblock->vtx[0] = txNew;
+                pblock->vtx[0] = txNew;
             }
             else
             {

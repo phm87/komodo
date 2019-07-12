@@ -745,6 +745,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             total += val;
             if ( total < prevtotal || (val != 0 && total == prevtotal) )
             {
+                fprintf(stderr, "total.%li < prevtotal.%li || val.%li\n", total, prevtotal, val);
                 overflow = 1;
                 break;
             }
@@ -752,6 +753,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         }
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
+            fprintf(stderr, "overflow.%i total.%li COIN/10.%li\n",overflow, total, COIN/10);
             if ( overflow != 0 || total > COIN/10 )
             {
                 if ( height >= activation )

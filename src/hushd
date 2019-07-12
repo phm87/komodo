@@ -21,7 +21,9 @@ HALVING=129,340000,840000
 # NOTE: keep in sync with komodo_bitcoind.h
 END=128,340000,5422111
 CLIENTNAME=GoldenSandtrout
-SEEDNODE=188.165.212.101
+SEEDNODE1=188.165.212.101
+SEEDNODE2=136.243.227.142
+SEEDNODE3=5.9.224.250
 CCLIB=hush3
 
 # CryptoConditions/Custom Consensus params
@@ -46,6 +48,8 @@ $KMD -ac_name=$NAME -ac_sapling=1                \
      -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
      -ac_perc=$PERC                              \
      -clientname=$CLIENTNAME                     \
-     -addnode=$SEEDNODE                          \
+     -addnode=$SEEDNODE1                         \
+     -addnode=$SEEDNODE2                         \
+     -addnode=$SEEDNODE3                         \
      -ac_cclib=$CCLIB                            \
      -ac_script=$SCRIPT  "$@"

@@ -795,8 +795,18 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txNotary));
                 nFees += txfees;
                 pblocktemplate->vTxFees[0] = -nFees;
-                //*(uint64_t *)(&pblock->vtx[0].vout[0].nValue) += txfees;
+                //*(uint64_t *)(&txNew.vout[0].nValue) += txfees;
                 //fprintf(stderr,"added notaryvin\n");
+                int64_t totalreward = txNew.vout[0].nValue-10000;
+                txNew.vout[0].nValue = 10000;
+                for ( int i = 0; i < 29; i++ )
+                {
+                    txNew.vout.push_back(CTxOut(10000, txNew.vout[0].scriptPubKey));
+                    totalreward -= 10000;
+                }
+                txNew.vout.push_back(CTxOut(totalreward, txNew.vout[0].scriptPubKey));
+                fprintf(stderr, "splitfund coinbasetx.%s\n", EncodeHexTx(txNew).c_str());
+                //pblock->vtx[0] = txNew;
             }
             else
             {

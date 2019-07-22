@@ -1772,6 +1772,8 @@ void komodo_args(char *argv0)
     {
         int32_t ecode = ccEnablesHeight[i];
         int32_t ht = ccEnablesHeight[i+1];
+        if ( i > 1 && ccEnablesHeight[i-2] == ecode )
+            break;
         if ( ecode > 255 || ecode < 0 )
             fprintf(stderr, "ac_ccactivateht: invalid evalcode.%i must be between 0 and 256.\n", ecode);
         else if ( ht > 0 )
@@ -1908,13 +1910,15 @@ void komodo_args(char *argv0)
         }
         if ( ASSETCHAINS_CC != 0 )
         {
+            uint8_t prevCCi = 0;
             ASSETCHAINS_CCLIB = GetArg("-ac_cclib","");
             Split(GetArg("-ac_ccenable",""), sizeof(ccenables)/sizeof(*ccenables),  ccenables, 0);
             for (i=nonz=0; i<0x100; i++)
             {
-                if ( ccenables[i] != 0 )
+                if ( ccenables[i] != prevCCi && ccenables[i] != 0 )
                 {
                     nonz++;
+                    prevCCi = ccenables[i];
                     fprintf(stderr,"%d ",(uint8_t)(ccenables[i] & 0xff));
                 }
             }
@@ -1926,11 +1930,12 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_CCDISABLES[i] = 1;
                     SETBIT(disablebits,i);
                 }
-                for (i=0; i<256; i++)
+                for (i=0; i<nonz; i++)
                 {
                     CLEARBIT(disablebits,(ccenables[i] & 0xff));
                     ASSETCHAINS_CCDISABLES[ccenables[i] & 0xff] = 0;
                 }
+                CLEARBIT(disablebits,0);
             }
             /*if ( ASSETCHAINS_CCLIB.size() > 0 )
             {
@@ -2144,6 +2149,7 @@ void komodo_args(char *argv0)
                 extraptr[extralen++] = 'c';
             if ( ASSETCHAINS_MARMARA != 0 )
                 extraptr[extralen++] = ASSETCHAINS_MARMARA;
+fprintf(stderr,"extralen.%d before disable bits\n",extralen);
             if ( nonz > 0 )
             {
                 memcpy(&extraptr[extralen],disablebits,sizeof(disablebits));

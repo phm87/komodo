@@ -75,6 +75,36 @@
  
 */
 
+// payments cc fix
+#if (defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32))
+    #undef mpz_set_si
+    #undef mpz_get_si
+    #define GMP_LIMB_HIGHBIT ((mp_limb_t) 1 << (GMP_LIMB_BITS - 1))
+    #define GMP_NEG_CAST(T,x) (-(int64_t)((T)((x) + 1) - 1))
+
+    int64_t mpz_get_si (const mpz_t u) 
+        {
+        mp_size_t us = u->_mp_size;
+        if (us > 0)
+            return (int64_t) (u->_mp_d[0] & ~GMP_LIMB_HIGHBIT);
+        else if (us < 0)
+            return (int64_t) (- u->_mp_d[0] | GMP_LIMB_HIGHBIT);
+        else
+            return 0;
+    }
+
+    void mpz_set_si (mpz_t r, int64_t x)
+    {
+        if (x >= 0)
+            mpz_set_ui (r, x);
+        else /* (x < 0) */
+        {
+            r->_mp_size = -1;
+            r->_mp_d[0] = GMP_NEG_CAST (uint64_t, x);
+        }
+    }
+#endif
+
 // start of consensus code
 
 CScript EncodePaymentsTxidOpRet(int64_t allocation,std::vector<uint8_t> scriptPubKey,std::vector<uint8_t> destopret)
@@ -559,7 +589,7 @@ int64_t AddPaymentsInputs(bool fLockedBlocks,int8_t GetBalance,struct CCcontract
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
             //fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
-            if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+            if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
             {
                 if ( (nValue= IsPaymentsvout(cp,vintx,vout,coinaddr,ccopret)) > PAYMENTS_TXFEE && nValue >= threshold && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {

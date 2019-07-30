@@ -652,6 +652,7 @@ const char *banned_txids[] =
     //"01d8c839463bda2f2f6400ede4611357913684927a767422a8560ead1b22557c",
     //"6e4980a9e1bd669f4df04732dc6f11b7773b6de88d1abcf89a6b9007d72ef9ac",
     //"6cc1d0495170bc0e11fd3925297623562e529ea1336b66ea61f8a1159041aed2",
+    //"250875424cece9bcd98cb226b09da7671625633d6958589e3a462bad89ad87cc", // missed 
 };
 
 int32_t komodo_checkvout(int32_t vout,int32_t k,int32_t indallvouts)
@@ -745,6 +746,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             total += val;
             if ( total < prevtotal || (val != 0 && total == prevtotal) )
             {
+                //fprintf(stderr, "total.%li < prevtotal.%li || val.%li\n", total, prevtotal, val);
                 overflow = 1;
                 break;
             }
@@ -752,6 +754,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         }
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
+            //fprintf(stderr, "overflow.%i total.%li COIN/10.%li\n",overflow, total, COIN/10);
             if ( overflow != 0 || total > COIN/10 )
             {
                 if ( height >= activation )

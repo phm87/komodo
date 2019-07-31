@@ -1810,7 +1810,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                         
                         if ( CBitcoinAddress(address).ToString() == WHITEADDRESS )
                         {
-                            fprintf(stderr, "We received from whitelisted address (sent over RPC).%s\n", wladdr.c_str());
+                            fprintf(stderr, "We received from whitelisted address (sent over RPC).%s\n", WHITEADDRESS);
                             numvinIsWhiteList++;
                         }
                     }

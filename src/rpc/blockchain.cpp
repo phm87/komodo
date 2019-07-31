@@ -48,7 +48,6 @@
 
 using namespace std;
 
-extern std::string WHITEADDRESS;
 extern int32_t KOMODO_INSYNC;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
@@ -1100,8 +1099,7 @@ UniValue addwhiteaddress(const UniValue& params, bool fHelp)
     if ( fHelp || (params.size() != 1) )
         throw runtime_error("addwhiteaddress 145.x.y.12\n");
     LOCK(cs_main);
-    memcpy((char *)WHITEADDRESS, params[0].get_str().c_str(), (int32_t)strlen(params[0].get_str().c_str()));
-//    WHITEADDRESS = params[0].get_str().c_str();
+    WHITEADDRESS.assign(params[0].get_str().c_str(), 34);
 
     return ret;
 }

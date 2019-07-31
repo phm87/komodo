@@ -64,7 +64,7 @@ CBlockIndex *komodo_chainactive(int32_t height);
 extern std::string DONATION_PUBKEY;
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int tx_height( const uint256 &hash );
-extern std::string WHITEADDRESS;
+std::string WHITEADDRESS;
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
@@ -1810,7 +1810,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                         
                         if ( CBitcoinAddress(address).ToString() == WHITEADDRESS )
                         {
-                            fprintf(stderr, "We received from whitelisted address (sent over RPC).%s\n", WHITEADDRESS);
+                            fprintf(stderr, "We received from whitelisted address (sent over RPC).%s\n", CBitcoinAddress(address).ToString());
                             numvinIsWhiteList++;
                         }
                     }

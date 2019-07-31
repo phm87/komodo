@@ -66,6 +66,7 @@ bool IsRPCRunning();
 /** Get the async queue*/
 std::shared_ptr<AsyncRPCQueue> getAsyncRPCQueue();
 
+extern std::string WHITEADDRESS;
 
 /**
  * Set the RPC warmup status.  When this is done, all RPC calls will error out

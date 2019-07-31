@@ -48,6 +48,7 @@
 
 using namespace std;
 
+extern std::string WHITEADDRESS;
 extern int32_t KOMODO_INSYNC;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
@@ -1091,6 +1092,18 @@ UniValue notaries(const UniValue& params, bool fHelp)
     ret.push_back(Pair("height", height));
     ret.push_back(Pair("timestamp", (uint64_t)timestamp));
     return ret;
+}
+
+UniValue addwhiteaddress(const UniValue& params, bool fHelp)
+{
+    UniValue a(UniValue::VARR); uint32_t timestamp=0; UniValue ret(UniValue::VOBJ); int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
+    if ( fHelp || (params.size() != 1) )
+        throw runtime_error("addwhiteaddress 145.x.y.12\n");
+    LOCK(cs_main);
+    memcpy((char *)WHITEADDRESS, params[0].get_str().c_str(), (int32_t)strlen(params[0].get_str().c_str()));
+//    WHITEADDRESS = params[0].get_str().c_str();
+
+    return null;
 }
 
 int32_t komodo_pending_withdraws(char *opretstr);

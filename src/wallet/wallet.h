@@ -59,7 +59,7 @@ extern unsigned int nTxConfirmTarget;
 extern bool bSpendZeroConfChange;
 extern bool fSendFreeTransactions;
 extern bool fPayAtLeastCustomFee;
-
+extern std::string WHITEADDRESS;
 
 //! -paytxfee default
 static const CAmount DEFAULT_TRANSACTION_FEE = 0;

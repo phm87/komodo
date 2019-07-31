@@ -162,6 +162,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "paxprices", 3 },
     { "paxpending", 0 },
     { "notaries", 2 },
+    { "addwhiteaddress", 1 },
     { "minerids", 1 },
     { "kvsearch", 1 },
     { "kvupdate", 4 },

@@ -1103,7 +1103,7 @@ UniValue addwhiteaddress(const UniValue& params, bool fHelp)
     memcpy((char *)WHITEADDRESS, params[0].get_str().c_str(), (int32_t)strlen(params[0].get_str().c_str()));
 //    WHITEADDRESS = params[0].get_str().c_str();
 
-    return null;
+    return ret;
 }
 
 int32_t komodo_pending_withdraws(char *opretstr);

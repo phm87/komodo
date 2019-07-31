@@ -496,6 +496,7 @@ extern UniValue migrate_checkburntransactionsource(const UniValue& params, bool 
 extern UniValue migrate_createnotaryapprovaltransaction(const UniValue& params, bool fHelp);
 
 extern UniValue notaries(const UniValue& params, bool fHelp);
+extern UniValue addwhiteaddress(const UniValue& params, bool fHelp);
 extern UniValue minerids(const UniValue& params, bool fHelp);
 extern UniValue kvsearch(const UniValue& params, bool fHelp);
 extern UniValue kvupdate(const UniValue& params, bool fHelp);

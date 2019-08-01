@@ -1814,7 +1814,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                             numvinIsWhiteList++;
                         }
                     }
-                }                           
+                }
                 // Now we know if it was a tx sent to us, by either a whitelisted address, or ourself.
                 if ( numvinIsOurs != 0 )
                     fprintf(stderr, "We sent from address: %s vins: %d\n",NotaryAddress.c_str(),numvinIsOurs);

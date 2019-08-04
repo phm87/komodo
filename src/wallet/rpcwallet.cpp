@@ -80,6 +80,8 @@ int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
 std::string CCerror;
 
+bool fResetUtxoCache = false;
+
 // Private method:
 UniValue z_getoperationstatus_IMPL(const UniValue&, bool);
 
@@ -461,6 +463,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
     }
     if (!pwalletMain->CommitTransaction(wtxNew, reservekey))
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
+    fResetUtxoCache = true;
 }
 
 
@@ -2822,7 +2825,7 @@ UniValue dpowlistunspent(const std::set<CTxDestination> &destinations)
 
     UniValue results(UniValue::VARR);
     static vector<COutput> vOutputsSaved;
-    if ( vOutputsSaved.size() == 0 )
+    if ( vOutputsSaved.size() == 0 || fResetUtxoCache )
     {
         vector<COutput> vecOutputs;
         pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
@@ -2844,6 +2847,7 @@ UniValue dpowlistunspent(const std::set<CTxDestination> &destinations)
               continue;
             vOutputsSaved.push_back(out);
         }
+        fResetUtxoCache = false;
     }
     if ( vOutputsSaved.size() > 0 )
     {

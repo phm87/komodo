@@ -1230,7 +1230,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     while ( 1 )
     {
         if ( txpow != 0 )
-            mergedTx = mergedTxsave; */
+            mergedTx = mergedTxsave; 
         // Sign what we can:
         for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
             CTxIn& txin = mergedTx.vin[i];

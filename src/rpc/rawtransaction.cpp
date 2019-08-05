@@ -1212,9 +1212,9 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     // Use CTransaction for the constant parts of the
     // transaction to avoid rehashing.
     CMutableTransaction mergedTxsave = mergedTx;
-    int32_t txpow,numiters = 0;
+    //int32_t txpow,numiters = 0;
     const CTransaction txConst(mergedTx);
-    if ( (txpow = ASSETCHAINS_TXPOW) != 0 )
+    /*if ( (txpow = ASSETCHAINS_TXPOW) != 0 )
     {
         if ( txConst.IsCoinBase() != 0 )
         {
@@ -1230,7 +1230,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     while ( 1 )
     {
         if ( txpow != 0 )
-            mergedTx = mergedTxsave;
+            mergedTx = mergedTxsave; */
         // Sign what we can:
         for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
             CTxIn& txin = mergedTx.vin[i];
@@ -1259,7 +1259,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
                 TxInErrorToJSON(txin, vErrors, ScriptErrorString(serror));
             }
         }
-        if ( txpow != 0 )
+        /*if ( txpow != 0 )
         {
             uint256 txid = mergedTx.GetHash();
             if ( ((uint8_t *)&txid)[0] == 0 && ((uint8_t *)&txid)[31] == 0 )
@@ -1269,7 +1269,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         numiters++;
     }
     if ( numiters > 0 )
-        fprintf(stderr,"ASSETCHAINS_TXPOW.%d txpow.%d numiters.%d for signature\n",ASSETCHAINS_TXPOW,txpow,numiters);
+        fprintf(stderr,"ASSETCHAINS_TXPOW.%d txpow.%d numiters.%d for signature\n",ASSETCHAINS_TXPOW,txpow,numiters); */
     bool fComplete = vErrors.empty();
 
     UniValue result(UniValue::VOBJ);

@@ -263,6 +263,29 @@ public:
     //! Change to 64-bit type when necessary; won't happen before 2030
     unsigned int nChainTx;
 
+    //! (memory only) Number of shielded transactions (of any kind) in the chain up to and including this block.
+    //! A shielded transaction is defined as a transaction that contains at least 1 JoinSplit, which includes
+    //! shielding/de-shielding and other complex transaction possibilties including multiple taddrs/zaddrs as
+    //! inputs and outputs.
+    int64_t nShieldedChainTx;
+
+    //! (memory only) Number of fully shielded transactions. A fully shielded transaction is defined
+    //! as a transaction containing JoinSplits and only shielded inputs and outputs
+    int64_t nFullyShieldedChainTx;
+
+    //! (memory only) Number of deshielding transactions. A deshielding transaction is defined
+    //! as a transaction containing JoinSplits and at least one transparent output.
+    int64_t nDeshieldingChainTx;
+
+    //! (memory only) Number of shielding transactions. A shielding transaction is defined
+    //! as a transaction containing JoinSplits and at least one transparent input
+    int64_t nShieldingChainTx;
+
+
+    //! (memory only) Number of shielding transactions which contain multiple shielded input notes
+    //! z_sendmany cannot make these and so it indicates raw shielded transaction usage currently
+    int64_t nMultipleShieldedInputsChainTx;
+
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
 
@@ -321,6 +344,11 @@ public:
         chainPower = CChainPower();
         nTx = 0;
         nChainTx = 0;
+        nShieldedChainTx = 0;
+        nShieldingChainTx = 0;
+        nDeshieldingChainTx = 0;
+        nFullyShieldedChainTx = 0;
+        nMultipleShieldedInputsChainTx = 0;
         nStatus = 0;
         nCachedBranchId = boost::none;
         hashSproutAnchor = uint256();

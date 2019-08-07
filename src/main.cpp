@@ -4734,6 +4734,11 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         while (!queue.empty()) {
             CBlockIndex *pindex = queue.front();
             queue.pop_front();
+            // TODO: Count zxtns properly, even amount=0 xtns
+            // TODO: count number of joinsplits instead
+            if(saplingValue>0) {
+		    pindex->nShieldedChainTx = pindex->nShieldedChainTx ? 0 : pindex->nShieldedChainTx + 1;
+            }
             pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
             if (pindex->pprev) {
                 if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {

@@ -4700,8 +4700,14 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
 {
     pindexNew->nTx = block.vtx.size();
     pindexNew->nChainTx = 0;
+    pindexNew->nShieldedChainTx = 0;
     CAmount sproutValue = 0;
     CAmount saplingValue = 0;
+    int64_t nShieldedSpends=0,nShieldedOutputs=0;
+    int64_t nShieldedPayments=0;
+    int64_t nFullyShielded=0,nShielding=0,nDeshielding=0,nMultipleShieldedInputs=0;
+    bool hasShieldedTx = false;
+
     for (auto tx : block.vtx) {
         // Negative valueBalance "takes" money from the transparent value pool
         // and adds it to the Sapling value pool. Positive valueBalance "gives"
@@ -4712,6 +4718,41 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         for (auto js : tx.vjoinsplit) {
             sproutValue += js.vpub_old;
             sproutValue -= js.vpub_new;
+        }
+        nShieldedSpends  = tx.vShieldedSpend.size();
+        nShieldedOutputs = tx.vShieldedOutput.size();
+
+        // If we have not seen any zxtns, see if current xtn has any
+        if(!hasShieldedTx) {
+                hasShieldedTx    = (nShieldedSpends + nShieldedOutputs) > 0 ? true : false;
+        }
+        if(hasShieldedTx) {
+            if(tx.vin.size()==0 && tx.vout.size()==0) {
+                nFullyShielded++;
+            }
+            if(tx.vin.size()>0) {
+                nShielding++;
+            }
+            if(tx.out.size()>0) {
+                nDeshielding++;
+            }
+            if(nShieldedSpends>1) {
+                nMultipleShieldedInputs++;
+            }
+            //TODO: These are at best heuristics. Improve them as much as possible
+            //NOTE: You cannot compare payment data from different sets of heuristics
+
+            if (nShieldedOutputs > 1) {
+                // If there are multiple shielded outputs, count each as a payment
+                nShieldedPayments += nShieldedOutputs;
+            } else {
+                nShieldedPayments++;
+            }
+            if (nShieldedSpends==1) {
+                // If we see a single zaddr input, that counts as a single shielded payment
+                nShieldedPayments++;
+            }
+
         }
     }
     pindexNew->nSproutValue = sproutValue;
@@ -4734,10 +4775,12 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         while (!queue.empty()) {
             CBlockIndex *pindex = queue.front();
             queue.pop_front();
-            // TODO: Count zxtns properly, even amount=0 xtns
-            // TODO: count number of joinsplits instead
-            if(saplingValue>0) {
-		    pindex->nShieldedChainTx = pindex->nShieldedChainTx ? 0 : pindex->nShieldedChainTx + 1;
+
+            // Keep track of shielded transaction stats
+            if(hasShieldedTx) {
+                pindex->vShieldedSpend;
+                pindex->vShieldedOutput;
+                pindex->nShieldedChainTx = pindex->nShieldedChainTx ? 0 : pindex->nShieldedChainTx + 1;
             }
             pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
             if (pindex->pprev) {

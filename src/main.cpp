@@ -4769,7 +4769,10 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
 {
     pindexNew->nTx = block.vtx.size();
     pindexNew->nChainTx = 0;
-    pindexNew->nShieldedChainTx = 0;
+    pindexNew->nChainPayments = 0;
+    pindexNew->nShieldedTx = 0;
+    pindexNew->nShieldingTx = 0;
+    pindexNew->nDeshieldingTx = 0;
     CAmount sproutValue = 0;
     CAmount saplingValue = 0;
     int64_t nShieldedSpends=0,nShieldedOutputs=0;
@@ -4791,10 +4794,11 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         nShieldedSpends  = tx.vShieldedSpend.size();
         nShieldedOutputs = tx.vShieldedOutput.size();
 
-        // If we have not seen any zxtns, see if current xtn has any
+        // If we have not seen any zxtns, see if current block has any
         if(!hasShieldedTx) {
                 hasShieldedTx    = (nShieldedSpends + nShieldedOutputs) > 0 ? true : false;
         }
+        //TODO: this is if block has shielded txes, not if current xtn is shielded
         if(hasShieldedTx) {
             if(tx.vin.size()==0 && tx.vout.size()==0) {
                 nFullyShielded++;
@@ -4802,7 +4806,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             if(tx.vin.size()>0) {
                 nShielding++;
             }
-            if(tx.out.size()>0) {
+            if(tx.vout.size()>0) {
                 nDeshielding++;
             }
             if(nShieldedSpends>1) {
@@ -4847,9 +4851,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
 
             // Keep track of shielded transaction stats
             if(hasShieldedTx) {
-                pindex->vShieldedSpend;
-                pindex->vShieldedOutput;
-                pindex->nShieldedChainTx = pindex->nShieldedChainTx ? 0 : pindex->nShieldedChainTx + 1;
+                pindex->nShieldedTx = pindex->nShieldedTx ? 0 : pindex->nShieldedTx + 1;
             }
             pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
             if (pindex->pprev) {

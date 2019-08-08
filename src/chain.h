@@ -263,28 +263,51 @@ public:
     //! Change to 64-bit type when necessary; won't happen before 2030
     unsigned int nChainTx;
 
+    //! (memory only) Number of payments (shielded or transparent) in the chain
+    //! up to and including this block.  One transaction can contain one or more
+    //! payments. This stat allows us to calculate ratios of shielded/transparent
+    //! when combined with shielded payment stats
+    int64_t nChainPayments;
+
     //! (memory only) Number of shielded transactions (of any kind) in the chain up to and including this block.
     //! A shielded transaction is defined as a transaction that contains at least 1 JoinSplit, which includes
     //! shielding/de-shielding and other complex transaction possibilties including multiple taddrs/zaddrs as
     //! inputs and outputs.
-    int64_t nShieldedChainTx;
+    int64_t nShieldedTx;
 
     //! (memory only) Number of fully shielded transactions. A fully shielded transaction is defined
-    //! as a transaction containing JoinSplits and only shielded inputs and outputs
-    int64_t nFullyShieldedChainTx;
+    //! as a transaction containing JoinSplits and only shielded inputs and outputs, i.e. no transparent
+    // inputs or outputs: z->z or z->(z,z) or z->(z,z,z,) etc...
+    int64_t nFullyShieldedTx;
+
+    //! (memory only) Number of shielding payments. A shielding payment is defined
+    //! as having a shielded output but transparent input: t->z
+    int64_t nShieldingPayments;
+
+    //! (memory only) Number of shielded payments. A shielded payment is defined
+    //! as having a shielded input or output: t->z or z->t
+    int64_t nShieldedPayments;
+
+    //! (memory only) Number of fully shielded payments. A fully shielded payment is defined
+    //! as having a shielded input and shielded output: z->z
+    int64_t nFullyShieldedPayments;
 
     //! (memory only) Number of deshielding transactions. A deshielding transaction is defined
     //! as a transaction containing JoinSplits and at least one transparent output.
-    int64_t nDeshieldingChainTx;
+    int64_t nDeshieldingTx;
+
+    //! (memory only) Number of deshielding payments. A deshielding payment is defined
+    //! as one transparent input and one shielded output: z->t
+    int64_t nDeshieldingPayments;
 
     //! (memory only) Number of shielding transactions. A shielding transaction is defined
     //! as a transaction containing JoinSplits and at least one transparent input
-    int64_t nShieldingChainTx;
+    // i.e. t->z or t->(z,t) or z->(z,z,t)
+    int64_t nShieldingTx;
 
-
-    //! (memory only) Number of shielding transactions which contain multiple shielded input notes
+    //! (memory only) Number of shielded transactions which contain multiple shielded input notes
     //! z_sendmany cannot make these and so it indicates raw shielded transaction usage currently
-    int64_t nMultipleShieldedInputsChainTx;
+    int64_t nMultipleShieldedInputsTx;
 
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
@@ -344,11 +367,15 @@ public:
         chainPower = CChainPower();
         nTx = 0;
         nChainTx = 0;
-        nShieldedChainTx = 0;
-        nShieldingChainTx = 0;
-        nDeshieldingChainTx = 0;
-        nFullyShieldedChainTx = 0;
-        nMultipleShieldedInputsChainTx = 0;
+        nShieldedTx = 0;
+        nShieldingTx = 0;
+        nDeshieldingTx = 0;
+        nFullyShieldedTx = 0;
+        nShieldedPayments = 0;
+        nShieldingPayments = 0;
+        nDeshieldingPayments = 0;
+        nFullyShieldedPayments = 0;
+        nMultipleShieldedInputsTx = 0;
         nStatus = 0;
         nCachedBranchId = boost::none;
         hashSproutAnchor = uint256();

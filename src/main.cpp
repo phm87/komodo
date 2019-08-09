@@ -4778,8 +4778,8 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     int64_t nShieldedSpends=0,nShieldedOutputs=0;
     int64_t nShieldedPayments=0;
     int64_t nFullyShielded=0,nShielding=0,nDeshielding=0,nMultipleShieldedInputs=0;
-    bool hasShieldedTx = false;
 
+    bool hasShieldedTx = false;
     for (auto tx : block.vtx) {
         // Negative valueBalance "takes" money from the transparent value pool
         // and adds it to the Sapling value pool. Positive valueBalance "gives"
@@ -4794,11 +4794,8 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         nShieldedSpends  = tx.vShieldedSpend.size();
         nShieldedOutputs = tx.vShieldedOutput.size();
 
-        // If we have not seen any zxtns, see if current block has any
-        if(!hasShieldedTx) {
-                hasShieldedTx    = (nShieldedSpends + nShieldedOutputs) > 0 ? true : false;
-        }
-        //TODO: this is if block has shielded txes, not if current xtn is shielded
+        hasShieldedTx    = (nShieldedSpends + nShieldedOutputs) > 0 ? true : false;
+
         if(hasShieldedTx) {
             if(tx.vin.size()==0 && tx.vout.size()==0) {
                 nFullyShielded++;
@@ -4813,16 +4810,21 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
                 nMultipleShieldedInputs++;
             }
             //TODO: These are at best heuristics. Improve them as much as possible
-            //NOTE: You cannot compare payment data from different sets of heuristics
+            //TODO: Take into account change addresses
+            //NOTE: You cannot compare stats generated from different sets of heuristics
 
-            if (nShieldedOutputs > 1) {
-                // If there are multiple shielded outputs, count each as a payment
-                nShieldedPayments += nShieldedOutputs;
-            } else {
-                nShieldedPayments++;
-            }
-            if (nShieldedSpends==1) {
-                // If we see a single zaddr input, that counts as a single shielded payment
+            if (nShieldedOutputs >= 1) {
+                // If there are shielded outputs, count each as a payment
+                // t->(t,t,z)   = 1 shielded payment
+                // z->(z,z)     = 1 shielded payment + shielded change
+                // t->(z,z)     = 1 shielded payment + shielded change
+                // t->(t,z)     = 1 shielded payment + transparent change
+                // z->(z,z,z)   = 2 shielded payments + shielded change
+                nShieldedPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+            } else if (nShieldedSpends >=1) {
+                // z->t         = 1 shielded payment
+                // (z,z)->z     = 1 shielded payment
+                // z->(t,t)     = 1 shielded payment
                 nShieldedPayments++;
             }
 

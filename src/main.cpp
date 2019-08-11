@@ -4767,19 +4767,20 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
 /** Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS). */
 bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBlockIndex *pindexNew, const CDiskBlockPos& pos)
 {
-    pindexNew->nTx = block.vtx.size();
-    pindexNew->nChainTx = 0;
+    pindexNew->nTx            = block.vtx.size();
+    pindexNew->nChainTx       = 0;
     pindexNew->nChainPayments = 0;
-    pindexNew->nShieldedTx = 0;
-    pindexNew->nShieldingTx = 0;
+    pindexNew->nShieldedTx    = 0;
+    pindexNew->nShieldingTx   = 0;
     pindexNew->nDeshieldingTx = 0;
-    CAmount sproutValue = 0;
-    CAmount saplingValue = 0;
-    int64_t nShieldedSpends=0,nShieldedOutputs=0;
-    int64_t nShieldedPayments=0;
-    int64_t nFullyShielded=0,nShielding=0,nDeshielding=0,nMultipleShieldedInputs=0;
+    CAmount sproutValue       = 0;
+    CAmount saplingValue      = 0;
+    bool isShieldedTx         = false;
 
-    bool hasShieldedTx = false;
+    int64_t nShieldedSpends=0,nShieldedOutputs=0,nChainPayments=0;
+    int64_t nShieldedTx=0,nFullyShieldedTx=0,nDeshieldingTx=0,nShieldingTx=0;
+    int64_t nShieldedPayments=0,nFullyShieldedPayments=0,nShieldingPayments=0,nDeshieldingPayments=0;
+
     for (auto tx : block.vtx) {
         // Negative valueBalance "takes" money from the transparent value pool
         // and adds it to the Sapling value pool. Positive valueBalance "gives"
@@ -4791,43 +4792,49 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             sproutValue += js.vpub_old;
             sproutValue -= js.vpub_new;
         }
-        nShieldedSpends  = tx.vShieldedSpend.size();
-        nShieldedOutputs = tx.vShieldedOutput.size();
+        nShieldedSpends   = tx.vShieldedSpend.size();
+        nShieldedOutputs  = tx.vShieldedOutput.size();
+        isShieldedTx      = (nShieldedSpends + nShieldedOutputs) > 0 ? true : false;
 
-        hasShieldedTx    = (nShieldedSpends + nShieldedOutputs) > 0 ? true : false;
-
-        if(hasShieldedTx) {
+        if(isShieldedTx) {
+            nShieldedTx++;
             if(tx.vin.size()==0 && tx.vout.size()==0) {
-                nFullyShielded++;
+                nFullyShieldedTx++;
             }
             if(tx.vin.size()>0) {
-                nShielding++;
+                nShieldingTx++;
             }
             if(tx.vout.size()>0) {
-                nDeshielding++;
+                nDeshieldingTx++;
             }
-            if(nShieldedSpends>1) {
-                nMultipleShieldedInputs++;
-            }
-            //TODO: These are at best heuristics. Improve them as much as possible
-            //TODO: Take into account change addresses
-            //NOTE: You cannot compare stats generated from different sets of heuristics
+            //NOTE: These are at best heuristics. Improve them as much as possible
+            //      You cannot compare stats generated from different sets of heuristics
 
             if (nShieldedOutputs >= 1) {
                 // If there are shielded outputs, count each as a payment
+                // By default, if there is more than 1 output, we assume 1 change output which is not a payment.
+                // In the case of multiple outputs which spend inputs exactly, there is no change output and this
+                // heuristic will undercount payments. Since this edge case is rare, this seems acceptable.
                 // t->(t,t,z)   = 1 shielded payment
                 // z->(z,z)     = 1 shielded payment + shielded change
                 // t->(z,z)     = 1 shielded payment + shielded change
                 // t->(t,z)     = 1 shielded payment + transparent change
+                // (z,z)->z     = 1 shielded payment (has this xtn ever occurred?)
                 // z->(z,z,z)   = 2 shielded payments + shielded change
+                // Assume that there is always 1 change output when there are more than one
                 nShieldedPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
             } else if (nShieldedSpends >=1) {
+                // Shielded inputs with no shielded outputs. We know none are change output because
+                // change would flow back to the zaddr
                 // z->t         = 1 shielded payment
-                // (z,z)->z     = 1 shielded payment
-                // z->(t,t)     = 1 shielded payment
-                nShieldedPayments++;
+                // z->(t,t)     = 2 shielded payments
+                // z->(t,t,t)   = 3 shielded payments
+                nShieldedPayments += tx.vout.size();
             }
-
+            nChainPayments += nShieldedPayments;
+        } else {
+            // No shielded payments, add transparent payments minus a change address
+            nChainPayments +=  tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
         }
     }
     pindexNew->nSproutValue = sproutValue;
@@ -4839,6 +4846,18 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     pindexNew->nUndoPos = 0;
     pindexNew->nStatus |= BLOCK_HAVE_DATA;
     pindexNew->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
+
+    // Store data for later use by gettxchainstats and other RPCs
+    pindexNew->nChainPayments         = nChainPayments;
+    pindexNew->nShieldedTx            = nShieldedTx;
+    pindexNew->nFullyShieldedTx       = nFullyShieldedTx;
+    pindexNew->nDeshieldingTx         = nDeshieldingTx;
+    pindexNew->nShieldingTx           = nShieldingTx;
+    pindexNew->nShieldedPayments      = nShieldedPayments;
+    pindexNew->nFullyShieldedPayments = nFullyShieldedPayments;
+    pindexNew->nDeshieldingPayments   = nDeshieldingPayments;
+    pindexNew->nShieldingPayments     = nShieldingPayments;
+
     setDirtyBlockIndex.insert(pindexNew);
 
     if (pindexNew->pprev == NULL || pindexNew->pprev->nChainTx) {
@@ -4851,10 +4870,6 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             CBlockIndex *pindex = queue.front();
             queue.pop_front();
 
-            // Keep track of shielded transaction stats
-            if(hasShieldedTx) {
-                pindex->nShieldedTx = pindex->nShieldedTx ? 0 : pindex->nShieldedTx + 1;
-            }
             pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
             if (pindex->pprev) {
                 if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
@@ -4892,6 +4907,8 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         }
     }
 
+    fprintf(stderr, "ht.%d, ShieldedPayments=%d, ShieldedTx=%d, FullyShieldedTx=%d\n",
+            pindexNew->GetHeight(), nShieldedPayments, nShieldedTx,  nFullyShieldedTx );
     return true;
 }
 

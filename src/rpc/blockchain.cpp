@@ -1994,18 +1994,25 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
     int nTimeDiff                 = pindex->GetMedianTimePast() - pindexPast->GetMedianTimePast();
     int nTxDiff                   = pindex->nChainTx - pindexPast->nChainTx;
     int64_t nPaymentsDiff         = pindex->nChainPayments - pindexPast->nChainPayments;
+    int64_t nShieldedPaymentsDiff = pindex->nShieldedPayments - pindexPast->nShieldedPayments;
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("time", (int64_t)pindex->nTime);
     ret.pushKV("txcount", (int64_t)pindex->nChainTx);
+    ret.pushKV("shielded_txcount", (int64_t)pindex->nShieldedTx);
+    ret.pushKV("fully_shielded_txcount", (int64_t)pindex->nFullyShieldedTx);
+
     ret.pushKV("window_final_block_hash", pindex->GetBlockHash().GetHex());
     ret.pushKV("window_block_count", blockcount);
     if (blockcount > 0) {
         ret.pushKV("window_tx_count", nTxDiff);
+        ret.pushKV("window_payment_count", nPaymentsDiff);
+        ret.pushKV("window_shielded_payment_count", nShieldedPaymentsDiff);
         ret.pushKV("window_interval", nTimeDiff);
         if (nTimeDiff > 0) {
             ret.pushKV("txrate",      ((double)nTxDiff) / nTimeDiff);
             ret.pushKV("paymentrate", ((double)nPaymentsDiff) / nTimeDiff);
+            ret.pushKV("shieled_paymentrate", ((double)nShieldedPaymentsDiff) / nTimeDiff);
         }
     }
 

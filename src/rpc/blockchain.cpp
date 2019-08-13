@@ -1949,7 +1949,7 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
             "{\n"
             "  \"time\": xxxxx,                         (numeric) The timestamp for the final block in the window in UNIX format.\n"
             "  \"txcount\": xxxxx,                      (numeric) The total number of transactions in the chain up to that point.\n"
-            "  \"window_final_block_hash\": \"...\",      (string) The hash of the final block in the window.\n"
+            "  \"window_final_block_hash\": \"...\",    (string) The hash of the final block in the window.\n"
             "  \"window_block_count\": xxxxx,           (numeric) Size of the window in number of blocks.\n"
             "  \"window_tx_count\": xxxxx,              (numeric) The number of transactions in the window. Only returned if \"window_block_count\" is > 0.\n"
             "  \"window_interval\": xxxxx,              (numeric) The elapsed time in the window in seconds. Only returned if \"window_block_count\" is > 0.\n"
@@ -1991,8 +1991,9 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
     }
 
     const CBlockIndex* pindexPast = pindex->GetAncestor(pindex->GetHeight() - blockcount);
-    int nTimeDiff = pindex->GetMedianTimePast() - pindexPast->GetMedianTimePast();
-    int nTxDiff = pindex->nChainTx - pindexPast->nChainTx;
+    int nTimeDiff                 = pindex->GetMedianTimePast() - pindexPast->GetMedianTimePast();
+    int nTxDiff                   = pindex->nChainTx - pindexPast->nChainTx;
+    int64_t nPaymentsDiff         = pindex->nChainPayments - pindexPast->nChainPayments;
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("time", (int64_t)pindex->nTime);
@@ -2003,7 +2004,8 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
         ret.pushKV("window_tx_count", nTxDiff);
         ret.pushKV("window_interval", nTimeDiff);
         if (nTimeDiff > 0) {
-            ret.pushKV("txrate", ((double)nTxDiff) / nTimeDiff);
+            ret.pushKV("txrate",      ((double)nTxDiff) / nTimeDiff);
+            ret.pushKV("paymentrate", ((double)nPaymentsDiff) / nTimeDiff);
         }
     }
 

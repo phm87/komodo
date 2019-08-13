@@ -17,8 +17,9 @@
 #ifndef KOMODO_NSPV_DEFSH
 #define KOMODO_NSPV_DEFSH
 
-#define NSPV_POLLITERS 100
-#define NSPV_POLLMICROS 30000
+#define NSPV_PROTOCOL_VERSION 0x00000002
+#define NSPV_POLLITERS 200
+#define NSPV_POLLMICROS 50000
 #define NSPV_MAXVINS 64
 #define NSPV_AUTOLOGOUT 777
 #define NSPV_BRANCHID 0x76b809bb
@@ -110,6 +111,7 @@ struct NSPV_ntz
 {
     uint256 blockhash,txid,othertxid;
     int32_t height,txidheight;
+    uint32_t timestamp;
 };
 
 struct NSPV_ntzsresp
@@ -124,6 +126,7 @@ struct NSPV_inforesp
     uint256 blockhash;
     int32_t height,hdrheight;
     struct NSPV_equihdr H;
+    uint32_t version;
 };
 
 struct NSPV_txproof

@@ -743,6 +743,19 @@ bool InitSanityCheck(void)
     return true;
 }
 
+void NoParamsShutdown(void)
+{
+    //TODO: error message incorrect about location
+    LogPrintf("Could not find Sapling params anywhere! Exiting...");
+    uiInterface.ThreadSafeMessageBox(strprintf(
+        _("Cannot find the Sapling network parameters in the following directory:\n"
+            "%s\n"
+            "Please run 'zcash-fetch-params' or './zcutil/fetch-params.sh' and then restart."),
+            ZC_GetParamsDir()),
+        "", CClientUIInterface::MSG_ERROR);
+    StartShutdown();
+    return;
+}
 
 static void ZC_LoadParams(
     const CChainParams& chainparams
@@ -751,21 +764,37 @@ static void ZC_LoadParams(
     struct timeval tv_start, tv_end;
     float elapsed;
 
+    // First check the global installation location
     boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
     boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
 
-    if (!(
-        boost::filesystem::exists(sapling_spend) &&
-        boost::filesystem::exists(sapling_output)
-    )) {
-        uiInterface.ThreadSafeMessageBox(strprintf(
-            _("Cannot find the Zcash network parameters in the following directory:\n"
-              "%s\n"
-              "Please run 'zcash-fetch-params' or './zcutil/fetch-params.sh' and then restart."),
-                ZC_GetParamsDir()),
-            "", CClientUIInterface::MSG_ERROR);
-        StartShutdown();
-        return;
+    // NOTE: This means that sapling params do not need to be installed, just findable
+    if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
+        // Not globally installed, use local copies if they exist
+        // First check ., then .., then ../hush3
+        sapling_spend =  "sapling-spend.params";
+        sapling_output = "sapling-output.params";
+
+        // This is the most common case, for binaries distributed with params
+        if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
+            // Not in PWD, try ..
+            sapling_spend =  boost::filesystem::path("..") / "sapling-spend.params";
+            sapling_output = boost::filesystem::path("..") / "sapling-output.params";
+
+            // Try .. in case this binary has no params
+            if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
+                // Not in .., try ../hush3 (the case of SilentDragon installed in same directory as hush3)
+                sapling_spend =  boost::filesystem::path("..") / "hush3" / "sapling-spend.params";
+                sapling_output = boost::filesystem::path("..") / "hush3" / "sapling-output.params";
+
+                // This will catch the case of any external software (i.e. GUI wallets) needing params and installed in same dir as hush3.git
+                if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
+                    // No Sapling params, at least we tried
+                    NoParamsShutdown();
+                    return;
+                }
+            }
+        }
     }
 
     //LogPrintf("Loading verifying key from %s\n", vk_path.string().c_str());
@@ -1059,7 +1088,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     RegisterAllCoreRPCCommands(tableRPC);
 #ifdef ENABLE_WALLET
     bool fDisableWallet = GetBoolArg("-disablewallet", false);
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
     {
         fDisableWallet = true;
         nLocalServices = 0;
@@ -1140,7 +1169,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Option to startup with mocktime set (used for regression testing):
     SetMockTime(GetArg("-mocktime", 0)); // SetMockTime(0) is a no-op
 
-    if ( KOMODO_NSPV == 0 )
+    if ( KOMODO_NSPV <= 0 )
     {
         if (GetBoolArg("-peerbloomfilters", true))
             nLocalServices |= NODE_BLOOM;
@@ -1304,7 +1333,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     libsnark::inhibit_profiling_info = true;
     libsnark::inhibit_profiling_counters = true;
 
-    if ( KOMODO_NSPV == 0 )
+    if ( KOMODO_NSPV <= 0 )
     {
         // Initialize Zcash circuit parameters
         ZC_LoadParams(chainparams);
@@ -1485,7 +1514,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 #endif
 
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
     {
         std::vector<boost::filesystem::path> vImportFiles;
         threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
@@ -1909,11 +1938,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             PruneAndFlush();
         }
     }
-    if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) != 0 )
-        nLocalServices |= NODE_ADDRINDEX;
-    if ( GetBoolArg("-spentindex", DEFAULT_SPENTINDEX) != 0 )
-        nLocalServices |= NODE_SPENTINDEX;
-fprintf(stderr,"nLocalServices %llx %d, %d\n",(long long)nLocalServices,GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX),GetBoolArg("-spentindex", DEFAULT_SPENTINDEX));
+    if ( KOMODO_NSPV >= 0 )
+    {
+        if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) != 0 )
+            nLocalServices |= NODE_ADDRINDEX;
+        if ( GetBoolArg("-spentindex", DEFAULT_SPENTINDEX) != 0 )
+            nLocalServices |= NODE_SPENTINDEX;
+        fprintf(stderr,"nLocalServices %llx %d, %d\n",(long long)nLocalServices,GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX),GetBoolArg("-spentindex", DEFAULT_SPENTINDEX));
+    }
     // ********************************************************* Step 10: import blocks
 
     if (mapArgs.count("-blocknotify"))

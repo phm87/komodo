@@ -4770,14 +4770,10 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     pindexNew->nTx            = block.vtx.size();
     pindexNew->nChainTx       = 0;
     pindexNew->nChainPayments = 0;
-    pindexNew->nShieldedTx    = 0;
-    pindexNew->nShieldingTx   = 0;
-    pindexNew->nDeshieldingTx = 0;
     CAmount sproutValue       = 0;
     CAmount saplingValue      = 0;
     bool isShieldedTx         = false;
-
-    int64_t nShieldedSpends=0,nShieldedOutputs=0,nChainPayments=0;
+    int64_t nShieldedSpends=0,nShieldedOutputs=0,nPayments=0;
     int64_t nShieldedTx=0,nFullyShieldedTx=0,nDeshieldingTx=0,nShieldingTx=0;
     int64_t nShieldedPayments=0,nFullyShieldedPayments=0,nShieldingPayments=0,nDeshieldingPayments=0;
 
@@ -4831,12 +4827,14 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
                 // z->(t,t,t)   = 3 shielded payments
                 nShieldedPayments += tx.vout.size();
             }
-            nChainPayments += nShieldedPayments;
+            //TODO:  correctly add shielded payments to total chain payments
+            nPayments += nShieldedPayments;
         } else {
             // No shielded payments, add transparent payments minus a change address
-            nChainPayments +=  tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
+            nPayments +=  tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
         }
     }
+
     pindexNew->nSproutValue = sproutValue;
     pindexNew->nChainSproutValue = boost::none;
     pindexNew->nSaplingValue = saplingValue;
@@ -4847,8 +4845,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     pindexNew->nStatus |= BLOCK_HAVE_DATA;
     pindexNew->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
 
-    // Store data for later use by gettxchainstats and other RPCs
-    pindexNew->nChainPayments         = nChainPayments;
+    pindexNew->nPayments              = nPayments;
     pindexNew->nShieldedTx            = nShieldedTx;
     pindexNew->nFullyShieldedTx       = nFullyShieldedTx;
     pindexNew->nDeshieldingTx         = nDeshieldingTx;
@@ -4870,7 +4867,17 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             CBlockIndex *pindex = queue.front();
             queue.pop_front();
 
-            pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
+            pindex->nChainTx                    = (pindex->pprev ? pindex->pprev->nChainTx         : 0) + pindex->nTx;
+            pindex->nChainShieldedTx            = (pindex->pprev ? pindex->pprev->nChainShieldedTx : 0) + pindex->nShieldedTx;
+            pindex->nChainFullyShieldedTx       = (pindex->pprev ? pindex->pprev->nChainFullyShieldedTx : 0) + pindex->nFullyShieldedTx;
+            pindex->nChainShieldingTx           = (pindex->pprev ? pindex->pprev->nChainShieldingTx : 0) + pindex->nShieldingTx;
+            pindex->nChainDeshieldingTx         = (pindex->pprev ? pindex->pprev->nChainDeshieldingTx : 0) + pindex->nDeshieldingTx;
+
+            pindex->nChainShieldedPayments      = (pindex->pprev ? pindex->pprev->nChainShieldedPayments : 0) + pindex->nShieldedPayments;
+            pindex->nChainFullyShieldedPayments = (pindex->pprev ? pindex->pprev->nChainFullyShieldedPayments : 0) + pindex->nFullyShieldedPayments;
+            pindex->nChainShieldingPayments     = (pindex->pprev ? pindex->pprev->nChainShieldingPayments : 0) + pindex->nShieldingPayments;
+            pindex->nChainDeshieldingPayments   = (pindex->pprev ? pindex->pprev->nChainDeshieldingPayments : 0) + pindex->nDeshieldingPayments;
+
             if (pindex->pprev) {
                 if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                     pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;

@@ -6147,7 +6147,11 @@ bool static LoadBlockIndexDB()
         if (pindex->nTx > 0) {
             if (pindex->pprev) {
                 if (pindex->pprev->nChainTx) {
-                    pindex->nChainTx = pindex->pprev->nChainTx + pindex->nTx;
+
+                    pindex->nChainTx               = pindex->pprev->nChainTx + pindex->nTx;
+                    pindex->nChainShieldedTx       = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
+                    pindex->nChainShieldedPayments = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
+
                     if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                         pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
                     } else {

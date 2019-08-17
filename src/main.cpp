@@ -4873,6 +4873,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             pindex->nChainShieldingTx           = (pindex->pprev ? pindex->pprev->nChainShieldingTx : 0) + pindex->nShieldingTx;
             pindex->nChainDeshieldingTx         = (pindex->pprev ? pindex->pprev->nChainDeshieldingTx : 0) + pindex->nDeshieldingTx;
 
+            pindex->nChainPayments              = (pindex->pprev ? pindex->pprev->nChainPayments         : 0) + pindex->nPayments;
             pindex->nChainShieldedPayments      = (pindex->pprev ? pindex->pprev->nChainShieldedPayments : 0) + pindex->nShieldedPayments;
             pindex->nChainFullyShieldedPayments = (pindex->pprev ? pindex->pprev->nChainFullyShieldedPayments : 0) + pindex->nFullyShieldedPayments;
             pindex->nChainShieldingPayments     = (pindex->pprev ? pindex->pprev->nChainShieldingPayments : 0) + pindex->nShieldingPayments;

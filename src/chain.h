@@ -613,6 +613,17 @@ public:
         READWRITE(VARINT(chainPower.nHeight));
         READWRITE(VARINT(nStatus));
         READWRITE(VARINT(nTx));
+
+        READWRITE(VARINT(nShieldedTx));
+        READWRITE(VARINT(nShieldingTx));
+        READWRITE(VARINT(nDeshieldingTx));
+        READWRITE(VARINT(nFullyShieldedTx));
+
+        READWRITE(VARINT(nShieldedPayments));
+        READWRITE(VARINT(nShieldingPayments));
+        READWRITE(VARINT(nDeshieldingPayments));
+        READWRITE(VARINT(nFullyShieldedPayments));
+
         if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))
             READWRITE(VARINT(nFile));
         if (nStatus & BLOCK_HAVE_DATA)

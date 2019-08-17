@@ -6148,9 +6148,15 @@ bool static LoadBlockIndexDB()
             if (pindex->pprev) {
                 if (pindex->pprev->nChainTx) {
 
-                    pindex->nChainTx               = pindex->pprev->nChainTx + pindex->nTx;
-                    pindex->nChainShieldedTx       = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
-                    pindex->nChainShieldedPayments = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
+                    pindex->nChainTx                    = pindex->pprev->nChainTx + pindex->nTx;
+                    pindex->nChainShieldedTx            = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
+                    pindex->nChainShieldedPayments      = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
+                    pindex->nChainShieldingTx           = pindex->pprev->nChainShieldingTx + pindex->nShieldingTx;
+                    pindex->nChainShieldingPayments     = pindex->pprev->nChainShieldingPayments + pindex->nShieldingPayments;
+                    pindex->nChainDeshieldingTx         = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
+                    pindex->nChainDeshieldingPayments   = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
+                    pindex->nChainFullyShieldedTx       = pindex->pprev->nChainFullyShieldedTx + pindex->nFullyShieldedTx;
+                    pindex->nChainFullyShieldedPayments = pindex->pprev->nChainFullyShieldedPayments + pindex->nFullyShieldedPayments;
 
                     if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                         pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
@@ -6163,15 +6169,30 @@ bool static LoadBlockIndexDB()
                         pindex->nChainSaplingValue = boost::none;
                     }
                 } else {
-                    pindex->nChainTx = 0;
-                    pindex->nChainSproutValue = boost::none;
-                    pindex->nChainSaplingValue = boost::none;
+                    pindex->nChainTx                    = 0;
+                    pindex->nChainShieldedTx            = 0;
+                    pindex->nChainFullyShieldedTx       = 0;
+                    pindex->nChainShieldedPayments      = 0;
+                    pindex->nChainShieldingPayments     = 0;
+                    pindex->nChainDeshieldingTx         = 0;
+                    pindex->nChainDeshieldingPayments   = 0;
+                    pindex->nChainFullyShieldedTx       = 0;
+                    pindex->nChainFullyShieldedPayments = 0;
+                    pindex->nChainSproutValue           = boost::none;
+                    pindex->nChainSaplingValue          = boost::none;
                     mapBlocksUnlinked.insert(std::make_pair(pindex->pprev, pindex));
                 }
             } else {
-                pindex->nChainTx = pindex->nTx;
-                pindex->nChainSproutValue = pindex->nSproutValue;
-                pindex->nChainSaplingValue = pindex->nSaplingValue;
+                pindex->nChainTx                    = pindex->nTx;
+                pindex->nChainShieldedTx            = pindex->nShieldedTx;
+                pindex->nChainShieldedPayments      = pindex->nShieldedPayments;
+                pindex->nChainShieldingTx           = pindex->nShieldingTx;
+                pindex->nChainShieldingPayments     = pindex->nShieldingPayments;
+                pindex->nChainDeshieldingTx         = pindex->nDeshieldingTx;
+                pindex->nChainDeshieldingPayments   = pindex->nDeshieldingPayments;
+                pindex->nChainFullyShieldedPayments = pindex->nFullyShieldedPayments;
+                pindex->nChainSproutValue           = pindex->nSproutValue;
+                pindex->nChainSaplingValue          = pindex->nSaplingValue;
             }
         }
         // Construct in-memory chain of branch IDs.

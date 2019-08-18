@@ -204,7 +204,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     bool fRescan = true;
     if (params.size() > 2)
         fRescan = params[2].get_bool();
-    if ( fRescan && params.size() == 4 )
+    if ( fRescan && params.size() >= 4 )
         height = params[3].get_int();
 
     if (params.size() > 5)

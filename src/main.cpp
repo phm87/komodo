@@ -4818,14 +4818,17 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
                 // (z,z)->z     = 1 shielded payment (has this xtn ever occurred?)
                 // z->(z,z,z)   = 2 shielded payments + shielded change
                 // Assume that there is always 1 change output when there are more than one
-                nShieldedPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+                nShieldedPayments  += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+                // TODO: fully shielded should not count toward shielding/deshielding
+                nShieldingPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
             } else if (nShieldedSpends >=1) {
                 // Shielded inputs with no shielded outputs. We know none are change output because
                 // change would flow back to the zaddr
                 // z->t         = 1 shielded payment
                 // z->(t,t)     = 2 shielded payments
                 // z->(t,t,t)   = 3 shielded payments
-                nShieldedPayments += tx.vout.size();
+                nShieldedPayments    += tx.vout.size();
+                nDeshieldingPayments += tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
             }
             //TODO:  correctly add shielded payments to total chain payments
             nPayments += nShieldedPayments;

@@ -241,8 +241,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             }
 	}
 	else	{
-	    pwalletMain->ScanForWalletTransactions(chainActive[height], true);
-	    return EncodeDestination(vchAddress);
+
 	}
 
         pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;

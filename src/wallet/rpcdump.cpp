@@ -162,8 +162,8 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             "2. \"label\"            (string, optional, default=\"\") An optional label\n"
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "4. height               (integer, optional, default=0) start at block height?\n"
-            "5. force_rescan         (boolean, optional, default=false) used to force the rescan (if the key was already imported)\n" 
-	    "6. secret_key           (integer, optional, default=188) used to import WIFs of other coins\n" 
+            "5. secret_key           (integer, optional, default=188) used to import WIFs of other coins\n" 
+	    "6. force_rescan         (boolean, optional, default=false) used to force the rescan (if the key was already imported)\n" 
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nDump a private key\n"
@@ -177,13 +177,13 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             "\nImport with rescan from a block height\n"
             + HelpExampleCli("importprivkey", "\"mykey\" \"testing\" true 1000") +
             "\nImport a BTC WIF with rescan (no need to force the rescan if the key was not imported yet)\n"
-            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" true 0 false 128") +
+            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" true 0 128") +
             "\nImport a KMD WIF with forced rescan\n"
-            + HelpExampleCli("importprivkey", "\"KMDWIF\" \"testing\" true 120000 true") +
+            + HelpExampleCli("importprivkey", "\"KMDWIF\" \"testing\" true 120000 188 true") +
             "\nImport a BTC WIF with forced rescan\n"
-            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" true 120000 true 128") +
+            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" true 120000 128 true") +
             "\nImport a BTC WIF without rescan\n"
-            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" false 0 false 128") +
+            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" false 0 128 false") +
             "\nAs a JSON-RPC call\n"
             + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", true, 1000")
         );
@@ -207,9 +207,9 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if ( fRescan && params.size() >= 4 )
         height = params[3].get_int();
 
-    if (params.size() > 5)
+    if (params.size() > 4)
     {
-        auto secret_key = AmountFromValue(params[5])/100000000;
+        auto secret_key = AmountFromValue(params[4])/100000000;
         key = DecodeCustomSecret(strSecret, secret_key);
     } else {
         key = DecodeSecret(strSecret);
@@ -217,9 +217,9 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
 
     // Force the rescan (if the key was already imported)
     bool fForceRescan = false;
-    if (params.size() > 4)
+    if (params.size() > 5)
     {
-        fForceRescan = params[4].get_bool();
+        fForceRescan = params[5].get_bool();
     }
 
     if ( height < 0 || height > chainActive.Height() )
@@ -241,11 +241,11 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             }
             if (!pwalletMain->AddKeyPubKey(key, pubkey))
                 throw JSONRPCError(RPC_WALLET_ERROR, "Error adding key to wallet");
-	    pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
+	    pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1; // phm87: Not sure if it should be move according to fForceRescan
 	}
 
         // whenever a key is imported, we need to scan the whole chain
-        pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
+        pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value' - phm87: Not sure if it should be move according to fForceRescan
 
         if (fRescan) {
             pwalletMain->ScanForWalletTransactions(chainActive[height], true);

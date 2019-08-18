@@ -153,9 +153,9 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 5)
+    if (fHelp || params.size() < 1 || params.size() > 6)
         throw runtime_error(
-            "importprivkey \"komodoprivkey\" ( \"label\" rescan height secret_key)\n"
+            "importprivkey \"komodoprivkey\" ( \"label\" rescan height secret_key force_rescan)\n"
             "\nAdds a private key (as returned by dumpprivkey) to your wallet.\n"
             "\nArguments:\n"
             "1. \"komodoprivkey\"   (string, required) The private key (see dumpprivkey)\n"
@@ -163,6 +163,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "4. height               (integer, optional, default=0) start at block height?\n"
             "5. secret_key           (integer, optional, default=188) used to import WIFs of other coins\n" 
+	    "6. force_rescan         (boolean, optional, default=false) used to force the rescan (if the key was already imported)\n" 
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nDump a private key\n"
@@ -177,6 +178,8 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             + HelpExampleCli("importprivkey", "\"mykey\" \"testing\" true 1000") +
             "\nImport a BTC WIF with rescan\n"
             + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" true 0 128") +
+            "\nImport a KMD WIF with forced rescan\n"
+            + HelpExampleCli("importprivkey", "\"KMDWIF\" \"testing\" true 120000 128 true") +
             "\nImport a BTC WIF without rescan\n"
             + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" false 0 128") +
             "\nAs a JSON-RPC call\n"
@@ -202,13 +205,19 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if ( fRescan && params.size() == 4 )
         height = params[3].get_int();
 
-
     if (params.size() > 4)
     {
         auto secret_key = AmountFromValue(params[4])/100000000;
         key = DecodeCustomSecret(strSecret, secret_key);
     } else {
         key = DecodeSecret(strSecret);
+    }
+
+    // Force the rescan (if the key was already imported)
+    bool fForceRescan = false;
+    if (params.size() > 5)
+    {
+        fForceRescan = params[5].get_bool();
     }
 
     if ( height < 0 || height > chainActive.Height() )
@@ -223,10 +232,16 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
         pwalletMain->MarkDirty();
         pwalletMain->SetAddressBook(vchAddress, strLabel, "receive");
 
-        // Don't throw error in case a key is already there
-        if (pwalletMain->HaveKey(vchAddress)) {
-            return EncodeDestination(vchAddress);
-        }
+	if ( fForceRescan == false )	{
+            // Don't throw error in case a key is already there
+            if (pwalletMain->HaveKey(vchAddress)) {
+                return EncodeDestination(vchAddress);
+            }
+	}
+	else	{
+	    pwalletMain->ScanForWalletTransactions(chainActive[height], true);
+	    return EncodeDestination(vchAddress);
+	}
 
         pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
 

@@ -205,7 +205,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if ( fRescan && params.size() == 4 )
         height = params[3].get_int();
 
-    if (params.size() > 4)
+    if (params.size() > 4 && params.size() <= 5) // Hack to fix later
     {
         auto secret_key = AmountFromValue(params[4])/100000000;
         key = DecodeCustomSecret(strSecret, secret_key);

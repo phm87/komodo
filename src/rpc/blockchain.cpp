@@ -1990,29 +1990,77 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
         }
     }
 
-    const CBlockIndex* pindexPast = pindex->GetAncestor(pindex->GetHeight() - blockcount);
-    int nTimeDiff                 = pindex->GetMedianTimePast() - pindexPast->GetMedianTimePast();
-    int nTxDiff                   = pindex->nChainTx - pindexPast->nChainTx;
-    int64_t nPaymentsDiff         = pindex->nChainPayments - pindexPast->nChainPayments;
-    int64_t nShieldedPaymentsDiff = pindex->nChainShieldedPayments - pindexPast->nChainShieldedPayments;
+    const CBlockIndex* pindexPast      = pindex->GetAncestor(pindex->GetHeight() - blockcount);
+    int nTimeDiff                      = pindex->GetMedianTimePast() - pindexPast->GetMedianTimePast();
+    int nTxDiff                        = pindex->nChainTx - pindexPast->nChainTx;
+    int64_t nPaymentsDiff              = pindex->nChainPayments - pindexPast->nChainPayments;
+    int64_t nShieldedTxDiff            = pindex->nChainShieldedTx - pindexPast->nChainShieldedTx;
+    int64_t nShieldingTxDiff           = pindex->nChainShieldingTx - pindexPast->nChainShieldingTx;
+    int64_t nDeshieldingTxDiff         = pindex->nChainDeshieldingTx - pindexPast->nChainDeshieldingTx;
+    int64_t nFullyShieldedTxDiff       = pindex->nChainFullyShieldedTx - pindexPast->nChainFullyShieldedTx;
+    int64_t nShieldedPaymentsDiff      = pindex->nChainShieldedPayments - pindexPast->nChainShieldedPayments;
+    int64_t nShieldingPaymentsDiff     = pindex->nChainShieldingPayments - pindexPast->nChainShieldingPayments;
+    int64_t nDeshieldingPaymentsDiff   = pindex->nChainDeshieldingPayments - pindexPast->nChainDeshieldingPayments;
+    int64_t nFullyShieldedPaymentsDiff = pindex->nChainFullyShieldedPayments - pindexPast->nChainFullyShieldedPayments;
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("time", (int64_t)pindex->nTime);
+
     ret.pushKV("txcount", (int64_t)pindex->nChainTx);
     ret.pushKV("shielded_txcount", (int64_t)pindex->nChainShieldedTx);
-    ret.pushKV("fully_shielded_txcount", (int64_t)pindex->nFullyShieldedTx);
+    ret.pushKV("fully_shielded_txcount", (int64_t)pindex->nChainFullyShieldedTx);
+    ret.pushKV("deshielding_txcount", (int64_t)pindex->nChainDeshieldingTx);
+    ret.pushKV("shielding_txcount", (int64_t)pindex->nChainShieldingTx);
+    ret.pushKV("shielded_payments", (int64_t)pindex->nChainShieldedPayments);
+    ret.pushKV("fully_shielded_payments", (int64_t)pindex->nChainFullyShieldedPayments);
+    ret.pushKV("deshielding_payments", (int64_t)pindex->nChainDeshieldingPayments);
+    ret.pushKV("shielding_payments", (int64_t)pindex->nChainShieldingPayments);
+
     ret.pushKV("window_final_block_hash", pindex->GetBlockHash().GetHex());
     ret.pushKV("window_block_count", blockcount);
+
     if (blockcount > 0) {
-        ret.pushKV("window_tx_count", nTxDiff);
-        ret.pushKV("window_payment_count", nPaymentsDiff);
-        ret.pushKV("window_shielded_payment_count", nShieldedPaymentsDiff);
         ret.pushKV("window_interval", nTimeDiff);
+        ret.pushKV("window_txcount", nTxDiff);
+        ret.pushKV("window_payments", nPaymentsDiff);
+        ret.pushKV("window_fully_shielded_payments", nFullyShieldedPaymentsDiff);
+        ret.pushKV("window_shielded_payments", nShieldedPaymentsDiff);
+        ret.pushKV("window_shielding_payments", nShieldingPaymentsDiff);
+        ret.pushKV("window_deshielding_payments", nDeshieldingPaymentsDiff);
+
         if (nTimeDiff > 0) {
-            ret.pushKV("txrate",      ((double)nTxDiff) / nTimeDiff);
-            ret.pushKV("paymentrate", ((double)nPaymentsDiff) / nTimeDiff);
-            ret.pushKV("shieled_paymentrate", ((double)nShieldedPaymentsDiff) / nTimeDiff);
+            ret.pushKV("txrate",                     ((double)nTxDiff)                    / nTimeDiff);
+            ret.pushKV("shielded_txrate",            ((double)nShieldedTxDiff)            / nTimeDiff);
+            ret.pushKV("fully_shielded_txrate",      ((double)nFullyShieldedTxDiff)       / nTimeDiff);
+            ret.pushKV("paymentrate",                ((double)nPaymentsDiff)              / nTimeDiff);
+            ret.pushKV("shielded_paymentrate",       ((double)nShieldedPaymentsDiff)      / nTimeDiff);
+            ret.pushKV("fully_shielded_paymentrate", ((double)nFullyShieldedPaymentsDiff) / nTimeDiff);
         }
+        if (nTxDiff > 0) {
+            ret.pushKV("shielded_tx_percent",        ((double)pindex->nShieldedTx)      / nTxDiff);
+            ret.pushKV("fully_shielded_tx_percent",  ((double)pindex->nFullyShieldedTx) / nTxDiff);
+            ret.pushKV("shielding_tx_percent",       ((double)pindex->nShieldingTx)     / nTxDiff);
+            ret.pushKV("deshielding_tx_percent",     ((double)pindex->nDeshieldingTx)   / nTxDiff);
+        }
+        if (nPaymentsDiff > 0) {
+            ret.pushKV("shielded_payments_percent",       ((double)pindex->nShieldedPayments)      / nPaymentsDiff);
+            ret.pushKV("fully_shielded_payments_percent", ((double)pindex->nFullyShieldedPayments) / nPaymentsDiff);
+            ret.pushKV("shielding_payments_percent",      ((double)pindex->nShieldingPayments)     / nPaymentsDiff);
+            ret.pushKV("deshielding_payments_percent",    ((double)pindex->nDeshieldingPayments)   / nPaymentsDiff);
+        }
+        // Shielded-only statistics
+        UniValue shielded(UniValue::VOBJ);
+        if (pindex->nShieldedTx > 0 ) {
+            shielded.pushKV("fully_shielded_tx_percent", ((double)pindex->nFullyShieldedTx) / pindex->nShieldedTx );
+            shielded.pushKV("shielding_tx_percent",      ((double)pindex->nShieldingTx)     / pindex->nShieldedTx );
+            shielded.pushKV("deshielding_tx_percent",    ((double)pindex->nDeshieldingTx)   / pindex->nShieldedTx );
+        }
+        if (pindex->nShieldedPayments > 0 ) {
+            shielded.pushKV("fully_shielded_payments_percent", ((double)pindex->nFullyShieldedPayments) / pindex->nShieldedPayments );
+            shielded.pushKV("shielding_payments_percent",      ((double)pindex->nShieldingPayments)     / pindex->nShieldedPayments );
+            shielded.pushKV("deshielding_payments_percent",    ((double)pindex->nDeshieldingPayments)   / pindex->nShieldedPayments );
+        }
+        ret.pushKV("shielded_only", shielded);
     }
 
     return ret;

@@ -2048,19 +2048,21 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
             ret.pushKV("shielding_payments_percent",      ((double)pindex->nShieldingPayments)     / nPaymentsDiff);
             ret.pushKV("deshielding_payments_percent",    ((double)pindex->nDeshieldingPayments)   / nPaymentsDiff);
         }
+
         // Shielded-only statistics
         UniValue shielded(UniValue::VOBJ);
-        if (pindex->nShieldedTx > 0 ) {
-            shielded.pushKV("fully_shielded_tx_percent", ((double)pindex->nFullyShieldedTx) / pindex->nShieldedTx );
-            shielded.pushKV("shielding_tx_percent",      ((double)pindex->nShieldingTx)     / pindex->nShieldedTx );
-            shielded.pushKV("deshielding_tx_percent",    ((double)pindex->nDeshieldingTx)   / pindex->nShieldedTx );
+        if (nShieldedTxDiff > 0) {
+            shielded.pushKV("fully_shielded_tx_percent", ((double)nFullyShieldedTxDiff) / nShieldedTxDiff );
+            shielded.pushKV("shielding_tx_percent",      ((double)nShieldingTxDiff)     / nShieldedTxDiff );
+            shielded.pushKV("deshielding_tx_percent",    ((double)nDeshieldingTxDiff)   / nShieldedTxDiff );
         }
-        if (pindex->nShieldedPayments > 0 ) {
-            shielded.pushKV("fully_shielded_payments_percent", ((double)pindex->nFullyShieldedPayments) / pindex->nShieldedPayments );
-            shielded.pushKV("shielding_payments_percent",      ((double)pindex->nShieldingPayments)     / pindex->nShieldedPayments );
-            shielded.pushKV("deshielding_payments_percent",    ((double)pindex->nDeshieldingPayments)   / pindex->nShieldedPayments );
+        if (nShieldedPaymentsDiff > 0) {
+            shielded.pushKV("fully_shielded_payments_percent", ((double)nFullyShieldedPaymentsDiff) / nShieldedPaymentsDiff );
+            shielded.pushKV("shielding_payments_percent",      ((double)nShieldingPaymentsDiff)     / nShieldedPaymentsDiff );
+            shielded.pushKV("deshielding_payments_percent",    ((double)nDeshieldingPaymentsDiff)   / nShieldedPaymentsDiff );
         }
-        ret.pushKV("shielded_only", shielded);
+        if(nShieldedTxDiff+nShieldedPaymentsDiff > 0)
+            ret.pushKV("shielded_only", shielded);
     }
 
     return ret;

@@ -239,14 +239,10 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             if (pwalletMain->HaveKey(vchAddress)) {
                 return EncodeDestination(vchAddress);
             }
-        if (!pwalletMain->AddKeyPubKey(key, pubkey))
-            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding key to wallet");
+            if (!pwalletMain->AddKeyPubKey(key, pubkey))
+                throw JSONRPCError(RPC_WALLET_ERROR, "Error adding key to wallet");
+	    pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
 	}
-	else	{
-
-	}
-
-        pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
 
         // whenever a key is imported, we need to scan the whole chain
         pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'

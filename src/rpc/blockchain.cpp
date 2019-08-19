@@ -2017,6 +2017,7 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
     ret.pushKV("shielding_payments", (int64_t)pindex->nChainShieldingPayments);
 
     ret.pushKV("window_final_block_hash", pindex->GetBlockHash().GetHex());
+    ret.pushKV("window_final_block_height", pindex->GetHeight());
     ret.pushKV("window_block_count", blockcount);
 
     if (blockcount > 0) {

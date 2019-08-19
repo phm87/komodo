@@ -4796,11 +4796,9 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             nShieldedTx++;
             if(tx.vin.size()==0 && tx.vout.size()==0) {
                 nFullyShieldedTx++;
-            }
-            if(tx.vin.size()>0) {
+            } else if(tx.vin.size()>0) {
                 nShieldingTx++;
-            }
-            if(tx.vout.size()>0) {
+            } else if(tx.vout.size()>0) {
                 nDeshieldingTx++;
             }
             //NOTE: These are at best heuristics. Improve them as much as possible
@@ -4819,8 +4817,13 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
                 // z->(z,z,z)   = 2 shielded payments + shielded change
                 // Assume that there is always 1 change output when there are more than one
                 nShieldedPayments  += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
-                // TODO: fully shielded should not count toward shielding/deshielding
-                nShieldingPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+
+                // Fully shielded do not count toward shielding/deshielding
+                if(tx.vin.size()==0 && tx.vout.size()==0) {
+                    nFullyShieldedPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+                } else {
+                    nShieldingPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+                }
             } else if (nShieldedSpends >=1) {
                 // Shielded inputs with no shielded outputs. We know none are change output because
                 // change would flow back to the zaddr

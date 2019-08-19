@@ -49,6 +49,7 @@
 using namespace std;
 
 extern int32_t KOMODO_INSYNC;
+extern bool fZindex;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp);
@@ -2007,14 +2008,16 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
     ret.pushKV("time", (int64_t)pindex->nTime);
 
     ret.pushKV("txcount", (int64_t)pindex->nChainTx);
-    ret.pushKV("shielded_txcount", (int64_t)pindex->nChainShieldedTx);
-    ret.pushKV("fully_shielded_txcount", (int64_t)pindex->nChainFullyShieldedTx);
-    ret.pushKV("deshielding_txcount", (int64_t)pindex->nChainDeshieldingTx);
-    ret.pushKV("shielding_txcount", (int64_t)pindex->nChainShieldingTx);
-    ret.pushKV("shielded_payments", (int64_t)pindex->nChainShieldedPayments);
-    ret.pushKV("fully_shielded_payments", (int64_t)pindex->nChainFullyShieldedPayments);
-    ret.pushKV("deshielding_payments", (int64_t)pindex->nChainDeshieldingPayments);
-    ret.pushKV("shielding_payments", (int64_t)pindex->nChainShieldingPayments);
+    if (fZindex) {
+        ret.pushKV("shielded_txcount", (int64_t)pindex->nChainShieldedTx);
+        ret.pushKV("fully_shielded_txcount", (int64_t)pindex->nChainFullyShieldedTx);
+        ret.pushKV("deshielding_txcount", (int64_t)pindex->nChainDeshieldingTx);
+        ret.pushKV("shielding_txcount", (int64_t)pindex->nChainShieldingTx);
+        ret.pushKV("shielded_payments", (int64_t)pindex->nChainShieldedPayments);
+        ret.pushKV("fully_shielded_payments", (int64_t)pindex->nChainFullyShieldedPayments);
+        ret.pushKV("deshielding_payments", (int64_t)pindex->nChainDeshieldingPayments);
+        ret.pushKV("shielding_payments", (int64_t)pindex->nChainShieldingPayments);
+    }
 
     ret.pushKV("window_final_block_hash", pindex->GetBlockHash().GetHex());
     ret.pushKV("window_final_block_height", pindex->GetHeight());
@@ -2024,46 +2027,51 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
         ret.pushKV("window_interval", nTimeDiff);
         ret.pushKV("window_txcount", nTxDiff);
         ret.pushKV("window_payments", nPaymentsDiff);
-        ret.pushKV("window_fully_shielded_payments", nFullyShieldedPaymentsDiff);
-        ret.pushKV("window_shielded_payments", nShieldedPaymentsDiff);
-        ret.pushKV("window_shielding_payments", nShieldingPaymentsDiff);
-        ret.pushKV("window_deshielding_payments", nDeshieldingPaymentsDiff);
 
         if (nTimeDiff > 0) {
             ret.pushKV("txrate",                     ((double)nTxDiff)                    / nTimeDiff);
-            ret.pushKV("shielded_txrate",            ((double)nShieldedTxDiff)            / nTimeDiff);
-            ret.pushKV("fully_shielded_txrate",      ((double)nFullyShieldedTxDiff)       / nTimeDiff);
-            ret.pushKV("paymentrate",                ((double)nPaymentsDiff)              / nTimeDiff);
-            ret.pushKV("shielded_paymentrate",       ((double)nShieldedPaymentsDiff)      / nTimeDiff);
-            ret.pushKV("fully_shielded_paymentrate", ((double)nFullyShieldedPaymentsDiff) / nTimeDiff);
-        }
-        if (nTxDiff > 0) {
-            ret.pushKV("shielded_tx_percent",        ((double)pindex->nShieldedTx)      / nTxDiff);
-            ret.pushKV("fully_shielded_tx_percent",  ((double)pindex->nFullyShieldedTx) / nTxDiff);
-            ret.pushKV("shielding_tx_percent",       ((double)pindex->nShieldingTx)     / nTxDiff);
-            ret.pushKV("deshielding_tx_percent",     ((double)pindex->nDeshieldingTx)   / nTxDiff);
-        }
-        if (nPaymentsDiff > 0) {
-            ret.pushKV("shielded_payments_percent",       ((double)pindex->nShieldedPayments)      / nPaymentsDiff);
-            ret.pushKV("fully_shielded_payments_percent", ((double)pindex->nFullyShieldedPayments) / nPaymentsDiff);
-            ret.pushKV("shielding_payments_percent",      ((double)pindex->nShieldingPayments)     / nPaymentsDiff);
-            ret.pushKV("deshielding_payments_percent",    ((double)pindex->nDeshieldingPayments)   / nPaymentsDiff);
+            if (fZindex) {
+                ret.pushKV("shielded_txrate",            ((double)nShieldedTxDiff)            / nTimeDiff);
+                ret.pushKV("fully_shielded_txrate",      ((double)nFullyShieldedTxDiff)       / nTimeDiff);
+                ret.pushKV("paymentrate",                ((double)nPaymentsDiff)              / nTimeDiff);
+                ret.pushKV("shielded_paymentrate",       ((double)nShieldedPaymentsDiff)      / nTimeDiff);
+                ret.pushKV("fully_shielded_paymentrate", ((double)nFullyShieldedPaymentsDiff) / nTimeDiff);
+            }
         }
 
-        // Shielded-only statistics
-        UniValue shielded(UniValue::VOBJ);
-        if (nShieldedTxDiff > 0) {
-            shielded.pushKV("fully_shielded_tx_percent", ((double)nFullyShieldedTxDiff) / nShieldedTxDiff );
-            shielded.pushKV("shielding_tx_percent",      ((double)nShieldingTxDiff)     / nShieldedTxDiff );
-            shielded.pushKV("deshielding_tx_percent",    ((double)nDeshieldingTxDiff)   / nShieldedTxDiff );
+        if (fZindex) {
+            ret.pushKV("window_fully_shielded_payments", nFullyShieldedPaymentsDiff);
+            ret.pushKV("window_shielded_payments", nShieldedPaymentsDiff);
+            ret.pushKV("window_shielding_payments", nShieldingPaymentsDiff);
+            ret.pushKV("window_deshielding_payments", nDeshieldingPaymentsDiff);
+            if (nTxDiff > 0) {
+                ret.pushKV("shielded_tx_percent",        ((double)nShieldedTxDiff)      / nTxDiff);
+                ret.pushKV("fully_shielded_tx_percent",  ((double)nFullyShieldedTxDiff) / nTxDiff);
+                ret.pushKV("shielding_tx_percent",       ((double)nShieldingTxDiff)     / nTxDiff);
+                ret.pushKV("deshielding_tx_percent",     ((double)nDeshieldingTxDiff)   / nTxDiff);
+            }
+            if (nPaymentsDiff > 0) {
+                ret.pushKV("shielded_payments_percent",       ((double)nShieldedPaymentsDiff)      / nPaymentsDiff);
+                ret.pushKV("fully_shielded_payments_percent", ((double)nFullyShieldedPaymentsDiff) / nPaymentsDiff);
+                ret.pushKV("shielding_payments_percent",      ((double)nShieldingPaymentsDiff)     / nPaymentsDiff);
+                ret.pushKV("deshielding_payments_percent",    ((double)nDeshieldingPaymentsDiff)   / nPaymentsDiff);
+            }
+
+            // Shielded-only statistics
+            UniValue shielded(UniValue::VOBJ);
+            if (nShieldedTxDiff > 0) {
+                shielded.pushKV("fully_shielded_tx_percent", ((double)nFullyShieldedTxDiff) / nShieldedTxDiff );
+                shielded.pushKV("shielding_tx_percent",      ((double)nShieldingTxDiff)     / nShieldedTxDiff );
+                shielded.pushKV("deshielding_tx_percent",    ((double)nDeshieldingTxDiff)   / nShieldedTxDiff );
+            }
+            if (nShieldedPaymentsDiff > 0) {
+                shielded.pushKV("fully_shielded_payments_percent", ((double)nFullyShieldedPaymentsDiff) / nShieldedPaymentsDiff );
+                shielded.pushKV("shielding_payments_percent",      ((double)nShieldingPaymentsDiff)     / nShieldedPaymentsDiff );
+                shielded.pushKV("deshielding_payments_percent",    ((double)nDeshieldingPaymentsDiff)   / nShieldedPaymentsDiff );
+            }
+            if(nShieldedTxDiff+nShieldedPaymentsDiff > 0)
+                ret.pushKV("shielded_only", shielded);
         }
-        if (nShieldedPaymentsDiff > 0) {
-            shielded.pushKV("fully_shielded_payments_percent", ((double)nFullyShieldedPaymentsDiff) / nShieldedPaymentsDiff );
-            shielded.pushKV("shielding_payments_percent",      ((double)nShieldingPaymentsDiff)     / nShieldedPaymentsDiff );
-            shielded.pushKV("deshielding_payments_percent",    ((double)nDeshieldingPaymentsDiff)   / nShieldedPaymentsDiff );
-        }
-        if(nShieldedTxDiff+nShieldedPaymentsDiff > 0)
-            ret.pushKV("shielded_only", shielded);
     }
 
     return ret;

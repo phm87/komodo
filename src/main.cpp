@@ -4777,6 +4777,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     int64_t nShieldedSpends=0,nShieldedOutputs=0,nPayments=0;
     int64_t nShieldedTx=0,nFullyShieldedTx=0,nDeshieldingTx=0,nShieldingTx=0;
     int64_t nShieldedPayments=0,nFullyShieldedPayments=0,nShieldingPayments=0,nDeshieldingPayments=0;
+    int64_t nNotarizations=0;
 
     for (auto tx : block.vtx) {
         // Negative valueBalance "takes" money from the transparent value pool
@@ -4789,9 +4790,18 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             sproutValue += js.vpub_old;
             sproutValue -= js.vpub_new;
         }
+
+        if (!fZindex)
+            continue;
+
         nShieldedSpends   = tx.vShieldedSpend.size();
         nShieldedOutputs  = tx.vShieldedOutput.size();
         isShieldedTx      = (nShieldedSpends + nShieldedOutputs) > 0 ? true : false;
+
+
+        if(tx.vin.size()==13 && tx.vout.size()==2) {
+            nNotarizations++;
+        }
 
         if(isShieldedTx) {
             nShieldedTx++;
@@ -4852,15 +4862,17 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     pindexNew->nStatus |= BLOCK_HAVE_DATA;
     pindexNew->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
 
-    pindexNew->nPayments              = nPayments;
-    pindexNew->nShieldedTx            = nShieldedTx;
-    pindexNew->nFullyShieldedTx       = nFullyShieldedTx;
-    pindexNew->nDeshieldingTx         = nDeshieldingTx;
-    pindexNew->nShieldingTx           = nShieldingTx;
-    pindexNew->nShieldedPayments      = nShieldedPayments;
-    pindexNew->nFullyShieldedPayments = nFullyShieldedPayments;
-    pindexNew->nDeshieldingPayments   = nDeshieldingPayments;
-    pindexNew->nShieldingPayments     = nShieldingPayments;
+    if (fZindex) {
+        pindexNew->nPayments              = nPayments;
+        pindexNew->nShieldedTx            = nShieldedTx;
+        pindexNew->nFullyShieldedTx       = nFullyShieldedTx;
+        pindexNew->nDeshieldingTx         = nDeshieldingTx;
+        pindexNew->nShieldingTx           = nShieldingTx;
+        pindexNew->nShieldedPayments      = nShieldedPayments;
+        pindexNew->nFullyShieldedPayments = nFullyShieldedPayments;
+        pindexNew->nDeshieldingPayments   = nDeshieldingPayments;
+        pindexNew->nShieldingPayments     = nShieldingPayments;
+    }
 
     setDirtyBlockIndex.insert(pindexNew);
 
@@ -4874,17 +4886,19 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             CBlockIndex *pindex = queue.front();
             queue.pop_front();
 
-            pindex->nChainTx                    = (pindex->pprev ? pindex->pprev->nChainTx         : 0) + pindex->nTx;
-            pindex->nChainShieldedTx            = (pindex->pprev ? pindex->pprev->nChainShieldedTx : 0) + pindex->nShieldedTx;
-            pindex->nChainFullyShieldedTx       = (pindex->pprev ? pindex->pprev->nChainFullyShieldedTx : 0) + pindex->nFullyShieldedTx;
-            pindex->nChainShieldingTx           = (pindex->pprev ? pindex->pprev->nChainShieldingTx : 0) + pindex->nShieldingTx;
-            pindex->nChainDeshieldingTx         = (pindex->pprev ? pindex->pprev->nChainDeshieldingTx : 0) + pindex->nDeshieldingTx;
+            if (fZindex) {
+                pindex->nChainTx                    = (pindex->pprev ? pindex->pprev->nChainTx         : 0) + pindex->nTx;
+                pindex->nChainShieldedTx            = (pindex->pprev ? pindex->pprev->nChainShieldedTx : 0) + pindex->nShieldedTx;
+                pindex->nChainFullyShieldedTx       = (pindex->pprev ? pindex->pprev->nChainFullyShieldedTx : 0) + pindex->nFullyShieldedTx;
+                pindex->nChainShieldingTx           = (pindex->pprev ? pindex->pprev->nChainShieldingTx : 0) + pindex->nShieldingTx;
+                pindex->nChainDeshieldingTx         = (pindex->pprev ? pindex->pprev->nChainDeshieldingTx : 0) + pindex->nDeshieldingTx;
 
-            pindex->nChainPayments              = (pindex->pprev ? pindex->pprev->nChainPayments         : 0) + pindex->nPayments;
-            pindex->nChainShieldedPayments      = (pindex->pprev ? pindex->pprev->nChainShieldedPayments : 0) + pindex->nShieldedPayments;
-            pindex->nChainFullyShieldedPayments = (pindex->pprev ? pindex->pprev->nChainFullyShieldedPayments : 0) + pindex->nFullyShieldedPayments;
-            pindex->nChainShieldingPayments     = (pindex->pprev ? pindex->pprev->nChainShieldingPayments : 0) + pindex->nShieldingPayments;
-            pindex->nChainDeshieldingPayments   = (pindex->pprev ? pindex->pprev->nChainDeshieldingPayments : 0) + pindex->nDeshieldingPayments;
+                pindex->nChainPayments              = (pindex->pprev ? pindex->pprev->nChainPayments         : 0) + pindex->nPayments;
+                pindex->nChainShieldedPayments      = (pindex->pprev ? pindex->pprev->nChainShieldedPayments : 0) + pindex->nShieldedPayments;
+                pindex->nChainFullyShieldedPayments = (pindex->pprev ? pindex->pprev->nChainFullyShieldedPayments : 0) + pindex->nFullyShieldedPayments;
+                pindex->nChainShieldingPayments     = (pindex->pprev ? pindex->pprev->nChainShieldingPayments : 0) + pindex->nShieldingPayments;
+                pindex->nChainDeshieldingPayments   = (pindex->pprev ? pindex->pprev->nChainDeshieldingPayments : 0) + pindex->nDeshieldingPayments;
+            }
 
             if (pindex->pprev) {
                 if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
@@ -4922,8 +4936,10 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         }
     }
 
-    fprintf(stderr, "ht.%d, ShieldedPayments=%d, ShieldedTx=%d, FullyShieldedTx=%d\n",
-            pindexNew->GetHeight(), nShieldedPayments, nShieldedTx,  nFullyShieldedTx );
+    if (fZindex)
+        fprintf(stderr, "ht.%d, ShieldedPayments=%d, ShieldedTx=%d, FullyShieldedTx=%d, ntz=%d\n",
+            pindexNew->GetHeight(), nShieldedPayments, nShieldedTx,  nFullyShieldedTx, nNotarizations );
+
     return true;
 }
 
@@ -6155,15 +6171,17 @@ bool static LoadBlockIndexDB()
             if (pindex->pprev) {
                 if (pindex->pprev->nChainTx) {
 
-                    pindex->nChainTx                    = pindex->pprev->nChainTx + pindex->nTx;
-                    pindex->nChainShieldedTx            = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
-                    pindex->nChainShieldedPayments      = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
-                    pindex->nChainShieldingTx           = pindex->pprev->nChainShieldingTx + pindex->nShieldingTx;
-                    pindex->nChainShieldingPayments     = pindex->pprev->nChainShieldingPayments + pindex->nShieldingPayments;
-                    pindex->nChainDeshieldingTx         = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
-                    pindex->nChainDeshieldingPayments   = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
-                    pindex->nChainFullyShieldedTx       = pindex->pprev->nChainFullyShieldedTx + pindex->nFullyShieldedTx;
-                    pindex->nChainFullyShieldedPayments = pindex->pprev->nChainFullyShieldedPayments + pindex->nFullyShieldedPayments;
+                    if (fZindex) {
+                        pindex->nChainTx                    = pindex->pprev->nChainTx + pindex->nTx;
+                        pindex->nChainShieldedTx            = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
+                        pindex->nChainShieldedPayments      = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
+                        pindex->nChainShieldingTx           = pindex->pprev->nChainShieldingTx + pindex->nShieldingTx;
+                        pindex->nChainShieldingPayments     = pindex->pprev->nChainShieldingPayments + pindex->nShieldingPayments;
+                        pindex->nChainDeshieldingTx         = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
+                        pindex->nChainDeshieldingPayments   = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
+                        pindex->nChainFullyShieldedTx       = pindex->pprev->nChainFullyShieldedTx + pindex->nFullyShieldedTx;
+                        pindex->nChainFullyShieldedPayments = pindex->pprev->nChainFullyShieldedPayments + pindex->nFullyShieldedPayments;
+                    }
 
                     if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                         pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
@@ -6177,29 +6195,33 @@ bool static LoadBlockIndexDB()
                     }
                 } else {
                     pindex->nChainTx                    = 0;
-                    pindex->nChainShieldedTx            = 0;
-                    pindex->nChainFullyShieldedTx       = 0;
-                    pindex->nChainShieldedPayments      = 0;
-                    pindex->nChainShieldingPayments     = 0;
-                    pindex->nChainDeshieldingTx         = 0;
-                    pindex->nChainDeshieldingPayments   = 0;
-                    pindex->nChainFullyShieldedTx       = 0;
-                    pindex->nChainFullyShieldedPayments = 0;
+                    if (fZindex) {
+                        pindex->nChainShieldedTx            = 0;
+                        pindex->nChainFullyShieldedTx       = 0;
+                        pindex->nChainShieldedPayments      = 0;
+                        pindex->nChainShieldingPayments     = 0;
+                        pindex->nChainDeshieldingTx         = 0;
+                        pindex->nChainDeshieldingPayments   = 0;
+                        pindex->nChainFullyShieldedTx       = 0;
+                        pindex->nChainFullyShieldedPayments = 0;
+                    }
                     pindex->nChainSproutValue           = boost::none;
                     pindex->nChainSaplingValue          = boost::none;
                     mapBlocksUnlinked.insert(std::make_pair(pindex->pprev, pindex));
                 }
             } else {
                 pindex->nChainTx                    = pindex->nTx;
-                pindex->nChainShieldedTx            = pindex->nShieldedTx;
-                pindex->nChainShieldedPayments      = pindex->nShieldedPayments;
-                pindex->nChainShieldingTx           = pindex->nShieldingTx;
-                pindex->nChainShieldingPayments     = pindex->nShieldingPayments;
-                pindex->nChainDeshieldingTx         = pindex->nDeshieldingTx;
-                pindex->nChainDeshieldingPayments   = pindex->nDeshieldingPayments;
-                pindex->nChainFullyShieldedPayments = pindex->nFullyShieldedPayments;
                 pindex->nChainSproutValue           = pindex->nSproutValue;
                 pindex->nChainSaplingValue          = pindex->nSaplingValue;
+                if (fZindex) {
+                    pindex->nChainShieldedTx            = pindex->nShieldedTx;
+                    pindex->nChainShieldedPayments      = pindex->nShieldedPayments;
+                    pindex->nChainShieldingTx           = pindex->nShieldingTx;
+                    pindex->nChainShieldingPayments     = pindex->nShieldingPayments;
+                    pindex->nChainDeshieldingTx         = pindex->nDeshieldingTx;
+                    pindex->nChainDeshieldingPayments   = pindex->nDeshieldingPayments;
+                    pindex->nChainFullyShieldedPayments = pindex->nFullyShieldedPayments;
+                }
             }
         }
         // Construct in-memory chain of branch IDs.

@@ -98,6 +98,7 @@ bool fExperimentalMode = true;
 bool fImporting = false;
 bool fReindex = false;
 bool fTxIndex = false;
+bool fZindex = false;
 bool fAddressIndex = false;
 bool fTimestampIndex = false;
 bool fSpentIndex = false;
@@ -6279,6 +6280,9 @@ bool static LoadBlockIndexDB()
     // Check whether we have an address index
     pblocktree->ReadFlag("addressindex", fAddressIndex);
     LogPrintf("%s: address index %s\n", __func__, fAddressIndex ? "enabled" : "disabled");
+    // Check whether we have a shielded index
+    pblocktree->ReadFlag("zindex", fZindex);
+    LogPrintf("%s: shielded index %s\n", __func__, fZindex ? "enabled" : "disabled");
 
     // Check whether we have a timestamp index
     pblocktree->ReadFlag("timestampindex", fTimestampIndex);
@@ -6643,17 +6647,22 @@ bool InitBlockIndex() {
         // Use the provided setting for -txindex in the new database
         fTxIndex = GetBoolArg("-txindex", true);
         pblocktree->WriteFlag("txindex", fTxIndex);
+
         // Use the provided setting for -addressindex in the new database
         fAddressIndex = GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX);
         pblocktree->WriteFlag("addressindex", fAddressIndex);
-        
+
+        // Use the provided setting for -zindex in the new database
+        fAddressIndex = GetBoolArg("-zindex", DEFAULT_SHIELDEDINDEX);
+        pblocktree->WriteFlag("zindex", fZindex);
+
         // Use the provided setting for -timestampindex in the new database
         fTimestampIndex = GetBoolArg("-timestampindex", DEFAULT_TIMESTAMPINDEX);
         pblocktree->WriteFlag("timestampindex", fTimestampIndex);
-        
+
         fSpentIndex = GetBoolArg("-spentindex", DEFAULT_SPENTINDEX);
         pblocktree->WriteFlag("spentindex", fSpentIndex);
-        fprintf(stderr,"fAddressIndex.%d/%d fSpentIndex.%d/%d\n",fAddressIndex,DEFAULT_ADDRESSINDEX,fSpentIndex,DEFAULT_SPENTINDEX);
+        fprintf(stderr,"fAddressIndex.%d/%d fSpentIndex.%d/%d fZindex.%d/%d\n",fAddressIndex,DEFAULT_ADDRESSINDEX,fSpentIndex,DEFAULT_SPENTINDEX,fZindex, DEFAULT_SHIELDEDINDEX );
         LogPrintf("Initializing databases...\n");
     }
     // Only add the genesis block if not reindexing (in which case we reuse the one already on disk)

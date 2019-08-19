@@ -29,6 +29,7 @@ class CChainPower;
 #include "tinyformat.h"
 #include "uint256.h"
 extern int8_t is_STAKED(const char *chain_name);
+extern bool fZindex;
 
 #include <vector>
 
@@ -614,15 +615,19 @@ public:
         READWRITE(VARINT(nStatus));
         READWRITE(VARINT(nTx));
 
-        READWRITE(VARINT(nShieldedTx));
-        READWRITE(VARINT(nShieldingTx));
-        READWRITE(VARINT(nDeshieldingTx));
-        READWRITE(VARINT(nFullyShieldedTx));
+        // These values only serialized when -zindex=1
+        //if (fZindex != GetBoolArg("-zindex", false)) {
+        if(fZindex) {
+            READWRITE(VARINT(nShieldedTx));
+            READWRITE(VARINT(nShieldingTx));
+            READWRITE(VARINT(nDeshieldingTx));
+            READWRITE(VARINT(nFullyShieldedTx));
 
-        READWRITE(VARINT(nShieldedPayments));
-        READWRITE(VARINT(nShieldingPayments));
-        READWRITE(VARINT(nDeshieldingPayments));
-        READWRITE(VARINT(nFullyShieldedPayments));
+            READWRITE(VARINT(nShieldedPayments));
+            READWRITE(VARINT(nShieldingPayments));
+            READWRITE(VARINT(nDeshieldingPayments));
+            READWRITE(VARINT(nFullyShieldedPayments));
+        }
 
         if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))
             READWRITE(VARINT(nFile));

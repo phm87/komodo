@@ -4791,6 +4791,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             sproutValue -= js.vpub_new;
         }
 
+        // Ignore following stats unless -zindex
         if (!fZindex)
             continue;
 
@@ -4812,8 +4813,10 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             } else if(tx.vout.size()>0) {
                 nDeshieldingTx++;
             }
-            //NOTE: These are at best heuristics. Improve them as much as possible
-            //      You cannot compare stats generated from different sets of heuristics
+            //NOTE: These are at best heuristics. Improve them as much as possible.
+            //      You cannot compare stats generated from different sets of heuristics, so
+            //      if you change this code, you must delete and resync from scratch, or you
+            //      will be mixing together data from two set of heuristics.
 
             if (nShieldedOutputs >= 1) {
                 // If there are shielded outputs, count each as a payment
@@ -6299,9 +6302,11 @@ bool static LoadBlockIndexDB()
     // Check whether we have a transaction index
     pblocktree->ReadFlag("txindex", fTxIndex);
     LogPrintf("%s: transaction index %s\n", __func__, fTxIndex ? "enabled" : "disabled");
+
     // Check whether we have an address index
     pblocktree->ReadFlag("addressindex", fAddressIndex);
     LogPrintf("%s: address index %s\n", __func__, fAddressIndex ? "enabled" : "disabled");
+
     // Check whether we have a shielded index
     pblocktree->ReadFlag("zindex", fZindex);
     LogPrintf("%s: shielded index %s\n", __func__, fZindex ? "enabled" : "disabled");

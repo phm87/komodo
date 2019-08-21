@@ -260,6 +260,10 @@ public:
     //! Note: in a potential headers-first mode, this number cannot be relied upon
     unsigned int nTx;
 
+    //! Number of notarization transactions in this block.
+    unsigned int nNotarizations;
+
+    // TODO: convert block-stats to unsigned int ?
     //! (memory only) Number of payments (shielded or transparent) in the block
     //! up to and including this block.  One transaction can contain one or more
     //! payments. This stat allows us to calculate ratios of shielded/transparent
@@ -309,6 +313,9 @@ public:
     //! This value will be non-zero only if and only if transactions for this block and all its parents are available.
     //! Change to 64-bit type when necessary; won't happen before 2030
     unsigned int nChainTx;
+
+    //! Number of notarization transactions in this chain
+    int64_t nChainNotarizations;
 
     //! (memory only) Number of payments (shielded or transparent) in the chain
     //! up to and including this block.  One transaction can contain one or more
@@ -615,8 +622,7 @@ public:
         READWRITE(VARINT(nStatus));
         READWRITE(VARINT(nTx));
 
-        // These values only serialized when -zindex=1
-        //if (fZindex != GetBoolArg("-zindex", false)) {
+        // These values only serialized when -zindex enabled
         if(fZindex) {
             READWRITE(VARINT(nShieldedTx));
             READWRITE(VARINT(nShieldingTx));
@@ -627,6 +633,8 @@ public:
             READWRITE(VARINT(nShieldingPayments));
             READWRITE(VARINT(nDeshieldingPayments));
             READWRITE(VARINT(nFullyShieldedPayments));
+
+            READWRITE(VARINT(nChainNotarizations));
         }
 
         if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))

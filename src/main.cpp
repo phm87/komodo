@@ -4799,8 +4799,8 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         nShieldedOutputs  = tx.vShieldedOutput.size();
         isShieldedTx      = (nShieldedSpends + nShieldedOutputs) > 0 ? true : false;
 
-
-        if(tx.vin.size()==13 && tx.vout.size()==2) {
+        // We want to avoid full verification with a low false-positive rate
+        if(tx.vin.size()==13 && tx.vout.size()==2 && tx.vout[1].scriptPubKey.IsOpReturn() && tx.vout[1].nValue==0) {
             nNotarizations++;
         }
 
@@ -4875,6 +4875,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         pindexNew->nFullyShieldedPayments = nFullyShieldedPayments;
         pindexNew->nDeshieldingPayments   = nDeshieldingPayments;
         pindexNew->nShieldingPayments     = nShieldingPayments;
+        pindexNew->nNotarizations         = nNotarizations;
     }
 
     setDirtyBlockIndex.insert(pindexNew);
@@ -4891,6 +4892,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
 
             if (fZindex) {
                 pindex->nChainTx                    = (pindex->pprev ? pindex->pprev->nChainTx         : 0) + pindex->nTx;
+                pindex->nChainNotarizations         = (pindex->pprev ? pindex->pprev->nChainNotarizations : 0) + pindex->nNotarizations;
                 pindex->nChainShieldedTx            = (pindex->pprev ? pindex->pprev->nChainShieldedTx : 0) + pindex->nShieldedTx;
                 pindex->nChainFullyShieldedTx       = (pindex->pprev ? pindex->pprev->nChainFullyShieldedTx : 0) + pindex->nFullyShieldedTx;
                 pindex->nChainShieldingTx           = (pindex->pprev ? pindex->pprev->nChainShieldingTx : 0) + pindex->nShieldingTx;
@@ -6175,6 +6177,7 @@ bool static LoadBlockIndexDB()
                 if (pindex->pprev->nChainTx) {
 
                     if (fZindex) {
+                        pindex->nChainNotarizations         = pindex->pprev->nChainNotarizations + pindex->nNotarizations;
                         pindex->nChainTx                    = pindex->pprev->nChainTx + pindex->nTx;
                         pindex->nChainShieldedTx            = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
                         pindex->nChainShieldedPayments      = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
@@ -6199,6 +6202,7 @@ bool static LoadBlockIndexDB()
                 } else {
                     pindex->nChainTx                    = 0;
                     if (fZindex) {
+                        pindex->nChainNotarizations         = 0;
                         pindex->nChainShieldedTx            = 0;
                         pindex->nChainFullyShieldedTx       = 0;
                         pindex->nChainShieldedPayments      = 0;
@@ -6217,6 +6221,7 @@ bool static LoadBlockIndexDB()
                 pindex->nChainSproutValue           = pindex->nSproutValue;
                 pindex->nChainSaplingValue          = pindex->nSaplingValue;
                 if (fZindex) {
+                    pindex->nChainNotarizations         = pindex->nNotarizations;
                     pindex->nChainShieldedTx            = pindex->nShieldedTx;
                     pindex->nChainShieldedPayments      = pindex->nShieldedPayments;
                     pindex->nChainShieldingTx           = pindex->nShieldingTx;

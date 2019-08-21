@@ -2817,7 +2817,7 @@ UniValue dpowlistunspent(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    if (fHelp || params.size() < 1)
+    if ( fHelp )
         throw runtime_error(
             "dpowlistunspent satoshies address\n"
             "Only for Notary Nodes, returns a single utxo of the requested size from the specified address from the utxo cache.\n"

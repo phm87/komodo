@@ -463,7 +463,6 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
     }
     if (!pwalletMain->CommitTransaction(wtxNew, reservekey))
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
-    fResetUtxoCache = true;
 }
 
 
@@ -2814,40 +2813,47 @@ UniValue resendwallettransactions(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue dpowlistunspent(const std::set<CTxDestination> &destinations)
+UniValue dpowlistunspent(const UniValue& params, bool fHelp)
 {
-    int nMinDepth = 1;
-    int nMaxDepth = 9999999;
-    CAmount value = 10000; // size of KMD utxos to look for.
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    if (fHelp || params.size() < 2)
+        throw runtime_error(
+            "dpowlistunspent satoshies address\n"
+            "Only for Notary Nodes, returns a single utxo of the requested size from the specified address from the utxo cache.\n"
+            );
 
+    CAmount value = params[0].get_int();
+    if ( value < 10000 )
+        value = 10000;
+    
+    CTxDestination dest;
+    if (!IsValidDestination(DecodeDestination(params[1].get_str())))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Komodo address: ") + params[1].get_str());
+    
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     UniValue results(UniValue::VARR);
     static vector<COutput> vOutputsSaved;
-    if ( vOutputsSaved.size() == 0 || fResetUtxoCache )
+    if ( fResetUtxoCache )
+    {
+        vOutputsSaved.clear();
+        fResetUtxoCache = false;
+    }
+    if ( vOutputsSaved.size() == 0 )
     {
         vector<COutput> vecOutputs;
-        pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+        pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, false);
         BOOST_FOREACH(const COutput& out, vecOutputs)
         {
-            int nDepth = out.tx->GetDepthInMainChain();
-            if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
-                continue;
-
             CTxDestination address;
-            const CScript& scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-            bool fValidAddress = ExtractDestination(scriptPubKey, address);
-
-            if (destinations.size() && (!fValidAddress || !destinations.count(address)))
+            if ( !ExtractDestination(out.tx->vout[out.i].scriptPubKey, address) )
                 continue;
-
-            CAmount nValue = out.tx->vout[out.i].nValue;
-            if ( nValue != value )
+            if ( out.tx->vout[out.i].nValue != value )
               continue;
             vOutputsSaved.push_back(out);
         }
-        fResetUtxoCache = false;
     }
     if ( vOutputsSaved.size() > 0 )
     {
@@ -2940,9 +2946,6 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             }
         }
     }
-
-    if ( nMaxDepth == 7777 )
-        return(dpowlistunspent(destinations));
 
     UniValue results(UniValue::VARR);
     vector<COutput> vecOutputs;
@@ -8088,6 +8091,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "listsinceblock",           &listsinceblock,           false },
     { "wallet",             "listtransactions",         &listtransactions,         false },
     { "wallet",             "listunspent",              &listunspent,              false },
+    { "wallet",             "dpowlistunspent",          &dpowlistunspent,          false },
     { "wallet",             "lockunspent",              &lockunspent,              true  },
     { "wallet",             "move",                     &movecmd,                  false },
     { "wallet",             "sendfrom",                 &sendfrom,                 false },

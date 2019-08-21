@@ -2817,19 +2817,18 @@ UniValue dpowlistunspent(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    if (fHelp || params.size() < 2)
+    if (fHelp || params.size() < 1)
         throw runtime_error(
             "dpowlistunspent satoshies address\n"
             "Only for Notary Nodes, returns a single utxo of the requested size from the specified address from the utxo cache.\n"
             );
 
-    CAmount value = params[0].get_int();
-    if ( value < 10000 )
-        value = 10000;
-    
-    CTxDestination dest;
-    if (!IsValidDestination(DecodeDestination(params[1].get_str())))
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Komodo address: ") + params[1].get_str());
+    CAmount value = 10000;
+    if (params.size() >= 1) {
+	value = params[0].get_int();
+        if ( value < 10000 )
+            value = 10000;
+    }
     
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);

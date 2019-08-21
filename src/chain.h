@@ -263,50 +263,47 @@ public:
     //! Number of notarization transactions in this block.
     unsigned int nNotarizations;
 
-    // TODO: convert block-stats to unsigned int ?
     //! (memory only) Number of payments (shielded or transparent) in the block
     //! up to and including this block.  One transaction can contain one or more
     //! payments. This stat allows us to calculate ratios of shielded/transparent
     //! when combined with shielded payment stats
-    int64_t nPayments;
+    unsigned int nPayments;
 
     //! (memory only) Number of shielded transactions (of any kind) in the block up to and including this block.
     //! A shielded transaction is defined as a transaction that contains at least 1 JoinSplit, which includes
     //! shielding/de-shielding and other complex transaction possibilties including multiple taddrs/zaddrs as
     //! inputs and outputs.
-    int64_t nShieldedTx;
+    unsigned int nShieldedTx;
 
     //! (memory only) Number of fully shielded transactions. A fully shielded transaction is defined
     //! as a transaction containing JoinSplits and only shielded inputs and outputs, i.e. no transparent
     // inputs or outputs: z->z or z->(z,z) or z->(z,z,z,) etc...
-    int64_t nFullyShieldedTx;
+    unsigned int nFullyShieldedTx;
 
     //! (memory only) Number of shielding payments. A shielding payment is defined
     //! as having a shielded output but transparent input: t->z
-    int64_t nShieldingPayments;
+    unsigned int nShieldingPayments;
 
     //! (memory only) Number of shielded payments. A shielded payment is defined
     //! as having a shielded input or output: t->z or z->t
-    int64_t nShieldedPayments;
+    unsigned int nShieldedPayments;
 
     //! (memory only) Number of fully shielded payments. A fully shielded payment is defined
     //! as having a shielded input and shielded output: z->z
-    int64_t nFullyShieldedPayments;
+    unsigned int nFullyShieldedPayments;
 
     //! (memory only) Number of deshielding transactions. A deshielding transaction is defined
     //! as a transaction containing JoinSplits and at least one transparent output.
-    int64_t nDeshieldingTx;
+    unsigned int nDeshieldingTx;
 
     //! (memory only) Number of deshielding payments. A deshielding payment is defined
     //! as one transparent input and one shielded output: z->t
-    int64_t nDeshieldingPayments;
+    unsigned int nDeshieldingPayments;
 
     //! (memory only) Number of shielding transactions. A shielding transaction is defined
     //! as a transaction containing JoinSplits and at least one transparent input
     // i.e. t->z or t->(z,t) or z->(z,z,t)
-    int64_t nShieldingTx;
-
-
+    unsigned int nShieldingTx;
 
     // chain stats
     //! (memory only) Number of transactions in the chain up to and including this block.
@@ -634,7 +631,7 @@ public:
             READWRITE(VARINT(nDeshieldingPayments));
             READWRITE(VARINT(nFullyShieldedPayments));
 
-            READWRITE(VARINT(nChainNotarizations));
+            READWRITE(VARINT(nNotarizations));
         }
 
         if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))

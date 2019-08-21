@@ -1994,21 +1994,13 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
     const CBlockIndex* pindexPast      = pindex->GetAncestor(pindex->GetHeight() - blockcount);
     int nTimeDiff                      = pindex->GetMedianTimePast() - pindexPast->GetMedianTimePast();
     int nTxDiff                        = pindex->nChainTx - pindexPast->nChainTx;
-    int64_t nPaymentsDiff              = pindex->nChainPayments - pindexPast->nChainPayments;
-    int64_t nShieldedTxDiff            = pindex->nChainShieldedTx - pindexPast->nChainShieldedTx;
-    int64_t nShieldingTxDiff           = pindex->nChainShieldingTx - pindexPast->nChainShieldingTx;
-    int64_t nDeshieldingTxDiff         = pindex->nChainDeshieldingTx - pindexPast->nChainDeshieldingTx;
-    int64_t nFullyShieldedTxDiff       = pindex->nChainFullyShieldedTx - pindexPast->nChainFullyShieldedTx;
-    int64_t nShieldedPaymentsDiff      = pindex->nChainShieldedPayments - pindexPast->nChainShieldedPayments;
-    int64_t nShieldingPaymentsDiff     = pindex->nChainShieldingPayments - pindexPast->nChainShieldingPayments;
-    int64_t nDeshieldingPaymentsDiff   = pindex->nChainDeshieldingPayments - pindexPast->nChainDeshieldingPayments;
-    int64_t nFullyShieldedPaymentsDiff = pindex->nChainFullyShieldedPayments - pindexPast->nChainFullyShieldedPayments;
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("time", (int64_t)pindex->nTime);
-
     ret.pushKV("txcount", (int64_t)pindex->nChainTx);
+
     if (fZindex) {
+        ret.pushKV("notarizations", (int64_t)pindex->nChainNotarizations);
         ret.pushKV("shielded_txcount", (int64_t)pindex->nChainShieldedTx);
         ret.pushKV("fully_shielded_txcount", (int64_t)pindex->nChainFullyShieldedTx);
         ret.pushKV("deshielding_txcount", (int64_t)pindex->nChainDeshieldingTx);
@@ -2024,13 +2016,26 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
     ret.pushKV("window_block_count", blockcount);
 
     if (blockcount > 0) {
+        int64_t nPaymentsDiff              = pindex->nChainPayments - pindexPast->nChainPayments;
+        int64_t nShieldedTxDiff            = pindex->nChainShieldedTx - pindexPast->nChainShieldedTx;
+        int64_t nShieldingTxDiff           = pindex->nChainShieldingTx - pindexPast->nChainShieldingTx;
+        int64_t nDeshieldingTxDiff         = pindex->nChainDeshieldingTx - pindexPast->nChainDeshieldingTx;
+        int64_t nFullyShieldedTxDiff       = pindex->nChainFullyShieldedTx - pindexPast->nChainFullyShieldedTx;
+        int64_t nShieldedPaymentsDiff      = pindex->nChainShieldedPayments - pindexPast->nChainShieldedPayments;
+        int64_t nShieldingPaymentsDiff     = pindex->nChainShieldingPayments - pindexPast->nChainShieldingPayments;
+        int64_t nDeshieldingPaymentsDiff   = pindex->nChainDeshieldingPayments - pindexPast->nChainDeshieldingPayments;
+        int64_t nFullyShieldedPaymentsDiff = pindex->nChainFullyShieldedPayments - pindexPast->nChainFullyShieldedPayments;
+        unsigned int nNotarizationsDiff    = pindex->nChainNotarizations - pindexPast->nChainNotarizations;
+
         ret.pushKV("window_interval", nTimeDiff);
         ret.pushKV("window_txcount", nTxDiff);
         ret.pushKV("window_payments", nPaymentsDiff);
+        ret.pushKV("window_notarizations", (int) nNotarizationsDiff);
 
         if (nTimeDiff > 0) {
             ret.pushKV("txrate",                     ((double)nTxDiff)                    / nTimeDiff);
             if (fZindex) {
+                ret.pushKV("notarization_txrate",        ((double)nNotarizationsDiff)         / nTimeDiff);
                 ret.pushKV("shielded_txrate",            ((double)nShieldedTxDiff)            / nTimeDiff);
                 ret.pushKV("fully_shielded_txrate",      ((double)nFullyShieldedTxDiff)       / nTimeDiff);
                 ret.pushKV("paymentrate",                ((double)nPaymentsDiff)              / nTimeDiff);

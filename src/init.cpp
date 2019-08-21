@@ -1283,14 +1283,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError(strprintf(_("Cannot obtain a lock on data directory %s. Komodo is probably already running.") + " %s.", strDataDir, e.what()));
     }
 
-    fprintf(stderr,"About to create pidfile\n");
 #ifndef _WIN32
     CreatePidFile(GetPidFile(), getpid());
 #endif
-    fprintf(stderr,"created pidfile\n");
     if (GetBoolArg("-shrinkdebugfile", !fDebug))
         ShrinkDebugFile();
-    fprintf(stderr,"past shrinkdebugfile\n");
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     LogPrintf("Komodo version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
 
@@ -1669,8 +1666,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     break;
                 }
 
-                // Check for changed -zindex state
-                if (fZindex != GetBoolArg("-zindex", false)) {
+                fprintf(stderr, "zindex=%s in block index??\n", fZindex ? "enabled" : "disabled");
+                // Turning on -zindex requires a reindex, turning it off doesn't
+                if (fZindex && (fZindex != GetBoolArg("-zindex", false))) {
                     strLoadError = _("You need to rebuild the database using -reindex to change -zindex");
                     break;
                 }

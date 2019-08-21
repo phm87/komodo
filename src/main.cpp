@@ -6680,7 +6680,7 @@ bool InitBlockIndex() {
         pblocktree->WriteFlag("addressindex", fAddressIndex);
 
         // Use the provided setting for -zindex in the new database
-        fAddressIndex = GetBoolArg("-zindex", DEFAULT_SHIELDEDINDEX);
+        fZindex = GetBoolArg("-zindex", DEFAULT_SHIELDEDINDEX);
         pblocktree->WriteFlag("zindex", fZindex);
 
         // Use the provided setting for -timestampindex in the new database

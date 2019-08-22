@@ -7978,7 +7978,6 @@ UniValue pubkey2addr_rpc(const UniValue& params, bool fHelp)
     if (fHelp) 
         throw runtime_error("pubkey2addr pubkey\n");
 
-    pubkey2addr
     char Raddress[64];
     uint8_t pubkey33[33];
     if (strlen(params[0].get_str().c_str()) == 66) 

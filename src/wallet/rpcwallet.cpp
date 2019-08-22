@@ -7973,8 +7973,23 @@ UniValue heirlist(const UniValue& params, bool fHelp)
 	return (HeirList());
 }
 
+UniValue pubkey2addr_rpc(const UniValue& params, bool fHelp)
+{
+    if (fHelp) 
+        throw runtime_error("pubkey2addr pubkey\n");
 
-
+    pubkey2addr
+    char Raddress[64];
+    uint8_t pubkey33[33];
+    if (strlen(params[0].get_str().c_str()) == 66) 
+        {
+            decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
+            pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
+    }
+    else
+        throw runtime_error("pubkey2addr pubkey pubkey length not ok\n");
+    return Raddress;
+}
 
 extern UniValue dumpprivkey(const UniValue& params, bool fHelp); // in rpcdump.cpp
 extern UniValue convertpassphrase(const UniValue& params, bool fHelp);
@@ -8017,6 +8032,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "importprivkey",            &importprivkey,            true  },
     { "wallet",             "importwallet",             &importwallet,             true  },
     { "wallet",             "importaddress",            &importaddress,            true  },
+    { "wallet",             "pubkey2addr",              &pubkey2addr_rpc,          true  },
     { "wallet",             "keypoolrefill",            &keypoolrefill,            true  },
     { "wallet",             "listaccounts",             &listaccounts,             false },
     { "wallet",             "listaddressgroupings",     &listaddressgroupings,     false },

@@ -1666,9 +1666,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     break;
                 }
 
-                fprintf(stderr, "zindex=%s in block index??\n", fZindex ? "enabled" : "disabled");
-                // Turning on -zindex requires a reindex, turning it off doesn't
-                if (fZindex && (fZindex != GetBoolArg("-zindex", false))) {
+                fprintf(stderr, "zindex=%s in block index\n", fZindex ? "enabled" : "disabled");
+                if (fZindex != GetBoolArg("-zindex", false)) {
                     strLoadError = _("You need to rebuild the database using -reindex to change -zindex");
                     break;
                 }

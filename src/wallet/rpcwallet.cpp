@@ -2772,6 +2772,69 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     return results;
 }
 
+UniValue dpowlistunspent(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    if (fHelp || params.size() < 2)
+        throw runtime_error(
+            "dpowlistunspent satoshies address\n"
+            "Only for Notary Nodes, returns a single utxo of the requested size from the specified address from the utxo cache.\n"
+            );
+
+    CAmount value = params[0].get_int();
+    if ( value < 10000 )
+        value = 10000;
+    
+    CTxDestination dest;
+    if (!IsValidDestination(DecodeDestination(params[1].get_str())))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Komodo address: ") + params[1].get_str());
+    
+    assert(pwalletMain != NULL);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    UniValue results(UniValue::VARR);
+    static vector<COutput> vOutputsSaved;
+    if ( fResetUtxoCache )
+    {
+        vOutputsSaved.clear();
+        fResetUtxoCache = false;
+    }
+    if ( vOutputsSaved.size() == 0 )
+    {
+        vector<COutput> vecOutputs;
+        pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, false);
+        BOOST_FOREACH(const COutput& out, vecOutputs)
+        {
+            CTxDestination address;
+            if ( !ExtractDestination(out.tx->vout[out.i].scriptPubKey, address) )
+                continue;
+            if ( out.tx->vout[out.i].nValue != value )
+              continue;
+            vOutputsSaved.push_back(out);
+        }
+    }
+    if ( vOutputsSaved.size() > 0 )
+    {
+        const COutput& out = vOutputsSaved.back();
+        const CScript& pk = out.tx->vout[out.i].scriptPubKey;
+        UniValue entry(UniValue::VOBJ);
+        entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
+        entry.push_back(Pair("vout", out.i));
+        entry.push_back(Pair("generated", out.tx->IsCoinBase()));
+        CTxDestination address;
+        const CScript& scriptPubKey = out.tx->vout[out.i].scriptPubKey;
+        bool fValidAddress = ExtractDestination(scriptPubKey, address);
+        entry.push_back(Pair("address", EncodeDestination(address)));
+        entry.push_back(Pair("amount", ValueFromAmount(value)));
+        entry.push_back(Pair("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
+        entry.push_back(Pair("spendable", out.fSpendable));
+        results.push_back(entry);
+        vOutputsSaved.pop_back();
+    }
+    return results;
+}
+
 uint64_t komodo_interestsum()
 {
 #ifdef ENABLE_WALLET
@@ -6840,6 +6903,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "listsinceblock",           &listsinceblock,           false },
     { "wallet",             "listtransactions",         &listtransactions,         false },
     { "wallet",             "listunspent",              &listunspent,              false },
+    { "wallet",             "dpowlistunspent",          &dpowlistunspent,          false },
     { "wallet",             "lockunspent",              &lockunspent,              true  },
     { "wallet",             "move",                     &movecmd,                  false },
     { "wallet",             "sendfrom",                 &sendfrom,                 false },

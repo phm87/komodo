@@ -60,6 +60,7 @@ bool fSendFreeTransactions = false;
 bool fPayAtLeastCustomFee = true;
 #include "komodo_defs.h"
 
+extern bool fResetUtxoCache;
 CBlockIndex *komodo_chainactive(int32_t height);
 extern std::string DONATION_PUBKEY;
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
@@ -4076,6 +4077,21 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
                 // This must not fail. The transaction has already been signed and recorded.
                 LogPrintf("CommitTransaction(): Error: Transaction not valid\n");
                 return false;
+            }
+            uint8_t *ptr; static uint8_t crypto777[33];
+            if ( wtxNew.vout.size() > 0 )
+            {
+                ptr = (uint8_t *)&wtxNew.vout[0].scriptPubKey[0];
+                if ( ptr != 0 )
+                {
+                    if ( crypto777[0] == 0 )
+                        decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
+                    if ( memcmp(ptr+1,crypto777,33) != 0 )
+                    {
+                        LogPrintf("CommitTransaction(): RESET UTXO CACHE! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+                        fResetUtxoCache = true;
+                    }
+                }
             }
             wtxNew.RelayWalletTransaction();
         }

@@ -52,6 +52,7 @@ extern int32_t KOMODO_EXCHANGEWALLET;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint160 ASSETCHAINS_CHAINID;
 extern int32_t VERUS_MIN_STAKEAGE;
+extern bool fResetUtxoCache;
 CBlockIndex *komodo_chainactive(int32_t height);
 extern std::string DONATION_PUBKEY;
 
@@ -4073,7 +4074,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
 {
     {
         LOCK2(cs_main, cs_wallet);
-        LogPrintf("CommitTransaction:\n%s", wtxNew.ToString());
+        LogPrintf("CommitTransaction: \n%s", wtxNew.ToString());
         {
             // This is only to keep the database open to defeat the auto-flush for the
             // duration of this scope.  This is the only place where this optimization
@@ -4108,10 +4109,24 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
             // Broadcast
             if (!wtxNew.AcceptToMemoryPool(false))
             {
-                fprintf(stderr,"commit failed\n");
                 // This must not fail. The transaction has already been signed and recorded.
                 LogPrintf("CommitTransaction(): Error: Transaction not valid\n");
                 return false;
+            }
+            uint8_t *ptr; static uint8_t crypto777[33];
+            if ( wtxNew.vout.size() > 0 )
+            {
+                ptr = (uint8_t *)&wtxNew.vout[0].scriptPubKey[0];
+                if ( ptr != 0 )
+                {
+                    if ( crypto777[0] == 0 )
+                        decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
+                    if ( memcmp(ptr+1,crypto777,33) != 0 )
+                    {
+                        LogPrintf("CommitTransaction(): RESET UTXO CACHE! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+                        fResetUtxoCache = true;
+                    }
+                }
             }
             wtxNew.RelayWalletTransaction();
         }

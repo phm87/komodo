@@ -199,6 +199,34 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
     return EncodeDestination(keyID);
 }
 
+UniValue rescanfromheight(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() != 1 )
+        throw runtime_error(
+            "rescanfromheight height\n"
+            "\nRescans keys in your wallet from a height.\n"
+            "\nArguments:\n"
+            "1. height               (integer, required, default=0) start at block height?\n"
+            "\nNote: This call can take minutes to complete for many blocks.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("rescanfromheight", "1280") +
+            "\nAs a JSON-RPC call\n"
+            + HelpExampleRpc("rescanfromheight", "1280")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    int32_t height = params[0].get_int();
+    if ( height < 0 || height > chainActive.Height() )
+        throw JSONRPCError(RPC_WALLET_ERROR, "Rescan height is out of range.");
+
+    pwalletMain->ScanForWalletTransactions(chainActive[height], true);
+
+    return(0);
+}
 
 CTxDestination GetAccountAddress(std::string strAccount, bool bForceNew=false)
 {

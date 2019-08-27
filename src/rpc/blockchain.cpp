@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -2086,16 +2087,14 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
             // Organic tx stats = Raw - Coinbase - DPoW
             if (nTxDiff > 0) {
                 UniValue organic(UniValue::VOBJ);
-                organic.pushKV("shielded_txrate",            ((double)nShieldedTxDiff            - blockcount - nNotarizationsDiff )  / nTimeDiff);
-                organic.pushKV("fully_shielded_txrate",      ((double)nFullyShieldedTxDiff       - blockcount - nNotarizationsDiff )  / nTimeDiff);
-                organic.pushKV("shielding_txrate",           ((double)nShieldingTxDiff           - blockcount - nNotarizationsDiff )  / nTimeDiff);
-                organic.pushKV("deshielding_txrate",         ((double)nDeshieldingTxDiff         - blockcount - nNotarizationsDiff )  / nTimeDiff);
 
-                ret.pushKV("shielded_tx_percent",        ((double)ORG(nShieldedTxDiff))      / nTxDiff);
-                ret.pushKV("fully_shielded_tx_percent",  ((double)ORG(nFullyShieldedTxDiff)) / nTxDiff);
-                ret.pushKV("shielding_tx_percent",       ((double)ORG(nShieldingTxDiff))     / nTxDiff);
-                ret.pushKV("deshielding_tx_percent",     ((double)ORG(nDeshieldingTxDiff))   / nTxDiff);
-                ret.pushKV("organic", organic);
+                organic.pushKV("shielded_tx_percent",        ((double)nShieldedTxDiff)      / ORG(nTxDiff));
+                organic.pushKV("fully_shielded_tx_percent",  ((double)nFullyShieldedTxDiff) / ORG(nTxDiff));
+                organic.pushKV("shielding_tx_percent",       ((double)nShieldingTxDiff)     / ORG(nTxDiff));
+                organic.pushKV("deshielding_tx_percent",     ((double)nDeshieldingTxDiff)   / ORG(nTxDiff));
+
+                organic.pushKV("txcount", (int) ORG(nTxDiff));
+                organic.pushKV("organic", organic);
             }
         }
     }

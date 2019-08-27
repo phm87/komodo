@@ -2037,6 +2037,8 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
             if (fZindex) {
                 ret.pushKV("notarization_txrate",        ((double)nNotarizationsDiff)         / nTimeDiff);
                 ret.pushKV("shielded_txrate",            ((double)nShieldedTxDiff)            / nTimeDiff);
+                ret.pushKV("shielding_txrate",           ((double)nShieldingTxDiff)           / nTimeDiff);
+                ret.pushKV("deshielding_txrate",         ((double)nDeshieldingTxDiff)         / nTimeDiff);
                 ret.pushKV("fully_shielded_txrate",      ((double)nFullyShieldedTxDiff)       / nTimeDiff);
                 ret.pushKV("paymentrate",                ((double)nPaymentsDiff)              / nTimeDiff);
                 ret.pushKV("shielded_paymentrate",       ((double)nShieldedPaymentsDiff)      / nTimeDiff);
@@ -2078,6 +2080,17 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
             }
             if(nShieldedTxDiff+nShieldedPaymentsDiff > 0)
                 ret.pushKV("shielded_only", shielded);
+
+            // Organic tx stats = Raw - Coinbase - DPoW
+            UniValue organic(UniValue::VOBJ);
+            organic.pushKV("shielded_txrate",            ((double)nShieldedTxDiff            - blockcount - nNotarizationsDiff )  / nTimeDiff);
+            organic.pushKV("fully_shielded_txrate",      ((double)nFullyShieldedTxDiff       - blockcount - nNotarizationsDiff )  / nTimeDiff);
+            organic.pushKV("shielding_txrate",           ((double)nShieldingTxDiff           - blockcount - nNotarizationsDiff )  / nTimeDiff);
+            organic.pushKV("deshielding_txrate",         ((double)nDeshieldingTxDiff         - blockcount - nNotarizationsDiff )  / nTimeDiff);
+
+            if (nTxDiff > 0) {
+                ret.pushKV("organic", organic);
+            }
         }
     }
 

@@ -1937,6 +1937,8 @@ inline CBlockIndex* LookupBlockIndex(const uint256& hash)
     return it == mapBlockIndex.end() ? nullptr : it->second;
 }
 
+#define ORG(X) (X - blockcount - nNotarizationsDiff)
+
 UniValue getchaintxstats(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)
@@ -2082,13 +2084,17 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
                 ret.pushKV("shielded_only", shielded);
 
             // Organic tx stats = Raw - Coinbase - DPoW
-            UniValue organic(UniValue::VOBJ);
-            organic.pushKV("shielded_txrate",            ((double)nShieldedTxDiff            - blockcount - nNotarizationsDiff )  / nTimeDiff);
-            organic.pushKV("fully_shielded_txrate",      ((double)nFullyShieldedTxDiff       - blockcount - nNotarizationsDiff )  / nTimeDiff);
-            organic.pushKV("shielding_txrate",           ((double)nShieldingTxDiff           - blockcount - nNotarizationsDiff )  / nTimeDiff);
-            organic.pushKV("deshielding_txrate",         ((double)nDeshieldingTxDiff         - blockcount - nNotarizationsDiff )  / nTimeDiff);
-
             if (nTxDiff > 0) {
+                UniValue organic(UniValue::VOBJ);
+                organic.pushKV("shielded_txrate",            ((double)nShieldedTxDiff            - blockcount - nNotarizationsDiff )  / nTimeDiff);
+                organic.pushKV("fully_shielded_txrate",      ((double)nFullyShieldedTxDiff       - blockcount - nNotarizationsDiff )  / nTimeDiff);
+                organic.pushKV("shielding_txrate",           ((double)nShieldingTxDiff           - blockcount - nNotarizationsDiff )  / nTimeDiff);
+                organic.pushKV("deshielding_txrate",         ((double)nDeshieldingTxDiff         - blockcount - nNotarizationsDiff )  / nTimeDiff);
+
+                ret.pushKV("shielded_tx_percent",        ((double)ORG(nShieldedTxDiff))      / nTxDiff);
+                ret.pushKV("fully_shielded_tx_percent",  ((double)ORG(nFullyShieldedTxDiff)) / nTxDiff);
+                ret.pushKV("shielding_tx_percent",       ((double)ORG(nShieldingTxDiff))     / nTxDiff);
+                ret.pushKV("deshielding_tx_percent",     ((double)ORG(nDeshieldingTxDiff))   / nTxDiff);
                 ret.pushKV("organic", organic);
             }
         }

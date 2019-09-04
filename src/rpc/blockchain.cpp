@@ -2003,15 +2003,15 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
     ret.pushKV("txcount", (int64_t)pindex->nChainTx);
 
     if (fZindex) {
-        ret.pushKV("notarizations", (int64_t)pindex->nChainNotarizations);
-        ret.pushKV("shielded_txcount", (int64_t)pindex->nChainShieldedTx);
+        ret.pushKV("notarizations",          (int64_t)pindex->nChainNotarizations);
+        ret.pushKV("shielded_txcount",       (int64_t)pindex->nChainShieldedTx);
         ret.pushKV("fully_shielded_txcount", (int64_t)pindex->nChainFullyShieldedTx);
-        ret.pushKV("deshielding_txcount", (int64_t)pindex->nChainDeshieldingTx);
-        ret.pushKV("shielding_txcount", (int64_t)pindex->nChainShieldingTx);
-        ret.pushKV("shielded_payments", (int64_t)pindex->nChainShieldedPayments);
-        ret.pushKV("fully_shielded_payments", (int64_t)pindex->nChainFullyShieldedPayments);
-        ret.pushKV("deshielding_payments", (int64_t)pindex->nChainDeshieldingPayments);
-        ret.pushKV("shielding_payments", (int64_t)pindex->nChainShieldingPayments);
+        ret.pushKV("deshielding_txcount",    (int64_t)pindex->nChainDeshieldingTx);
+        ret.pushKV("shielding_txcount",      (int64_t)pindex->nChainShieldingTx);
+        ret.pushKV("shielded_payments",      (int64_t)pindex->nChainShieldedPayments);
+        ret.pushKV("fully_shielded_payments",(int64_t)pindex->nChainFullyShieldedPayments);
+        ret.pushKV("deshielding_payments",   (int64_t)pindex->nChainDeshieldingPayments);
+        ret.pushKV("shielding_payments",     (int64_t)pindex->nChainShieldingPayments);
     }
 
     ret.pushKV("window_final_block_hash", pindex->GetBlockHash().GetHex());
@@ -2088,12 +2088,18 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
             if (nTxDiff > 0) {
                 UniValue organic(UniValue::VOBJ);
 
-                organic.pushKV("shielded_tx_percent",        ((double)nShieldedTxDiff)      / ORG(nTxDiff));
-                organic.pushKV("fully_shielded_tx_percent",  ((double)nFullyShieldedTxDiff) / ORG(nTxDiff));
-                organic.pushKV("shielding_tx_percent",       ((double)nShieldingTxDiff)     / ORG(nTxDiff));
-                organic.pushKV("deshielding_tx_percent",     ((double)nDeshieldingTxDiff)   / ORG(nTxDiff));
-
+                organic.pushKV("shielded_tx_percent",             ((double)nShieldedTxDiff)            / ORG(nTxDiff));
+                organic.pushKV("fully_shielded_tx_percent",       ((double)nFullyShieldedTxDiff)       / ORG(nTxDiff));
+                organic.pushKV("shielding_tx_percent",            ((double)nShieldingTxDiff)           / ORG(nTxDiff));
+                organic.pushKV("deshielding_tx_percent",          ((double)nDeshieldingTxDiff)         / ORG(nTxDiff));
+                organic.pushKV("shielded_payments_percent",       ((double)nShieldedPaymentsDiff)      / ORG(nPaymentsDiff));
+                organic.pushKV("fully_shielded_payments_percent", ((double)nFullyShieldedPaymentsDiff) / ORG(nPaymentsDiff));
+                organic.pushKV("shielding_payments_percent",      ((double)nShieldingPaymentsDiff)     / ORG(nPaymentsDiff));
+                organic.pushKV("deshielding_payments_percent",    ((double)nDeshieldingPaymentsDiff)   / ORG(nPaymentsDiff));
+                organic.pushKV("paymentrate",                     ((double)ORG(nPaymentsDiff))         / nTimeDiff);
+                organic.pushKV("txrate",                          ((double)ORG(nTxDiff))               / nTimeDiff);
                 organic.pushKV("txcount", (int) ORG(nTxDiff));
+                organic.pushKV("payments", (int) ORG(nPaymentsDiff));
                 organic.pushKV("organic", organic);
             }
         }

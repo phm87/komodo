@@ -2100,7 +2100,7 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
                 organic.pushKV("txrate",                          ((double)ORG(nTxDiff))               / nTimeDiff);
                 organic.pushKV("txcount", (int) ORG(nTxDiff));
                 organic.pushKV("payments", (int) ORG(nPaymentsDiff));
-                organic.pushKV("organic", organic);
+                ret.pushKV("organic", organic);
             }
         }
     }

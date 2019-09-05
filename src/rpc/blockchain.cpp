@@ -2082,7 +2082,7 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp)
                 shielded.pushKV("deshielding_payments_percent",    ((double)nDeshieldingPaymentsDiff)   / nShieldedPaymentsDiff );
             }
             if(nShieldedTxDiff+nShieldedPaymentsDiff > 0)
-                ret.pushKV("shielded_only", shielded);
+                ret.pushKV("shielded", shielded);
 
             // Organic tx stats = Raw - Coinbase - DPoW
             if (nTxDiff > 0) {

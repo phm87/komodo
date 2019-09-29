@@ -2825,13 +2825,15 @@ UniValue dpowlistunspent(const UniValue& params, bool fHelp)
 
     CAmount value = 10000;
 
-    int nMinDepth = 1;
     if (params.size() > 0)
-        nMinDepth = params[0].get_int();
+        value = params[0].get_int();
 
     int nMaxDepth = 9999999;
-    if (params.size() > 1)
-        nMaxDepth = params[1].get_int();
+
+	CTxDestination dest;
+    if (!IsValidDestination(dest = DecodeDestination(params[1].get_str())))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Komodo address: ") + params[1].get_str());
+	
 /*
     std::set<CTxDestination> destinations;
     if (params.size() > 2) {

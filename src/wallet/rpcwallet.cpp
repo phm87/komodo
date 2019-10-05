@@ -4138,15 +4138,11 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "  \"txid\" : \"transactionid\",   (string) The transaction id\n"
             "  \"spends\" : [\n"
             "    {\n"
-            "      \"type\" : \"sprout|sapling\",      (string) The type of address\n"
-            "      \"js\" : n,                       (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
-            "      \"jsSpend\" : n,                  (numeric, sprout) the index of the spend within the JSDescription\n"
-            "      \"spend\" : n,                    (numeric, sapling) the index of the spend within vShieldedSpend\n"
+            "      \"type\" : \"sapling\",      (string) The type of address\n"
+            "      \"spend\" : n,                    (numeric) the index of the spend within vShieldedSpend\n"
             "      \"txidPrev\" : \"transactionid\",   (string) The id for the transaction this note was created in\n"
-            "      \"jsPrev\" : n,                   (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
-            "      \"jsOutputPrev\" : n,             (numeric, sprout) the index of the output within the JSDescription\n"
-            "      \"outputPrev\" : n,               (numeric, sapling) the index of the output within the vShieldedOutput\n"
-            "      \"address\" : \"zcashaddress\",     (string) The Zcash address involved in the transaction\n"
+            "      \"outputPrev\" : n,               (numeric) the index of the output within the vShieldedOutput\n"
+            "      \"address\" : \"zcashaddress\",     (string) The Hush shielded address involved in the transaction\n"
             "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
             "      \"valueZat\" : xxxx               (numeric) The amount in zatoshis\n"
             "    }\n"
@@ -4155,11 +4151,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "  \"outputs\" : [\n"
             "    {\n"
             "      \"type\" : \"sprout|sapling\",      (string) The type of address\n"
-            "      \"js\" : n,                       (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
-            "      \"jsOutput\" : n,                 (numeric, sprout) the index of the output within the JSDescription\n"
-            "      \"output\" : n,                   (numeric, sapling) the index of the output within the vShieldedOutput\n"
+            "      \"output\" : n,                   (numeric) the index of the output within the vShieldedOutput\n"
             "      \"address\" : \"zcashaddress\",     (string) The Zcash address involved in the transaction\n"
-            "      \"recovered\" : true|false        (boolean, sapling) True if the output is not for an address in the wallet\n"
+            "      \"recovered\" : true|false        (boolean) True if the output is not for an address in the wallet\n"
             "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
             "      \"valueZat\" : xxxx               (numeric) The amount in zatoshis\n"
             "      \"memo\" : \"hexmemo\",             (string) Hexademical string representation of the memo field\n"
@@ -4181,6 +4175,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     hash.SetHex(params[0].get_str());
 
     UniValue entry(UniValue::VOBJ);
+	//TODO: if no txid is given, show details for most recent zutxo reported by z_listunspent
     if (!pwalletMain->mapWallet.count(hash))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id");
     const CWalletTx& wtx = pwalletMain->mapWallet[hash];
@@ -4189,64 +4184,6 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
     UniValue spends(UniValue::VARR);
     UniValue outputs(UniValue::VARR);
-
-    // Sprout spends
-    for (size_t i = 0; i < wtx.vjoinsplit.size(); ++i) {
-        for (size_t j = 0; j < wtx.vjoinsplit[i].nullifiers.size(); ++j) {
-            auto nullifier = wtx.vjoinsplit[i].nullifiers[j];
-
-            // Fetch the note that is being spent, if ours
-            auto res = pwalletMain->mapSproutNullifiersToNotes.find(nullifier);
-            if (res == pwalletMain->mapSproutNullifiersToNotes.end()) {
-                continue;
-            }
-            auto jsop = res->second;
-            auto wtxPrev = pwalletMain->mapWallet.at(jsop.hash);
-
-            auto decrypted = wtxPrev.DecryptSproutNote(jsop);
-            auto notePt = decrypted.first;
-            auto pa = decrypted.second;
-
-            UniValue entry(UniValue::VOBJ);
-            entry.push_back(Pair("type", ADDR_TYPE_SPROUT));
-            entry.push_back(Pair("js", (int)i));
-            entry.push_back(Pair("jsSpend", (int)j));
-            entry.push_back(Pair("txidPrev", jsop.hash.GetHex()));
-            entry.push_back(Pair("jsPrev", (int)jsop.js));
-            entry.push_back(Pair("jsOutputPrev", (int)jsop.n));
-            entry.push_back(Pair("address", EncodePaymentAddress(pa)));
-            entry.push_back(Pair("value", ValueFromAmount(notePt.value())));
-            entry.push_back(Pair("valueZat", notePt.value()));
-            outputs.push_back(entry);
-        }
-    }
-
-    // Sprout outputs
-    for (auto & pair : wtx.mapSproutNoteData) {
-        JSOutPoint jsop = pair.first;
-
-        auto decrypted = wtx.DecryptSproutNote(jsop);
-        auto notePt = decrypted.first;
-        auto pa = decrypted.second;
-        auto memo = notePt.memo();
-
-        UniValue entry(UniValue::VOBJ);
-        entry.push_back(Pair("type", ADDR_TYPE_SPROUT));
-        entry.push_back(Pair("js", (int)jsop.js));
-        entry.push_back(Pair("jsOutput", (int)jsop.n));
-        entry.push_back(Pair("address", EncodePaymentAddress(pa)));
-        entry.push_back(Pair("value", ValueFromAmount(notePt.value())));
-        entry.push_back(Pair("valueZat", notePt.value()));
-        entry.push_back(Pair("memo", HexStr(memo)));
-        if (memo[0] <= 0xf4) {
-            auto end = std::find_if(memo.rbegin(), memo.rend(), [](unsigned char v) { return v != 0; });
-            std::string memoStr(memo.begin(), end.base());
-            if (utf8::is_valid(memoStr)) {
-                entry.push_back(Pair("memoStr", memoStr));
-            }
-        }
-        outputs.push_back(entry);
-    }
 
     // Sapling spends
     std::set<uint256> ovks;

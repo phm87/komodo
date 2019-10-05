@@ -3033,7 +3033,6 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "  {\n"
             "    \"txid\" : \"txid\",          (string) the transaction id \n"
             "    \"jsindex\" : n             (numeric) the joinsplit index\n"
-            "    \"jsoutindex\" (sprout) : n          (numeric) the output index of the joinsplit\n"
             "    \"outindex\" (sapling) : n          (numeric) the output index\n"
             "    \"confirmations\" : n       (numeric) the number of confirmations\n"
             "    \"spendable\" : true|false  (boolean) true if note can be spent by wallet, false if note has zero confirmations, false if address is watchonly\n"
@@ -3095,7 +3094,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             string address = o.get_str();
             auto zaddr = DecodePaymentAddress(address);
             if (!IsValidPaymentAddress(zaddr)) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, address is not a valid zaddr: ") + address);
+                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, address is not a valid Hush zaddr: ") + address);
             }
             auto hasSpendingKey = boost::apply_visitor(HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr);
             if (!fIncludeWatchonly && !hasSpendingKey) {
@@ -3111,14 +3110,9 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     }
     else {
         // User did not provide zaddrs, so use default i.e. all addresses
-        std::set<libzcash::SproutPaymentAddress> sproutzaddrs = {};
-        pwalletMain->GetSproutPaymentAddresses(sproutzaddrs);
-
-        // Sapling support
         std::set<libzcash::SaplingPaymentAddress> saplingzaddrs = {};
         pwalletMain->GetSaplingPaymentAddresses(saplingzaddrs);
 
-        zaddrs.insert(sproutzaddrs.begin(), sproutzaddrs.end());
         zaddrs.insert(saplingzaddrs.begin(), saplingzaddrs.end());
     }
 
@@ -4148,15 +4142,16 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     hash.SetHex(params[0].get_str());
 
     UniValue entry(UniValue::VOBJ);
-	//TODO: if no txid is given, show details for most recent zutxo reported by z_listunspent
+
     if (!pwalletMain->mapWallet.count(hash))
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet Hush transaction id!");
     const CWalletTx& wtx = pwalletMain->mapWallet[hash];
 
     entry.push_back(Pair("txid", hash.GetHex()));
 
     UniValue spends(UniValue::VARR);
     UniValue outputs(UniValue::VARR);
+	char str[64];
 
     // Sapling spends
     std::set<uint256> ovks;
@@ -4166,14 +4161,14 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         // Fetch the note that is being spent
         auto res = pwalletMain->mapSaplingNullifiersToNotes.find(spend.nullifier);
         if (res == pwalletMain->mapSaplingNullifiersToNotes.end()) {
+			fprintf(stderr,"Could not find spending note %s", uint256_str(str, spend.nullifier));
             continue;
         }
-        auto op = res->second;
-        auto wtxPrev = pwalletMain->mapWallet.at(op.hash);
-
+        auto op        = res->second;
+        auto wtxPrev   = pwalletMain->mapWallet.at(op.hash);
         auto decrypted = wtxPrev.DecryptSaplingNote(op).get();
-        auto notePt = decrypted.first;
-        auto pa = decrypted.second;
+        auto notePt    = decrypted.first;
+        auto pa        = decrypted.second;
 
         // Store the OutgoingViewingKey for recovering outputs
         libzcash::SaplingFullViewingKey fvk;
@@ -4183,6 +4178,10 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("type", ADDR_TYPE_SAPLING));
         entry.push_back(Pair("spend", (int)i));
+        entry.push_back(Pair("nullifier", uint256_str(str,spend.nullifier)));
+        entry.push_back(Pair("anchor", uint256_str(str,spend.anchor)));
+        entry.push_back(Pair("commitment", uint256_str(str,spend.cv)));
+        entry.push_back(Pair("rk", uint256_str(str,spend.rk)));
         entry.push_back(Pair("txidPrev", op.hash.GetHex()));
         entry.push_back(Pair("outputPrev", (int)op.n));
         entry.push_back(Pair("address", EncodePaymentAddress(pa)));

@@ -4108,6 +4108,10 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "      \"type\" : \"sapling\",      (string) The type of address\n"
             "      \"spend\" : n,                    (numeric) the index of the spend within vShieldedSpend\n"
             "      \"txidPrev\" : \"transactionid\",   (string) The id for the transaction this note was created in\n"
+            "      \"nullifier\" : \"nullifier\",   (string) The nullifier\n"
+            "      \"anchor\" : \"anchor\",   (string) The anchor\n"
+            "      \"commitment\" : \"commitment\",   (string) The commitment\n"
+            "      \"rk\" : \"rk\",   (string) The rk\n"
             "      \"outputPrev\" : n,               (numeric) the index of the output within the vShieldedOutput\n"
             "      \"address\" : \"zcashaddress\",     (string) The Hush shielded address involved in the transaction\n"
             "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
@@ -4182,6 +4186,10 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         entry.push_back(Pair("anchor", uint256_str(str,spend.anchor)));
         entry.push_back(Pair("commitment", uint256_str(str,spend.cv)));
         entry.push_back(Pair("rk", uint256_str(str,spend.rk)));
+		//TODO: how to get list of wtinesses and height?
+        //entry.push_back(Pair("witnessHeight", op.witnessHeight));
+        entry.push_back(Pair("spendAuthSig", HexStr(spend.spendAuthSig.begin(), spend.spendAuthSig.end())));
+        entry.push_back(Pair("zkproof", HexStr(spend.zkproof.begin(), spend.zkproof.end())));
         entry.push_back(Pair("txidPrev", op.hash.GetHex()));
         entry.push_back(Pair("outputPrev", (int)op.n));
         entry.push_back(Pair("address", EncodePaymentAddress(pa)));
@@ -4212,6 +4220,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
                 isRecovered = true;
             } else {
                 // Unreadable
+			    fprintf(stderr,"Could not recover Sapling note!");
                 continue;
             }
         }

@@ -20,7 +20,7 @@
 #include "komodo_nk.h"
 
 #define KOMODO_EARLYTXID_HEIGHT 100
-#define ADAPTIVEPOW_CHANGETO_DEFAULTON 1572480000
+//#define ADAPTIVEPOW_CHANGETO_DEFAULTON 1572480000
 #define ASSETCHAINS_MINHEIGHT 128
 #define ASSETCHAINS_MAX_ERAS 7
 #define KOMODO_ELECTION_GAP 2000
@@ -344,5 +344,12 @@ int32_t komodo_notarized_bracket(struct notarized_checkpoint *nps[2],int32_t hei
 arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,uint32_t nTime);
 
 uint256 Parseuint256(const char *hexstr);
+
+#ifndef KOMODO_NSPV_FULLNODE
+#define KOMODO_NSPV_FULLNODE (KOMODO_NSPV <= 0)
+#endif // !KOMODO_NSPV_FULLNODE
+#ifndef KOMODO_NSPV_SUPERLITE
+#define KOMODO_NSPV_SUPERLITE (KOMODO_NSPV > 0)
+#endif // !KOMODO_NSPV_SUPERLITE
 
 #endif

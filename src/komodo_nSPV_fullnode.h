@@ -172,7 +172,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
             {
                 // if gettxout is != null to handle mempool
                 {
-                    if ( n >= skipcount )
+                    if ( n >= skipcount && myIsutxo_spentinmempool(ignoretxid,ignorevin,it->first.txhash,(int32_t)it->first.index) == 0  )
                     {
                         ptr->utxos[ind].txid = it->first.txhash;
                         ptr->utxos[ind].vout = (int32_t)it->first.index;
@@ -208,7 +208,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
 
 int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC,int32_t skipcount,uint32_t filter)
 {
-    int32_t maxlen,txheight,ind=0,n = 0,len = 0;
+    int32_t maxlen,txheight,ind=0,n = 0,len = 0; CTransaction tx; uint256 hashBlock;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     SetCCtxids(txids,coinaddr,isCC);
     ptr->nodeheight = chainActive.LastTip()->GetHeight();
@@ -250,10 +250,62 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
     return(0);
 }
 
-int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
+int32_t NSPV_mempoolfuncs(bits256 *satoshisp,int32_t *vindexp,std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
     int32_t num = 0,vini = 0,vouti = 0; uint8_t evalcode=0,func=0;  std::vector<uint8_t> vopret; char destaddr[64];
     *vindexp = -1;
+    memset(satoshisp,0,sizeof(*satoshisp));
+    if ( funcid == NSPV_CC_TXIDS)
+    {
+        std::vector<std::pair<CAddressIndexKey, CAmount> > tmp_txids; uint256 tmp_txid,hashBlock;
+        int32_t n=0,skipcount=vout>>16; uint8_t eval=(vout>>8)&0xFF, func=vout&0xFF;
+
+        CTransaction tx;
+        SetCCtxids(tmp_txids,coinaddr,isCC);
+        if ( skipcount < 0 ) skipcount = 0;
+        if ( skipcount >= tmp_txids.size() )
+            skipcount = tmp_txids.size()-1;
+        if ( tmp_txids.size()-skipcount > 0 )
+        {
+            for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=tmp_txids.begin(); it!=tmp_txids.end(); it++)
+            {
+                if (txid!=zeroid || func!=0)
+                {
+                    myGetTransaction(it->first.txhash,tx,hashBlock);
+                    std::vector<std::pair<uint8_t, vscript_t>>  oprets; uint256 tokenid,txid;
+                    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode;
+                    std::vector<CPubKey> pubkeys;
+
+                    if (DecodeTokenOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,tokenevalcode,tokenid,pubkeys,oprets)!=0 && GetOpretBlob(oprets, OPRETID_CHANNELSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
+                    {
+                        vopret=vOpretExtra;
+                    }
+                    else GetOpReturnData(tx.vout[tx.vout.size()-1].scriptPubKey, vopret);
+                    script = (uint8_t *)vopret.data();
+                    if ( vopret.size() > 2 && script[0]==eval )
+                    {
+                        switch (eval)
+                        {
+                            case EVAL_CHANNELS:EVAL_PEGS:EVAL_ORACLES:EVAL_GAMES:EVAL_IMPORTGATEWAY:EVAL_ROGUE:
+                                E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> tmp_txid;);
+                                if (e!=eval || (txid!=zeroid && txid!=tmp_txid) || (func!=0 && f!=func)) continue;
+                                break;
+                            case EVAL_TOKENS:EVAL_DICE:EVAL_DILITHIUM:EVAL_FAUCET:EVAL_LOTO:EVAL_PAYMENTS:EVAL_REWARDS:
+                                E_UNMARSHAL(vopret,ss >> e; ss >> f;);
+                                if (e!=eval || (func!=0 && f!=func)) continue;
+                                break;
+                            default:
+                                break;
+                        }
+                    }                        
+                }
+                if ( n >= skipcount ) txids.push_back(it->first.txhash);
+                n++;
+            }
+            return (n-skipcount);
+        }
+        return (0);
+    }
     if ( mempool.size() == 0 )
         return(0);
     if ( funcid == NSPV_MEMPOOL_CCEVALCODE )
@@ -323,6 +375,8 @@ int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coi
                     {
                         txids.push_back(hash);
                         *vindexp = vouti;
+                        if ( num < 4 )
+                            satoshisp->ulongs[num] = txout.nValue;
                         num++;
                     }
                 }
@@ -336,14 +390,14 @@ int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coi
 
 int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,uint8_t isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
-    std::vector<uint256> txids; uint256 tmp,tmpdest; int32_t i,len = 0;
+    std::vector<uint256> txids; bits256 satoshis; uint256 tmp,tmpdest; int32_t i,len = 0;
     ptr->nodeheight = chainActive.LastTip()->GetHeight();
     strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
     ptr->CCflag = isCC;
     ptr->txid = txid;
     ptr->vout = vout;
     ptr->funcid = funcid;
-    if ( NSPV_mempoolfuncs(&ptr->vindex,txids,coinaddr,isCC,funcid,txid,vout) >= 0 )
+    if ( NSPV_mempoolfuncs(&satoshis,&ptr->vindex,txids,coinaddr,isCC,funcid,txid,vout) >= 0 )
     {
         if ( (ptr->numtxids= (int32_t)txids.size()) >= 0 )
         {
@@ -355,6 +409,11 @@ int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,uint8_t is
                     tmp = txids[i];
                     iguana_rwbignum(0,(uint8_t *)&tmp,sizeof(*ptr->txids),(uint8_t *)&ptr->txids[i]);
                 }
+            }
+            if ( funcid == NSPV_MEMPOOL_ADDRESS )
+            {
+                memcpy(&tmp,&satoshis,sizeof(tmp));
+                iguana_rwbignum(0,(uint8_t *)&tmp,sizeof(ptr->txid),(uint8_t *)&ptr->txid);
             }
             len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
             return(len);
@@ -413,46 +472,48 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
 int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32_t height)
 {
     int32_t flag = 0,len = 0; CTransaction _tx; uint256 hashBlock; CBlock block; CBlockIndex *pindex;
-    if ( (ptr->tx= NSPV_getrawtx(_tx,hashBlock,&ptr->txlen,txid)) == 0 )
-        return(-1);
-    ptr->txid = txid;
-    ptr->vout = vout;
-    ptr->hashblock = hashBlock;
-    if ( height == 0 )
-        ptr->height = komodo_blockheight(hashBlock);
-    else
+    ptr->height = -1;
+    if ( (ptr->tx= NSPV_getrawtx(_tx,hashBlock,&ptr->txlen,txid)) != 0 )
     {
-        ptr->height = height;
-        if ( (pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
+        ptr->txid = txid;
+        ptr->vout = vout;
+        ptr->hashblock = hashBlock;
+        if ( height == 0 )
+            ptr->height = komodo_blockheight(hashBlock);
+        else
         {
-            BOOST_FOREACH(const CTransaction&tx, block.vtx)
+            ptr->height = height;
+            if ( (pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
             {
-                if ( tx.GetHash() == txid )
+                BOOST_FOREACH(const CTransaction&tx, block.vtx)
                 {
-                    flag = 1;
-                    break;
+                    if ( tx.GetHash() == txid )
+                    {
+                        flag = 1;
+                        break;
+                    }
                 }
-            }
-            if ( flag != 0 )
-            {
-                set<uint256> setTxids;
-                CDataStream ssMB(SER_NETWORK, PROTOCOL_VERSION);
-                setTxids.insert(txid);
-                CMerkleBlock mb(block, setTxids);
-                ssMB << mb;
-                std::vector<uint8_t> proof(ssMB.begin(), ssMB.end());
-                ptr->txprooflen = (int32_t)proof.size();
-                //fprintf(stderr,"%s txproof.(%s)\n",txid.GetHex().c_str(),HexStr(proof).c_str());
-                if ( ptr->txprooflen > 0 )
+                if ( flag != 0 )
                 {
-                    ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
-                    memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
+                    set<uint256> setTxids;
+                    CDataStream ssMB(SER_NETWORK, PROTOCOL_VERSION);
+                    setTxids.insert(txid);
+                    CMerkleBlock mb(block, setTxids);
+                    ssMB << mb;
+                    std::vector<uint8_t> proof(ssMB.begin(), ssMB.end());
+                    ptr->txprooflen = (int32_t)proof.size();
+                    //fprintf(stderr,"%s txproof.(%s)\n",txid.GetHex().c_str(),HexStr(proof).c_str());
+                    if ( ptr->txprooflen > 0 )
+                    {
+                        ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
+                        memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
+                    }
+                    //fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
                 }
-                //fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
             }
         }
+        ptr->unspentvalue = CCgettxout(txid,vout,1,1);
     }
-    ptr->unspentvalue = CCgettxout(txid,vout,1,1);
     return(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen);
 }
 
@@ -579,7 +640,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                         iguana_rwnum(0,&request[len-8],sizeof(skipcount),&skipcount);
                         iguana_rwnum(0,&request[len-4],sizeof(filter),&filter);
                     }
-                    if ( isCC != 0 )
+                    if ( 0 && isCC != 0 )
                         fprintf(stderr,"utxos %s isCC.%d skipcount.%d filter.%x\n",coinaddr,isCC,skipcount,filter);
                     memset(&U,0,sizeof(U));
                     if ( (slen= NSPV_getaddressutxos(&U,coinaddr,isCC,skipcount,filter)) > 0 )
@@ -619,7 +680,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                         iguana_rwnum(0,&request[len-8],sizeof(skipcount),&skipcount);
                         iguana_rwnum(0,&request[len-4],sizeof(filter),&filter);
                     }
-                    //if ( isCC != 0 )
+                    if ( 0 && isCC != 0 )
                         fprintf(stderr,"txids %s isCC.%d skipcount.%d filter.%d\n",coinaddr,isCC,skipcount,filter);
                     memset(&T,0,sizeof(T));
                     if ( (slen= NSPV_getaddresstxids(&T,coinaddr,isCC,skipcount,filter)) > 0 )

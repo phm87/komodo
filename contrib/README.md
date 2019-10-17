@@ -1,7 +1,13 @@
-*** Warning: This document has not been updated for Zcash and may be inaccurate. ***
+# Hush Contrib
 
-Wallet Tools
----------------------
+This is mostly very old stuff inherited from Bitcoin and Zcash!
+
+Do not expect all scripts to work!
+
+Please fix bugs and report things you find.
+
+
+## Wallet Tools
 
 ### [BitRPC](/contrib/bitrpc) ###
 Allows for sending of all standard Bitcoin commands via RPC rather than as command line args.
@@ -11,8 +17,7 @@ Allows for sending of all standard Bitcoin commands via RPC rather than as comma
 Use the raw transactions API to send coins received on a particular
 address (or addresses).
 
-Repository Tools
----------------------
+## Repository Tools
 
 ### [Developer tools](/contrib/devtools) ###
 Specific tools for developers working on this repository.
@@ -31,8 +36,7 @@ A Linux bash script that will set up traffic control (tc) to limit the outgoing 
 ### [Seeds](/contrib/seeds) ###
 Utility to generate the pnSeed[] array that is compiled into the client.
 
-Build Tools and Keys
----------------------
+## Build Tools and Keys
 
 ### [Debian](/contrib/debian) ###
 Contains files used to package bitcoind/bitcoin-qt
@@ -47,8 +51,7 @@ Various PGP files of core developers.
 ### [MacDeploy](/contrib/macdeploy) ###
 Scripts and notes for Mac builds. 
 
-Test and Verify Tools 
----------------------
+## Test and Verify Tools 
 
 ### [TestGen](/contrib/testgen) ###
 Utilities to generate test vectors for the data-driven Bitcoin tests.

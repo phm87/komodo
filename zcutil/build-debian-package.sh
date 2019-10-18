@@ -21,9 +21,9 @@ if [ ! -d $BUILD_PATH ]; then
 fi
 
 ## PACKAGE_VERSION=$($SRC_PATH/src/zcashd --version | grep version | cut -d' ' -f4 | tr -d v)
-PACKAGE_VERSION=0.3.2
-#PACKAGE_VERSION=$($SRC_PATH/src/hushd --version|head -n1|cut -d' ' -f4|cut -d- -f1|sed 's/v//g')
-#DEBVERSION=$(echo $PACKAGE_VERSION | sed 's/-beta/~beta/' | sed 's/-rc/~rc/' | sed 's/-/+/')
+#PACKAGE_VERSION=3.2.0
+PACKAGE_VERSION=$($SRC_PATH/src/hushd --version|grep version|cut -d' ' -f4|cut -d- -f1|sed 's/v//g')
+DEBVERSION=$(echo $PACKAGE_VERSION | sed 's/-beta/~beta/' | sed 's/-rc/~rc/' | sed 's/-/+/')
 BUILD_DIR="$BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64"
 
 if [ -d $BUILD_DIR ]; then
@@ -90,8 +90,8 @@ cd $SRC_PATH/contrib
 
 # Create the control file
 dpkg-shlibdeps $DEB_BIN/hush-komodod $DEB_BIN/hush-komodo-cli $DEB_BIN/hush-komodo-tx
-#dpkg-gencontrol -P$BUILD_DIR -v$DEBVERSION
-dpkg-gencontrol -P$BUILD_DIR
+dpkg-gencontrol -P$BUILD_DIR -v$DEBVERSION
+#dpkg-gencontrol -P$BUILD_DIR
 
 # Create the Debian package
 fakeroot dpkg-deb --build $BUILD_DIR

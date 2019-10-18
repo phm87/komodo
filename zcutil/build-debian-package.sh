@@ -1,12 +1,13 @@
 #!/bin/bash
+# Copyright 2019 Hush Developers
 ## Usage:
 ##  ./zcutil/build-debian-package.sh
 
 set -e
 set -x
 
-BUILD_PATH="/tmp/verus-cli"
-PACKAGE_NAME="verus-cli"
+BUILD_PATH="/tmp/hush-deb"
+PACKAGE_NAME="hush"
 SRC_PATH=`pwd`
 SRC_DEB=$SRC_PATH/contrib/debian
 SRC_DOC=$SRC_PATH/doc
@@ -18,12 +19,8 @@ if [ ! -d $BUILD_PATH ]; then
 fi
 
 ## PACKAGE_VERSION=$($SRC_PATH/src/zcashd --version | grep version | cut -d' ' -f4 | tr -d v)
-## Need version setting from environment
-
-PACKAGE_VERSION=0.3.10-beta
-
-##
-## Also, what does the sed end up doing?
+#PACKAGE_VERSION=0.3.10-beta
+PACKAGE_VERSION=$($SRC_PATH/src/hushd --version|head -n1|cut -d' ' -f4|cut -d- -f1|sed 's/v//g')
 DEBVERSION=$(echo $PACKAGE_VERSION | sed 's/-beta/~beta/' | sed 's/-rc/~rc/' | sed 's/-/+/')
 BUILD_DIR="$BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64"
 

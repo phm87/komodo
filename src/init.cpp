@@ -770,7 +770,7 @@ void NoParamsShutdown(void)
     uiInterface.ThreadSafeMessageBox(strprintf(
         _("Cannot find the Sapling network parameters in the following directory:\n"
             "%s\n"
-            "Please run 'zcash-fetch-params' or './zcutil/fetch-params.sh' and then restart."),
+            "Please run join our Discord for help: https://myhush.org/discord/"),
             ZC_GetParamsDir()),
         "", CClientUIInterface::MSG_ERROR);
     StartShutdown();
@@ -781,41 +781,59 @@ static void ZC_LoadParams(
     const CChainParams& chainparams
 )
 {
+    namespace fs = boost::filesystem;
     struct timeval tv_start, tv_end;
     float elapsed;
 
-    // First check the global installation location
+    // First check the per-user installation location
     boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
     boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
 
-    // NOTE: This means that sapling params do not need to be installed, just findable
+    // Debian packages install globally into /usr/share/hush
     if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-        // Not globally installed, use local copies if they exist
-        // First check ., then .., then ../hush3
-        sapling_spend =  "sapling-spend.params";
-        sapling_output = "sapling-output.params";
+        boost::filesystem::path sapling_spend  = fs::path("/usr/share/hush") / "sapling-spend.params";
+        boost::filesystem::path sapling_output = fs::path("/usr/share/hush") / "sapling-output.params";
 
-        // This is the most common case, for binaries distributed with params
+        // NOTE: This means that sapling params do not need to be installed, just findable
         if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-            // Not in PWD, try ..
-            sapling_spend =  boost::filesystem::path("..") / "sapling-spend.params";
-            sapling_output = boost::filesystem::path("..") / "sapling-output.params";
+            // Not globally installed, use local copies if they exist
+            // First check ., then .., then ../hush3
+            sapling_spend =  "sapling-spend.params";
+            sapling_output = "sapling-output.params";
 
-            // Try .. in case this binary has no params
+            // This is the most common case, for binaries distributed with params
             if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-                // Not in .., try ../hush3 (the case of SilentDragon installed in same directory as hush3)
-                sapling_spend =  boost::filesystem::path("..") / "hush3" / "sapling-spend.params";
-                sapling_output = boost::filesystem::path("..") / "hush3" / "sapling-output.params";
+                // Not in PWD, try ..
+                sapling_spend =  boost::filesystem::path("..") / "sapling-spend.params";
+                sapling_output = boost::filesystem::path("..") / "sapling-output.params";
 
-                // This will catch the case of any external software (i.e. GUI wallets) needing params and installed in same dir as hush3.git
+                // Try .. in case this binary has no params
                 if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-                    // No Sapling params, at least we tried
-                    NoParamsShutdown();
-                    return;
+                    // Not in .., try ../hush3 (the case of SilentDragon installed in same directory as hush3)
+                    sapling_spend =  boost::filesystem::path("..") / "hush3" / "sapling-spend.params";
+                    sapling_output = boost::filesystem::path("..") / "hush3" / "sapling-output.params";
+
+                    // This will catch the case of any external software (i.e. GUI wallets) needing params and installed in same dir as hush3.git
+                    if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
+                        // No Sapling params, at least we tried
+                        NoParamsShutdown();
+                        return;
+                    } else {
+                        fprintf(stderr,"Found sapling params in ../hush3\n");
+                    }
+                } else {
+                    fprintf(stderr,"Found sapling params in ..\n");
                 }
+            } else {
+                fprintf(stderr,"Found sapling params in PWD\n");
             }
-        }
+    } else {
+        fprintf(stderr,"Found sapling params in /usr/share/hush\n");
     }
+    } else {
+        fprintf(stderr,"Found sapling params in %s\n", ZC_GetParamsDir().string().c_str() );
+    }
+
 
     //LogPrintf("Loading verifying key from %s\n", vk_path.string().c_str());
     gettimeofday(&tv_start, 0);
@@ -870,7 +888,7 @@ bool AppInitServers(boost::thread_group& threadGroup)
     return true;
 }
 
-/** Initialize bitcoin.
+/** Initialize Hush.
  *  @pre Parameters should be parsed and config file should be read.
  */
 extern int32_t KOMODO_REWIND;
@@ -1816,10 +1834,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 InitWarning(msg);
             }
             else if (nLoadWalletRet == DB_TOO_NEW)
-                strErrors << _("Error loading wallet.dat: Wallet requires newer version of Komodo") << "\n";
+                strErrors << _("Error loading wallet.dat: Wallet requires newer version of Hush") << "\n";
             else if (nLoadWalletRet == DB_NEED_REWRITE)
             {
-                strErrors << _("Wallet needed to be rewritten: restart Zcash to complete") << "\n";
+                strErrors << _("Wallet needed to be rewritten: restart Hush to complete") << "\n";
                 LogPrintf("%s", strErrors.str());
                 return InitError(strErrors.str());
             }
@@ -1926,10 +1944,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #ifdef ENABLE_MINING
  #ifndef ENABLE_WALLET
     if (GetBoolArg("-minetolocalwallet", false)) {
-        return InitError(_("Zcash was not built with wallet support. Set -minetolocalwallet=0 to use -mineraddress, or rebuild Zcash with wallet support."));
+        return InitError(_("Hush was not built with wallet support. Set -minetolocalwallet=0 to use -mineraddress, or rebuild Hush with wallet support."));
     }
     if (GetArg("-mineraddress", "").empty() && GetBoolArg("-gen", false)) {
-        return InitError(_("Zcash was not built with wallet support. Set -mineraddress, or rebuild Zcash with wallet support."));
+        return InitError(_("Hush was not built with wallet support. Set -mineraddress, or rebuild Hush with wallet support."));
     }
  #endif // !ENABLE_WALLET
 

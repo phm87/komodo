@@ -67,7 +67,7 @@
 using namespace std;
 
 #if defined(NDEBUG)
-# error "Zcash cannot be compiled without assertions."
+# error "Hush cannot be compiled without assertions."
 #endif
 
 #include "librustzcash.h"

@@ -34,7 +34,8 @@ DEB_BIN=$BUILD_DIR/usr/bin
 DEB_CMP=$BUILD_DIR/usr/share/bash-completion/completions
 DEB_DOC=$BUILD_DIR/usr/share/doc/$PACKAGE_NAME
 DEB_MAN=$BUILD_DIR/usr/share/man/man1
-mkdir -p $BUILD_DIR/DEBIAN $DEB_CMP $DEB_BIN $DEB_DOC $DEB_MAN
+DEB_SHR=$BUILD_DIR/usr/share/hush
+mkdir -p $BUILD_DIR/DEBIAN $DEB_CMP $DEB_BIN $DEB_DOC $DEB_MAN $DEB_SHR
 chmod 0755 -R $BUILD_DIR/*
 
 # Package maintainer scripts (currently empty)
@@ -44,6 +45,8 @@ chmod 0755 -R $BUILD_DIR/*
 #cp $SRC_DEB/prerm $BUILD_DIR/DEBIAN
 # Copy binaries. We prefix our komodod binaries with hush- to prevent conflicting with
 # a stock komodod or other flavors of KMD
+cp $SRC_PATH/sapling-spend.params $DEB_SHR
+cp $SRC_PATH/sapling-output.params $DEB_SHR
 cp $SRC_PATH/src/komodod $DEB_BIN/hush-komodod
 strip $DEB_BIN/hush-komodod
 cp $SRC_PATH/src/komodo-cli $DEB_BIN/hush-komodo-cli
@@ -86,12 +89,13 @@ gzip --best -n $DEB_MAN/hush-tx.1
 cd $SRC_PATH/contrib
 
 # Create the control file
-dpkg-shlibdeps $DEB_BIN/hush-komodod $DEB_BIN/hush-komodo-cli
+dpkg-shlibdeps $DEB_BIN/hush-komodod $DEB_BIN/hush-komodo-cli $DEB_BIN/hush-komodo-tx
 dpkg-gencontrol -P$BUILD_DIR -v$DEBVERSION
 
 # Create the Debian package
 fakeroot dpkg-deb --build $BUILD_DIR
 cp $BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb $SRC_PATH
+shasum -a 256 $SRC_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb
 # Analyze with Lintian, reporting bugs and policy violations
 lintian -i $SRC_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb
 exit 0

@@ -1,12 +1,16 @@
-#!/bin/sh
+#!/bin/bash
+# Copyright ? various authors too lazy to put a copyright header
+# Copyright 2019 The Hush Developers
 
 PACKAGE_DIR="$@"
 mkdir ${PACKAGE_DIR}
+echo "Created ${PACKAGE_DIR}"
 
 binaries=("komodo-cli" "komodod")
 alllibs=()
 for binary in "${binaries[@]}";
 do
+    echo "Processing binary ${binary}"
     # do the work in the destination directory
     cp src/${binary} ${PACKAGE_DIR}
     # find the dylibs to copy for komodod
@@ -20,6 +24,7 @@ libraries=("libgcc_s.1.dylib" "libgomp.1.dylib" "libidn2.0.dylib" "libstdc++.6.d
 
 for binary in "${libraries[@]}";
 do
+    echo "Processing binary ${binary}"
     # find the dylibs to copy for komodod
     DYLIBS=`otool -L ${PACKAGE_DIR}/${binary} | grep "/usr/local" | awk -F' ' '{ print $1 }'`
     echo "copying ${DYLIBS} to ${PACKAGE_DIR}"
@@ -31,6 +36,7 @@ indirectlibraries=("libintl.8.dylib" "libunistring.2.dylib")
 
 for binary in "${indirectlibraries[@]}";
 do
+    echo "Processing binary ${binary}"
     # Need to undo this for the dylibs when we are done
     chmod 755 src/${binary}
     # find the dylibs to copy for komodod
@@ -42,6 +48,7 @@ done
 
 for binary in "${binaries[@]}";
 do
+    echo "Processing binary ${binary}"
     # modify komodod to point to dylibs
     echo "modifying ${binary} to use local libraries"
     for dylib in "${alllibs[@]}"
@@ -54,6 +61,7 @@ done
 
 for binary in "${libraries[@]}";
 do
+    echo "Processing binary ${binary}"
     # modify libraries to point to dylibs
     echo "modifying ${binary} to use local libraries"
     for dylib in "${alllibs[@]}"

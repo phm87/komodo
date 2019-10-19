@@ -32,11 +32,6 @@ cd hush3
 ./zcutil/build.sh -j$(nproc)
 ```
 
-## Download proving key:
-```sh
-./zcutil/fetch-params.sh
-```
-
 ## Run a HUSH Node
 
 ```sh

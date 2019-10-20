@@ -583,8 +583,7 @@ static CCriticalSection csPathCached;
 
 static boost::filesystem::path ZC_GetBaseParamsDir()
 {
-    // Copied from GetDefaultDataDir and adapter for zcash params.
-
+    // Copied from GetDefaultDataDir and adapted for zcash params.
     namespace fs = boost::filesystem;
     // Windows < Vista: C:\Documents and Settings\Username\Application Data\ZcashParams
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashParams
@@ -605,8 +604,13 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     TryCreateDirectory(pathRet);
     return pathRet / "ZcashParams";
 #else
-    // Unix
-    return pathRet / ".zcash-params";
+    // Unixy systems. Debian packages install params system-wide
+	if (fs::exists("/usr/share/hush")) {
+		pathRet = fs::path("/usr/share/hush");
+		return pathRet;
+	} else {
+	    return pathRet / ".zcash-params";
+	}
 #endif
 #endif
 }

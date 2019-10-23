@@ -1319,6 +1319,9 @@ void ThreadDNSAddressSeed()
                     {
                         vAdd.push_back(addr);
                         found++;
+                        LogPrintf("%s: Added node via DNS seed: %s:%d", __FUNCTION__, ip.c_str(), ASSETCHAINS_P2PPORT);
+                    } else {
+                        LogPrintf("%s: Node has incorrect port %s:%d", __FUNCTION__, ip.c_str(), addr.GetPort() );
                     }
                 }
             }

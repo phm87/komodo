@@ -141,7 +141,7 @@ static void CheckBlockIndex();
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "Komodo Signed Message:\n";
+const string strMessageMagic = "Hush Signed Message:\n";
 
 // Internal stuff
 namespace {

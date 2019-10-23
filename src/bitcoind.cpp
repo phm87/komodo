@@ -150,7 +150,7 @@ bool AppInit(int argc, char* argv[])
     // Process help and version before taking care about datadir
     if (mapArgs.count("-?") || mapArgs.count("-h") ||  mapArgs.count("-help") || mapArgs.count("-version"))
     {
-        std::string strUsage = _("Komodo Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
+        std::string strUsage = _("Hush Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
 
         if (mapArgs.count("-version"))
         {
@@ -159,7 +159,7 @@ bool AppInit(int argc, char* argv[])
         else
         {
             strUsage += "\n" + _("Usage:") + "\n" +
-                  "  komodod [options]                     " + _("Start Komodo Daemon") + "\n";
+                  "  komodod [options]                     " + _("Start Hush-flavored Komodo Daemon") + "\n";
 
             strUsage += "\n" + HelpMessage(HMM_BITCOIND);
         }
@@ -192,21 +192,22 @@ bool AppInit(int argc, char* argv[])
             ReadConfigFile(mapArgs, mapMultiArgs);
         } catch (const missing_zcash_conf& e) {
             fprintf(stderr,
-                (_("Before starting komodod, you need to create a configuration file:\n"
+                (_("Before starting hushd, you need to create a configuration file:\n"
                    "%s\n"
                    "It can be completely empty! That indicates you are happy with the default\n"
-                   "configuration of komodod. But requiring a configuration file to start ensures\n"
-                   "that komodod won't accidentally compromise your privacy if there was a default\n"
+                   "configuration of hushd. But requiring a configuration file to start ensures\n"
+                   "that hushd won't accidentally compromise your privacy if there was a default\n"
                    "option you needed to change.\n"
                    "\n"
                    "You can look at the example configuration file for suggestions of default\n"
                    "options that you may want to change. It should be in one of these locations,\n"
-                   "depending on how you installed Komodo:\n") +
+                   "depending on how you installed Hush\n") +
                  _("- Source code:  %s\n"
                    "- .deb package: %s\n")).c_str(),
                 GetConfigFile().string().c_str(),
-                "contrib/debian/examples/komodo.conf",
-                "/usr/share/doc/komodo/examples/komodo.conf");
+                "contrib/debian/examples/HUSH3.conf",
+                "/usr/share/doc/hush/examples/HUSH3.conf",
+                "https://github.com/MyHush/hush3/blob/master/contrib/debian/examples/HUSH3.conf");
             return false;
         } catch (const std::exception& e) {
             fprintf(stderr,"Error reading configuration file: %s\n", e.what());

@@ -1,4 +1,5 @@
 // Copyright (c) 2017 The Zcash developers
+// Copyright (c) 2018-2019 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -48,7 +49,7 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
         if (blocksToDeprecation == 0 || forceLogging) {
             msg = strprintf(_("This version has been deprecated as of block height %d."),
                                  DEPRECATION_HEIGHT) + " " +
-                       _("You should upgrade to the latest version of Komodo.");
+                  _("You should upgrade to the latest version of Hush! See Discord for more info: https://myhush.org/discord");
             LogPrintf("*** %s\n", msg);
             CAlert::Notify(msg, fThread);
             uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
@@ -57,7 +58,7 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
     } else if (blocksToDeprecation == DEPRECATION_WARN_LIMIT || (blocksToDeprecation < DEPRECATION_WARN_LIMIT && forceLogging)) {
         msg = strprintf(_("This version will be deprecated at block height %d, and will automatically shut down."),
                             DEPRECATION_HEIGHT) + " " +
-                  _("You should upgrade to the latest version of Komodo.");
+                  _("You should upgrade to the latest version of Hush! See Discord for more info: https://myhush.org/discord");
         LogPrintf("*** %s\n", msg);
         CAlert::Notify(msg, fThread);
         uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_WARNING);

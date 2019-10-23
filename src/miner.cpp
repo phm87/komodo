@@ -1032,7 +1032,7 @@ static bool ProcessBlockFound(CBlock* pblock)
                 fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
             fprintf(stderr," <- chainTip (stale)\n");
 
-            return error("KomodoMiner: generated block is stale");
+            return error("HushMiner: generated block is stale");
         }
     }
 
@@ -1058,7 +1058,7 @@ static bool ProcessBlockFound(CBlock* pblock)
     // Process this block the same as if we had received it from another node
     CValidationState state;
     if (!ProcessNewBlock(1,chainActive.LastTip()->GetHeight()+1,state, NULL, pblock, true, NULL))
-        return error("KomodoMiner: ProcessNewBlock, block not accepted");
+        return error("HushMiner: ProcessNewBlock, block not accepted");
 
     TrackMinedBlock(pblock->GetHash());
     //komodo_broadcast(pblock,16);
@@ -1615,7 +1615,7 @@ void static BitcoinMiner(CWallet *pwallet)
 void static BitcoinMiner()
 #endif
 {
-    LogPrintf("KomodoMiner started\n");
+    LogPrintf("HushMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("komodo-miner");
     const CChainParams& chainparams = Params();
@@ -1715,7 +1715,7 @@ void static BitcoinMiner()
                 {
                     miningTimer.stop();
                     c.disconnect();
-                    LogPrintf("KomodoMiner terminated\n");
+                    LogPrintf("HushMiner terminated\n");
                     return;
                 }
                 static uint32_t counter;
@@ -1729,10 +1729,10 @@ void static BitcoinMiner()
             if (!pblocktemplate.get())
             {
                 if (GetArg("-mineraddress", "").empty()) {
-                    LogPrintf("Error in KomodoMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
+                    LogPrintf("Error in HushMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
                 } else {
                     // Should never reach here, because -mineraddress validity is checked in init.cpp
-                    LogPrintf("Error in KomodoMiner: Invalid -mineraddress\n");
+                    LogPrintf("Error in HushMiner: Invalid -mineraddress\n");
                 }
                 return;
             }
@@ -1752,8 +1752,8 @@ void static BitcoinMiner()
                 }
             }
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
-            //fprintf(stderr,"Running KomodoMiner.%s with %u transactions in block\n",solver.c_str(),(int32_t)pblock->vtx.size());
-            LogPrintf("Running KomodoMiner.%s with %u transactions in block (%u bytes)\n",solver.c_str(),pblock->vtx.size(),::GetSerializeSize(*pblock,SER_NETWORK,PROTOCOL_VERSION));
+            //fprintf(stderr,"Running HushMiner.%s with %u transactions in block\n",solver.c_str(),(int32_t)pblock->vtx.size());
+            LogPrintf("Running HushMiner.%s with %u transactions in block (%u bytes)\n",solver.c_str(),pblock->vtx.size(),::GetSerializeSize(*pblock,SER_NETWORK,PROTOCOL_VERSION));
             //
             // Search
             //
@@ -1929,7 +1929,7 @@ void static BitcoinMiner()
                     KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
-                    LogPrintf("KomodoMiner:\n");
+                    LogPrintf("HushMiner:\n");
                     LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", B.GetHash().GetHex(), HASHTarget.GetHex());
 #ifdef ENABLE_WALLET
                     if (ProcessBlockFound(&B, *pwallet, reservekey)) {
@@ -2072,14 +2072,14 @@ void static BitcoinMiner()
         {
             miningTimer.stop();
             c.disconnect();
-            LogPrintf("KomodoMiner terminated\n");
+            LogPrintf("HushMiner terminated\n");
             throw;
         }
         catch (const std::runtime_error &e)
         {
             miningTimer.stop();
             c.disconnect();
-            LogPrintf("KomodoMiner runtime error: %s\n", e.what());
+            LogPrintf("HushMiner runtime error: %s\n", e.what());
             return;
         }
         miningTimer.stop();

@@ -1998,6 +1998,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         CValidationState state;
         if ( !ActivateBestChain(true,state))
             strErrors << "Failed to connect best block";
+    } else {
+        fprintf(stderr,"KOMODO_REWIND < 0\n");
     }
     std::vector<boost::filesystem::path> vImportFiles;
     if (mapArgs.count("-loadblock"))
@@ -2014,6 +2016,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // ********************************************************* Step 11: start node
 
+    fprintf(stderr,"Checking disk space...\n");
     if (!CheckDiskSpace())
         return false;
 
@@ -2038,6 +2041,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (GetBoolArg("-listenonion", DEFAULT_LISTEN_ONION))
         StartTorControl(threadGroup, scheduler);
 
+    fprintf(stderr,"Starting txnotify thread\n");
     StartNode(threadGroup, scheduler);
 
 #ifdef ENABLE_MINING
@@ -2055,7 +2059,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // ********************************************************* Step 11: finished
 
     SetRPCWarmupFinished();
-    uiInterface.InitMessage(_("Done loading"));
+    fprintf(stderr,"RPC warmump finished\n");
+    uiInterface.InitMessage(_("Done loading!"));
 
 #ifdef ENABLE_WALLET
     if (pwalletMain) {

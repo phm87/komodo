@@ -326,23 +326,6 @@ public:
         nTx = 0;
         nChainTx = 0;
 
-        nChainShieldedTx = 0;
-        nChainShieldingTx = 0;
-        nChainDeshieldingTx = 0;
-        nChainFullyShieldedTx = 0;
-        nChainShieldedPayments = 0;
-        nChainShieldingPayments = 0;
-        nChainDeshieldingPayments = 0;
-        nChainFullyShieldedPayments = 0;
-        nShieldedTx = 0;
-        nShieldingTx = 0;
-        nDeshieldingTx = 0;
-        nFullyShieldedTx = 0;
-        nShieldedPayments = 0;
-        nShieldingPayments = 0;
-        nDeshieldingPayments = 0;
-        nFullyShieldedPayments = 0;
-
         nStatus = 0;
         nCachedBranchId = boost::none;
         hashSproutAnchor = uint256();

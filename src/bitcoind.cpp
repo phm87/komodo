@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2013 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -70,12 +71,17 @@ CBlockIndex *komodo_chainactive(int32_t height);
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
     int32_t i,height; CBlockIndex *pindex; bool fShutdown = ShutdownRequested(); const uint256 zeroid;
+    fprintf(stderr,"%s: fShutdown=%d, KOMODO_EARLYTXID_HEIGHT=%d\n", __FUNCTION__, fShutdown, KOMODO_EARLYTXID_HEIGHT);
+
     // Tell the main threads to shutdown.
     if (komodo_currentheight()>KOMODO_EARLYTXID_HEIGHT && KOMODO_EARLYTXID!=zeroid && ((height=tx_height(KOMODO_EARLYTXID))==0 || height>KOMODO_EARLYTXID_HEIGHT))
     {
         fprintf(stderr,"error: earlytx must be before block height %d or tx does not exist\n",KOMODO_EARLYTXID_HEIGHT);
         StartShutdown();
     }
+
+    fprintf(stderr,"%s: earlytx height=%d, ASSETCHAINS_CBOPRET=%li\n", __FUNCTION__, height, ASSETCHAINS_CBOPRET);
+
     /*if ( ASSETCHAINS_STAKED == 0 && ASSETCHAINS_ADAPTIVEPOW == 0 && (pindex= komodo_chainactive(1)) != 0 )
     {
         if ( pindex->nTime > ADAPTIVEPOW_CHANGETO_DEFAULTON )
@@ -84,11 +90,14 @@ void WaitForShutdown(boost::thread_group* threadGroup)
             fprintf(stderr,"default activate adaptivepow\n");
         } else fprintf(stderr,"height1 time %u vs %u\n",pindex->nTime,ADAPTIVEPOW_CHANGETO_DEFAULTON);
     } //else fprintf(stderr,"cant find height 1\n");*/
-    if ( ASSETCHAINS_CBOPRET != 0 )
+
+    if ( ASSETCHAINS_CBOPRET != 0 ) {
         komodo_pricesinit();
+	}
+
     while (!fShutdown)
     {
-        //fprintf(stderr,"call passport iteration\n");
+        fprintf(stderr,"call passport iteration\n");
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             if ( KOMODO_NSPV_FULLNODE )
@@ -100,9 +109,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
                     break;
                 MilliSleep(1000);
             }
-        }
-        else
-        {
+        } else {
             //komodo_interestsum();
             //komodo_longestchain();
             if ( ASSETCHAINS_CBOPRET != 0 )
@@ -117,6 +124,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         }
         fShutdown = ShutdownRequested();
     }
+    fprintf(stderr,"%s: fShutdown=%d\n", __FUNCTION__, fShutdown);
+
     if (threadGroup)
     {
         Interrupt(*threadGroup);
@@ -141,6 +150,8 @@ bool AppInit(int argc, char* argv[])
 
     bool fRet = false;
 
+
+	fprintf(stderr, "%s start, argc=%d\n", __FUNCTION__, argc);
     //
     // Parameters
     //
@@ -189,6 +200,7 @@ bool AppInit(int argc, char* argv[])
         }
         try
         {
+			fprintf(stderr, "%s reading config file\n", __FUNCTION__);
             ReadConfigFile(mapArgs, mapMultiArgs);
         } catch (const missing_zcash_conf& e) {
             fprintf(stderr,
@@ -216,9 +228,12 @@ bool AppInit(int argc, char* argv[])
 
         // Command-line RPC
         bool fCommandLine = false;
-        for (int i = 1; i < argc; i++)
-            if (!IsSwitchChar(argv[i][0]) && !boost::algorithm::istarts_with(argv[i], "komodo:"))
+        for (int i = 1; i < argc; i++) {
+			//TODO: should this be hush: or komodo: ??
+            if (!IsSwitchChar(argv[i][0]) && !boost::algorithm::istarts_with(argv[i], "komodo:")) {
                 fCommandLine = true;
+			}
+		}
 
         if (fCommandLine)
         {
@@ -252,20 +267,23 @@ bool AppInit(int argc, char* argv[])
 #endif
         SoftSetBoolArg("-server", true);
 
+		fprintf(stderr,"%s: Running AppInit2()\n", __FUNCTION__);
         fRet = AppInit2(threadGroup, scheduler);
-    }
-    catch (const std::exception& e) {
+		fprintf(stderr,"%s: Finished AppInit2(), fRet=%d\n", __FUNCTION__, fRet);
+    } catch (const std::exception& e) {
         PrintExceptionContinue(&e, "AppInit()");
     } catch (...) {
         PrintExceptionContinue(NULL, "AppInit()");
     }
     if (!fRet)
     {
+		fprintf(stderr,"%s: Interrupting threadGroup\n", __FUNCTION__);
         Interrupt(threadGroup);
         // threadGroup.join_all(); was left out intentionally here, because we didn't re-test all of
         // the startup-failure cases to make sure they don't result in a hang due to some
         // thread-blocking-waiting-for-another-thread-during-startup case
     } else {
+		fprintf(stderr,"%s: Waiting for Shutdown\n", __FUNCTION__);
         WaitForShutdown(&threadGroup);
     }
     Shutdown();

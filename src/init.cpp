@@ -219,7 +219,6 @@ void Shutdown()
     /// module was initialized.
     static char shutoffstr[128];
     sprintf(shutoffstr,"%s-shutoff",ASSETCHAINS_SYMBOL);
-    //RenameThread("verus-shutoff");
     RenameThread(shutoffstr);
     mempool.AddTransactionsUpdated(1);
 
@@ -674,7 +673,7 @@ void CleanupBlockRevFiles()
 
 void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
 {
-    RenameThread("zcash-loadblk");
+    RenameThread("hush-loadblk");
     // -reindex
     if (fReindex) {
         CImportingNow imp;

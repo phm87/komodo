@@ -164,6 +164,7 @@ std::atomic<bool> fRequestShutdown(false);
 
 void StartShutdown()
 {
+	fprintf(stderr,"fRequestShudown=true\n");
     fRequestShutdown = true;
 }
 bool ShutdownRequested()
@@ -314,11 +315,13 @@ void Shutdown()
  */
 void HandleSIGTERM(int)
 {
+	fprintf(stderr,"%s\n",__FUNCTION__);
     fRequestShutdown = true;
 }
 
 void HandleSIGHUP(int)
 {
+	fprintf(stderr,"%s\n",__FUNCTION__);
     fReopenDebugLog = true;
 }
 
@@ -1806,6 +1809,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (!fLoaded) {
             // first suggest a reindex
             if (!fReset) {
+			    fprintf(stderr,"%s error in hd data\n", __FUNCTION__);
                 bool fRet = uiInterface.ThreadSafeMessageBox(
                     strLoadError + ".\n\n" + _("error in HDD data, might just need to update to latest, if that doesnt work, then you need to resync"),
                     "", CClientUIInterface::MSG_ERROR | CClientUIInterface::BTN_ABORT);

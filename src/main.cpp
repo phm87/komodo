@@ -4819,8 +4819,11 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         while (!queue.empty()) {
             CBlockIndex *pindex = queue.front();
             queue.pop_front();
+            pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
 
             if (pindex->pprev) {
+                pindex->nChainTx = pindex->pprev->nChainTx + pindex->nTx;
+
                 if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                     pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
                 } else {

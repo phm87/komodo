@@ -835,13 +835,12 @@ static void ZC_LoadParams(
             } else {
                 fprintf(stderr,"Found sapling params in PWD\n");
             }
-    } else {
-        fprintf(stderr,"Found sapling params in /usr/share/hush\n");
-    }
+        } else {
+            fprintf(stderr,"Found sapling params in /usr/share/hush\n");
+        }
     } else {
         fprintf(stderr,"Found sapling params in %s\n", ZC_GetParamsDir().string().c_str() );
     }
-
 
     //LogPrintf("Loading verifying key from %s\n", vk_path.string().c_str());
     gettimeofday(&tv_start, 0);

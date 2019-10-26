@@ -72,7 +72,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 {
     int32_t i,height; CBlockIndex *pindex; bool fShutdown = ShutdownRequested(); const uint256 zeroid;
     fprintf(stderr,"%s: fShutdown=%d, KOMODO_EARLYTXID_HEIGHT=%d\n", __FUNCTION__, fShutdown, KOMODO_EARLYTXID_HEIGHT);
-	fprintf(stderr,"%s: earlytxid=%s, tx_height=%d\n", __FUNCTION__, KOMODO_EARLYTXID.GetHex(), tx_height(KOMODO_EARLYTXID) );
+	//fprintf(stderr,"%s: earlytxid=%s, tx_height=%d\n", __FUNCTION__, KOMODO_EARLYTXID.GetHex(), tx_height(KOMODO_EARLYTXID) );
 
     height=tx_height(KOMODO_EARLYTXID);
     // Tell the main threads to shutdown.
@@ -87,7 +87,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 	}
 	*/
     fprintf(stderr,"%s: komodo_currentheight=%d\n", __FUNCTION__, komodo_currentheight() );
-    fprintf(stderr,"%s: earlytx height=%d, ASSETCHAINS_CBOPRET=%li\n", __FUNCTION__, height, ASSETCHAINS_CBOPRET);
+    //fprintf(stderr,"%s: earlytx height=%d, ASSETCHAINS_CBOPRET=%li\n", __FUNCTION__, height, ASSETCHAINS_CBOPRET);
 
     /*if ( ASSETCHAINS_STAKED == 0 && ASSETCHAINS_ADAPTIVEPOW == 0 && (pindex= komodo_chainactive(1)) != 0 )
     {

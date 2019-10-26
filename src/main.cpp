@@ -2089,6 +2089,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             }
         }
     }
+	//SyncWithWallets(tx,NULL);
 
     return true;
 }
@@ -4358,6 +4359,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         komodo_broadcast(pblock,4);*/
     if ( KOMODO_NSPV_FULLNODE )
     {
+		fprintf(stderr,"%s: KOMODO_NSPV_FULLNODE\n", __FUNCTION__);
         if ( ASSETCHAINS_CBOPRET != 0 )
             komodo_pricesupdate(pindexNew->GetHeight(),pblock);
         if ( ASSETCHAINS_SAPLING <= 0 && pindexNew->nTime > KOMODO_SAPLING_ACTIVATION - 24*3600 )
@@ -4373,6 +4375,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
             fprintf(stderr, "snapshot completed in: %d seconds\n", (int32_t)(time(NULL)-start));
         }
     }
+	fprintf(stderr,"%s: returning true\n", __FUNCTION__);
     return true;
 }
 

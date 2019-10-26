@@ -785,6 +785,10 @@ void NoParamsShutdown(void)
     return;
 }
 
+bool files_exist(boost::filesystem::path file1, boost::filesystem::path file2) {
+    return boost::filesystem::exists(file1) && boost::filesystem::exists(file2);
+}
+
 static void ZC_LoadParams(
     const CChainParams& chainparams
 )
@@ -792,55 +796,67 @@ static void ZC_LoadParams(
     namespace fs = boost::filesystem;
     struct timeval tv_start, tv_end;
     float elapsed;
+    bool found = false;
 
-    // First check the per-user installation location
-    boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
-    boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
+	// Some people have previous partial downloads of zcash params, so check that last
+	// Sapling Param Search path: . /usr/share/hush .. ../hush3 ~/.zcash-params
 
-    // Debian packages install globally into /usr/share/hush
-    if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-        boost::filesystem::path sapling_spend  = fs::path("/usr/share/hush") / "sapling-spend.params";
-        boost::filesystem::path sapling_output = fs::path("/usr/share/hush") / "sapling-output.params";
+    // PWD
+	boost::filesystem::path sapling_spend  = "sapling-spend.params";
+	boost::filesystem::path sapling_output = "sapling-output.params";
+	if (files_exist(sapling_spend, sapling_output)) {
+		fprintf(stderr,"Found sapling params in .\n");
+        found = true;
+	}
 
-        // NOTE: This means that sapling params do not need to be installed, just findable
-        if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-            // Not globally installed, use local copies if they exist
-            // First check ., then .., then ../hush3
-            sapling_spend =  "sapling-spend.params";
-            sapling_output = "sapling-output.params";
-
-            // This is the most common case, for binaries distributed with params
-            if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-                // Not in PWD, try ..
-                sapling_spend =  boost::filesystem::path("..") / "sapling-spend.params";
-                sapling_output = boost::filesystem::path("..") / "sapling-output.params";
-
-                // Try .. in case this binary has no params
-                if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-                    // Not in .., try ../hush3 (the case of SilentDragon installed in same directory as hush3)
-                    sapling_spend =  boost::filesystem::path("..") / "hush3" / "sapling-spend.params";
-                    sapling_output = boost::filesystem::path("..") / "hush3" / "sapling-output.params";
-
-                    // This will catch the case of any external software (i.e. GUI wallets) needing params and installed in same dir as hush3.git
-                    if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-                        // No Sapling params, at least we tried
-                        NoParamsShutdown();
-                        return;
-                    } else {
-                        fprintf(stderr,"Found sapling params in ../hush3\n");
-                    }
-                } else {
-                    fprintf(stderr,"Found sapling params in ..\n");
-                }
-            } else {
-                fprintf(stderr,"Found sapling params in PWD\n");
-            }
-        } else {
+    if (!found) {
+       // Debian global install dir: /usr/share/hush
+       sapling_spend  = fs::path("/usr/share/hush") / "sapling-spend.params";
+       sapling_output = fs::path("/usr/share/hush") / "sapling-output.params";
+       if (files_exist(sapling_spend, sapling_output)) {
             fprintf(stderr,"Found sapling params in /usr/share/hush\n");
-        }
-    } else {
-        fprintf(stderr,"Found sapling params in %s\n", ZC_GetParamsDir().string().c_str() );
+            found=true;
+       }
     }
+
+    if (!found) {
+        // Try ..
+        sapling_spend =  boost::filesystem::path("..") / "sapling-spend.params";
+        sapling_output = boost::filesystem::path("..") / "sapling-output.params";
+	    if (files_exist(sapling_spend, sapling_output)) {
+            fprintf(stderr,"Found sapling params in ..\n");
+            found = true;
+	    }
+    }
+
+    if (!found) {
+        // This will catch the case of any external software (i.e. GUI wallets) needing params and installed in same dir as hush3.git
+        sapling_spend =  boost::filesystem::path("..") / "hush3" / "sapling-spend.params";
+        sapling_output = boost::filesystem::path("..") / "hush3" / "sapling-output.params";
+	    if (files_exist(sapling_spend, sapling_output)) {
+            fprintf(stderr,"Found sapling params in ../hush3\n");
+            found = true;
+	    }
+    }
+
+    if (!found) {
+        // The traditional place Zcash params are stored, should not hit this case in normal circumstances,
+        // as Hush packages sapling params now
+        sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
+        sapling_output = ZC_GetParamsDir() / "sapling-output.params";
+	    if (files_exist(sapling_spend, sapling_output)) {
+            fprintf(stderr,"Found sapling params in ~/.zcash\n");
+            found = true;
+	    }
+    }
+
+    if (!found) {
+        // No Sapling params, at least we tried
+        NoParamsShutdown();
+        return;
+    }
+
+
 
     //LogPrintf("Loading verifying key from %s\n", vk_path.string().c_str());
     gettimeofday(&tv_start, 0);

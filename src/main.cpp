@@ -4439,16 +4439,16 @@ static CBlockIndex* FindMostWorkChain() {
 
 /** Delete all entries in setBlockIndexCandidates that are worse than the current tip. */
 static void PruneBlockIndexCandidates() {
-	fprintf(stderr,"%s:, setBlockIndexCandidates.size=%d\n", __FUNCTION__, setBlockIndexCandidates.size() );
+	//fprintf(stderr,"%s:, setBlockIndexCandidates.size=%d\n", __FUNCTION__, setBlockIndexCandidates.size() );
     // Note that we can't delete the current block itself, as we may need to return to it later in case a
     // reorganization to a better block fails.
     std::set<CBlockIndex*, CBlockIndexWorkComparator>::iterator it = setBlockIndexCandidates.begin();
     while (it != setBlockIndexCandidates.end() && setBlockIndexCandidates.value_comp()(*it, chainActive.LastTip())) {
-	    fprintf(stderr,"%s:, erasing blockindexcandidate element height=%d, time=%d\n", __FUNCTION__, (*it)->GetHeight(), (*it)->GetBlockTime() );
+	    //fprintf(stderr,"%s:, erasing blockindexcandidate element height=%d, time=%d\n", __FUNCTION__, (*it)->GetHeight(), (*it)->GetBlockTime() );
         setBlockIndexCandidates.erase(it++);
 	    //fprintf(stderr,"%s:, erased element\n", __FUNCTION__);
     }
-    fprintf(stderr,"%s:, setBlockIndexCandidates.size()=%d\n", __FUNCTION__, setBlockIndexCandidates.size() );
+    //fprintf(stderr,"%s:, setBlockIndexCandidates.size()=%d\n", __FUNCTION__, setBlockIndexCandidates.size() );
     // Either the current tip or a successor of it we're working towards is left in setBlockIndexCandidates.
     assert(!setBlockIndexCandidates.empty());
 }
@@ -4458,7 +4458,7 @@ static void PruneBlockIndexCandidates() {
  * pblock is either NULL or a pointer to a CBlock corresponding to pindexMostWork.
  */
 static bool ActivateBestChainStep(bool fSkipdpow, CValidationState &state, CBlockIndex *pindexMostWork, CBlock *pblock) {
-	fprintf(stderr,"%s: fSkipdpow=%d\n", __FUNCTION__, fSkipdpow);
+	//fprintf(stderr,"%s: fSkipdpow=%d\n", __FUNCTION__, fSkipdpow);
     AssertLockHeld(cs_main);
     bool fInvalidFound = false;
     const CBlockIndex *pindexOldTip = chainActive.Tip();

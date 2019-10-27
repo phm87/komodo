@@ -97,6 +97,9 @@ using namespace std;
 extern void ThreadSendAlert();
 extern bool komodo_dailysnapshot(int32_t height);
 extern int32_t KOMODO_LOADINGBLOCKS;
+extern char ASSETCHAINS_SYMBOL[];
+extern int32_t KOMODO_SNAPSHOT_INTERVAL;
+
 extern void komodo_init(int32_t height);
 
 ZCJoinSplit* pzcashParams = NULL;
@@ -164,7 +167,7 @@ std::atomic<bool> fRequestShutdown(false);
 
 void StartShutdown()
 {
-	fprintf(stderr,"fRequestShudown=true\n");
+	fprintf(stderr,"%s: fRequestShudown=true\n", __FUNCTION__);
     fRequestShutdown = true;
 }
 bool ShutdownRequested()
@@ -774,6 +777,7 @@ bool InitSanityCheck(void)
 void NoParamsShutdown(void)
 {
     //TODO: error message incorrect about location
+	fprintf(stderr,"%s: no params!\n", __FUNCTION__);
     LogPrintf("Could not find Sapling params anywhere! Exiting...");
     uiInterface.ThreadSafeMessageBox(strprintf(
         _("Cannot find the Sapling network parameters in the following directory:\n"
@@ -1325,7 +1329,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     ECC_Start();
     globalVerifyHandle.reset(new ECCVerifyHandle());
 
-	/*
     // set the hash algorithm to use for this chain
     // Again likely better solution here, than using long IF ELSE. 
     extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH, ASSETCHAINS_VERUSHASHV1_1;
@@ -1341,7 +1344,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         // initialize VerusHashV2
         CBlockHeader::SetVerusHashV2();
     }
-	*/
 
 	fprintf(stderr,"%s tik10\n", __FUNCTION__);
     // Sanity check
@@ -2082,6 +2084,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             MilliSleep(10);
     }
 
+	fprintf(stderr,"%s fRequestShutdown=%d\n", __FUNCTION__, !!fRequestShutdown);
+
     // ********************************************************* Step 11: start node
 
     fprintf(stderr,"Checking disk space...\n");
@@ -2102,6 +2106,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("mapAddressBook.size() = %u\n",  pwalletMain ? pwalletMain->mapAddressBook.size() : 0);
 #endif
 
+	fprintf(stderr,"%s fRequestShutdown=%d\n", __FUNCTION__, !!fRequestShutdown);
     // Start the thread that notifies listeners of transactions that have been
     // recently added to the mempool.
     threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "txnotify", &ThreadNotifyRecentlyAdded));
@@ -2115,7 +2120,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #ifdef ENABLE_MINING
     // Generate coins in the background
  #ifdef ENABLE_WALLET
-    VERUS_MINTBLOCKS = GetBoolArg("-mint", false);
 
     if (pwalletMain || !GetArg("-mineraddress", "").empty())
         GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", -1));
@@ -2129,6 +2133,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     SetRPCWarmupFinished();
     fprintf(stderr,"RPC warmump finished\n");
     uiInterface.InitMessage(_("Done loading!"));
+	fprintf(stderr,"%s fRequestShutdown=%d\n", __FUNCTION__, !!fRequestShutdown);
 
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
@@ -2145,6 +2150,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // SENDALERT
     threadGroup.create_thread(boost::bind(ThreadSendAlert));
 
-	fprintf(stderr,"%s end\n", __FUNCTION__);
+	fprintf(stderr,"%s end fRequestShutdown=%d\n", __FUNCTION__, !!fRequestShutdown);
     return !fRequestShutdown;
 }

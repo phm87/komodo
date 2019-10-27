@@ -81,7 +81,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 
     while (!fShutdown)
     {
-        fprintf(stderr,"call passport iteration\n");
+        //fprintf(stderr,"call passport iteration\n");
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             if ( KOMODO_NSPV_FULLNODE )
@@ -108,7 +108,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         }
         fShutdown = ShutdownRequested();
     }
-    fprintf(stderr,"%s: fShutdown=%d\n", __FUNCTION__, fShutdown);
+    //fprintf(stderr,"%s: fShutdown=%d\n", __FUNCTION__, fShutdown);
 
     if (threadGroup)
     {
@@ -135,7 +135,7 @@ bool AppInit(int argc, char* argv[])
     bool fRet = false;
 
 
-	fprintf(stderr, "%s start, argc=%d\n", __FUNCTION__, argc);
+	//fprintf(stderr, "%s start, argc=%d\n", __FUNCTION__, argc);
     //
     // Parameters
     //
@@ -251,9 +251,9 @@ bool AppInit(int argc, char* argv[])
 #endif
         SoftSetBoolArg("-server", true);
 
-		fprintf(stderr,"%s: Running AppInit2()\n", __FUNCTION__);
+		//fprintf(stderr,"%s: Running AppInit2()\n", __FUNCTION__);
         fRet = AppInit2(threadGroup, scheduler);
-		fprintf(stderr,"%s: Finished AppInit2(), fRet=%d\n", __FUNCTION__, fRet);
+		//fprintf(stderr,"%s: Finished AppInit2(), fRet=%d\n", __FUNCTION__, fRet);
     } catch (const std::exception& e) {
         PrintExceptionContinue(&e, "AppInit()");
     } catch (...) {
@@ -261,13 +261,13 @@ bool AppInit(int argc, char* argv[])
     }
     if (!fRet)
     {
-		fprintf(stderr,"%s: Interrupting threadGroup\n", __FUNCTION__);
+		//fprintf(stderr,"%s: Interrupting threadGroup\n", __FUNCTION__);
         Interrupt(threadGroup);
         // threadGroup.join_all(); was left out intentionally here, because we didn't re-test all of
         // the startup-failure cases to make sure they don't result in a hang due to some
         // thread-blocking-waiting-for-another-thread-during-startup case
     } else {
-		fprintf(stderr,"%s: Waiting for Shutdown\n", __FUNCTION__);
+		//fprintf(stderr,"%s: Waiting for Shutdown\n", __FUNCTION__);
         WaitForShutdown(&threadGroup);
     }
     Shutdown();

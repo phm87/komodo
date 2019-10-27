@@ -958,11 +958,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             return InitError("Error: -sysperms is not allowed in combination with enabled wallet functionality");
 #endif
     } else {
-	    fprintf(stderr,"%s setting umask\n", __FUNCTION__);
+	    //fprintf(stderr,"%s setting umask\n", __FUNCTION__);
         umask(077);
     }
 
-	fprintf(stderr,"%s tik1\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik1\n", __FUNCTION__);
     // Clean shutdown on SIGTERM
     struct sigaction sa;
     sa.sa_handler = HandleSIGTERM;
@@ -1010,7 +1010,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             return InitError(_("RPC method z_mergetoaddress requires -experimentalfeatures."));
         }
     } 
-	fprintf(stderr,"%s tik2\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik2\n", __FUNCTION__);
 
     // Set this early so that parameter interactions go to console
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
@@ -1032,7 +1032,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             LogPrintf("%s: parameter interaction: -whitebind set -> setting -listen=1\n", __func__);
     }
 
-	fprintf(stderr,"%s tik3\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik3\n", __FUNCTION__);
     if (mapArgs.count("-connect") && mapMultiArgs["-connect"].size() > 0) {
         // when only connecting to trusted nodes, do not seed via DNS, or listen by default
         if (SoftSetBoolArg("-dnsseed", false))
@@ -1075,7 +1075,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (SoftSetBoolArg("-rescan", true))
             LogPrintf("%s: parameter interaction: -zapwallettxes=<mode> -> setting -rescan=1\n", __func__);
     }
-	fprintf(stderr,"%s tik4\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik4\n", __FUNCTION__);
 
     // Make sure enough file descriptors are available
     int nBind = std::max((int)mapArgs.count("-bind") + (int)mapArgs.count("-whitebind"), 1);
@@ -1088,7 +1088,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError(_("Not enough file descriptors available."));
     if (nFD - MIN_CORE_FILEDESCRIPTORS < nMaxConnections)
         nMaxConnections = nFD - MIN_CORE_FILEDESCRIPTORS;
-    fprintf(stderr,"nMaxConnections %d\n",nMaxConnections);
+    //fprintf(stderr,"nMaxConnections %d\n",nMaxConnections);
     // if using block pruning, then disable txindex
     // also disable the wallet (for now, until SPV support is implemented in wallet)
     if (GetArg("-prune", 0)) {
@@ -1121,7 +1121,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
-	fprintf(stderr,"%s tik5\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik5\n", __FUNCTION__);
     // Check for -debugnet
     if (GetBoolArg("-debugnet", false))
         InitWarning(_("Warning: Unsupported argument -debugnet ignored, use -debug=net."));
@@ -1153,7 +1153,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         nScriptCheckThreads = MAX_SCRIPTCHECK_THREADS;
 
     fServer = GetBoolArg("-server", false);
-	fprintf(stderr,"%s tik6\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik6\n", __FUNCTION__);
 
     // block pruning; get the amount of disk space (in MB) to allot for block & undo files
     int64_t nSignedPruneTarget = GetArg("-prune", 0) * 1024 * 1024;
@@ -1241,7 +1241,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     expiryDelta = GetArg("-txexpirydelta", DEFAULT_TX_EXPIRY_DELTA);
     bSpendZeroConfChange = GetBoolArg("-spendzeroconfchange", true);
     fSendFreeTransactions = GetBoolArg("-sendfreetransactions", false);
-	fprintf(stderr,"%s tik7\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik7\n", __FUNCTION__);
 
     std::string strWalletFile = GetArg("-wallet", "wallet.dat");
 #endif // ENABLE_WALLET
@@ -1260,7 +1260,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             nLocalServices |= NODE_BLOOM;
     }
     nMaxTipAge = GetArg("-maxtipage", DEFAULT_MAX_TIP_AGE);
-	fprintf(stderr,"%s tik8\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik8\n", __FUNCTION__);
 
 #ifdef ENABLE_MINING
     if (mapArgs.count("-mineraddress")) {
@@ -1283,7 +1283,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
-	fprintf(stderr,"%s tik9\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik9\n", __FUNCTION__);
     if (!mapMultiArgs["-nuparams"].empty()) {
         // Allow overriding network upgrade parameters for testing
         if (Params().NetworkIDString() != "regtest") {
@@ -1329,6 +1329,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     ECC_Start();
     globalVerifyHandle.reset(new ECCVerifyHandle());
 
+	/*
     // set the hash algorithm to use for this chain
     // Again likely better solution here, than using long IF ELSE. 
     extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH, ASSETCHAINS_VERUSHASHV1_1;
@@ -1344,8 +1345,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         // initialize VerusHashV2
         CBlockHeader::SetVerusHashV2();
     }
+	*/
 
-	fprintf(stderr,"%s tik10\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik10\n", __FUNCTION__);
     // Sanity check
     if (!InitSanityCheck())
         return InitError(_("Initialization sanity check failed. Please check for insanity. Hush is shutting down!"));
@@ -1362,7 +1364,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (file) fclose(file);
 
 
-	fprintf(stderr,"%s tik11\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik11\n", __FUNCTION__);
     fprintf(stderr,"Attempting to obtain lock %s\n", pathLockFile.string().c_str());
     try {
         static boost::interprocess::file_lock lock(pathLockFile.string().c_str());
@@ -1378,7 +1380,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (GetBoolArg("-shrinkdebugfile", !fDebug))
         ShrinkDebugFile();
 
-	fprintf(stderr,"%s tik12\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik12\n", __FUNCTION__);
 
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     LogPrintf("Hush version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
@@ -1403,7 +1405,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             threadGroup.create_thread(&ThreadScriptCheck);
     }
 
-	fprintf(stderr,"%s tik13\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik13\n", __FUNCTION__);
 
     // Start the lightweight task scheduler thread
     CScheduler::Function serviceLoop = boost::bind(&CScheduler::serviceQueue, &scheduler);
@@ -1411,7 +1413,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // Count uptime
     MarkStartTime();
-	fprintf(stderr,"%s tik14\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik14\n", __FUNCTION__);
 
     if ((chainparams.NetworkIDString() != "regtest") &&
             GetBoolArg("-showmetrics", 0) &&
@@ -1421,7 +1423,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         threadGroup.create_thread(&ThreadShowMetricsScreen);
     }
 
-	fprintf(stderr,"%s tik15\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik15\n", __FUNCTION__);
     // These must be disabled for now, they are buggy and we probably don't
     // want any of libsnark's profiling in production anyway.
     libsnark::inhibit_profiling_info = true;
@@ -1443,7 +1445,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (!AppInitServers(threadGroup))
             return InitError(_("Unable to start HTTP server. See debug log for details."));
     }
-	fprintf(stderr,"%s tik16\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik16\n", __FUNCTION__);
 
     int64_t nStart;
 
@@ -1468,7 +1470,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #endif // ENABLE_WALLET
     // ********************************************************* Step 6: network initialization
 
-	fprintf(stderr,"%s tik17\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik17\n", __FUNCTION__);
     RegisterNodeSignals(GetNodeSignals());
 
     // sanitize comments per BIP-0014, format user agent and check total size
@@ -1484,7 +1486,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError(strprintf("Total length of network version string %i exceeds maximum of %i characters. Reduce the number and/or size of uacomments.",
             strSubVersion.size(), MAX_SUBVERSION_LENGTH));
     }
-	fprintf(stderr,"%s tik18\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik18\n", __FUNCTION__);
 
     if (mapArgs.count("-onlynet")) {
         std::set<enum Network> nets;
@@ -1501,7 +1503,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
-	fprintf(stderr,"%s tik19\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik19\n", __FUNCTION__);
     if (mapArgs.count("-whitelist")) {
         BOOST_FOREACH(const std::string& net, mapMultiArgs["-whitelist"]) {
             CSubNet subnet(net);
@@ -1527,7 +1529,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         SetNameProxy(addrProxy);
         SetLimited(NET_TOR, false); // by default, -proxy sets onion as reachable, unless -noonion later
     }
-	fprintf(stderr,"%s tik20\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik20\n", __FUNCTION__);
 
     // -onion can be used to set only a proxy for .onion, or override normal proxy for .onion addresses
     // -noonion (or -onion=0) disables connecting to .onion entirely
@@ -1550,7 +1552,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     fDiscover   = GetBoolArg("-discover", true);
     fNameLookup = GetBoolArg("-dns", true);
 
-	fprintf(stderr,"%s tik22\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik22\n", __FUNCTION__);
     bool fBound = false;
     if (fListen) {
         if (mapArgs.count("-bind") || mapArgs.count("-whitebind")) {
@@ -1588,7 +1590,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
-	fprintf(stderr,"%s tik23\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik23\n", __FUNCTION__);
 
     BOOST_FOREACH(const std::string& strDest, mapMultiArgs["-seednode"])
         AddOneShot(strDest);
@@ -1629,7 +1631,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return !fRequestShutdown;
     }
     // ********************************************************* Step 7: load block chain
-	fprintf(stderr,"%s tik24\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik24\n", __FUNCTION__);
 
     fReindex = GetBoolArg("-reindex", false);
 
@@ -1861,7 +1863,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         mempool.ReadFeeEstimates(est_filein);
     fFeeEstimatesInitialized = true;
 
-	fprintf(stderr,"%s tik25\n", __FUNCTION__);
+	//fprintf(stderr,"%s tik25\n", __FUNCTION__);
 
     // ********************************************************* Step 8: load wallet
 #ifdef ENABLE_WALLET

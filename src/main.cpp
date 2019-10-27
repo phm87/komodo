@@ -4262,7 +4262,7 @@ static int64_t nTimePostConnect = 0;
  */
 bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *pblock) {
 
-	fprintf(stderr, "%s: Start\n", __FUNCTION__);
+	//fprintf(stderr, "%s: Start\n", __FUNCTION__);
     assert(pindexNew->pprev == chainActive.Tip());
     // Read block from disk.
     int64_t nTime1 = GetTimeMicros();
@@ -4352,14 +4352,14 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     if ( KOMODO_LONGESTCHAIN != 0 && (pindexNew->GetHeight() == KOMODO_LONGESTCHAIN || pindexNew->GetHeight() == KOMODO_LONGESTCHAIN+1) )
         KOMODO_INSYNC = (int32_t)pindexNew->GetHeight();
     else KOMODO_INSYNC = 0;
-    fprintf(stderr,"connect.%d insync.%d ASSETCHAINS_SAPLING.%d\n",(int32_t)pindexNew->GetHeight(),KOMODO_INSYNC,ASSETCHAINS_SAPLING);
+    //fprintf(stderr,"connect.%d insync.%d ASSETCHAINS_SAPLING.%d\n",(int32_t)pindexNew->GetHeight(),KOMODO_INSYNC,ASSETCHAINS_SAPLING);
     /*if ( KOMODO_INSYNC != 0 ) //ASSETCHAINS_SYMBOL[0] == 0 &&
         komodo_broadcast(pblock,8);
     else if ( ASSETCHAINS_SYMBOL[0] != 0 )
         komodo_broadcast(pblock,4);*/
     if ( KOMODO_NSPV_FULLNODE )
     {
-		fprintf(stderr,"%s: KOMODO_NSPV_FULLNODE\n", __FUNCTION__);
+		//fprintf(stderr,"%s: KOMODO_NSPV_FULLNODE\n", __FUNCTION__);
         if ( ASSETCHAINS_CBOPRET != 0 )
             komodo_pricesupdate(pindexNew->GetHeight(),pblock);
         if ( ASSETCHAINS_SAPLING <= 0 && pindexNew->nTime > KOMODO_SAPLING_ACTIVATION - 24*3600 )
@@ -4375,7 +4375,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
             fprintf(stderr, "snapshot completed in: %d seconds\n", (int32_t)(time(NULL)-start));
         }
     }
-	fprintf(stderr,"%s: returning true\n", __FUNCTION__);
+	//fprintf(stderr,"%s: returning true\n", __FUNCTION__);
     return true;
 }
 
@@ -4439,12 +4439,16 @@ static CBlockIndex* FindMostWorkChain() {
 
 /** Delete all entries in setBlockIndexCandidates that are worse than the current tip. */
 static void PruneBlockIndexCandidates() {
+	fprintf(stderr,"%s:, setBlockIndexCandidates.size=%d\n", __FUNCTION__, setBlockIndexCandidates.size() );
     // Note that we can't delete the current block itself, as we may need to return to it later in case a
     // reorganization to a better block fails.
     std::set<CBlockIndex*, CBlockIndexWorkComparator>::iterator it = setBlockIndexCandidates.begin();
     while (it != setBlockIndexCandidates.end() && setBlockIndexCandidates.value_comp()(*it, chainActive.LastTip())) {
+	    fprintf(stderr,"%s:, erasing blockindexcandidate element height=%d, time=%d\n", __FUNCTION__, (*it)->GetHeight(), (*it)->GetBlockTime() );
         setBlockIndexCandidates.erase(it++);
+	    //fprintf(stderr,"%s:, erased element\n", __FUNCTION__);
     }
+    fprintf(stderr,"%s:, setBlockIndexCandidates.size()=%d\n", __FUNCTION__, setBlockIndexCandidates.size() );
     // Either the current tip or a successor of it we're working towards is left in setBlockIndexCandidates.
     assert(!setBlockIndexCandidates.empty());
 }
@@ -6080,9 +6084,9 @@ bool static LoadBlockIndexDB()
         vSortedByHeight.push_back(make_pair(pindex->GetHeight(), pindex));
         //komodo_pindex_init(pindex,(int32_t)pindex->GetHeight());
     }
-    //fprintf(stderr,"load blockindexDB paired %u\n",(uint32_t)time(NULL));
+    fprintf(stderr,"load blockindexDB paired %u\n",(uint32_t)time(NULL));
     sort(vSortedByHeight.begin(), vSortedByHeight.end());
-    //fprintf(stderr,"load blockindexDB sorted %u\n",(uint32_t)time(NULL));
+    fprintf(stderr,"load blockindexDB sorted %u\n",(uint32_t)time(NULL));
     BOOST_FOREACH(const PAIRTYPE(int, CBlockIndex*)& item, vSortedByHeight)
     {
         CBlockIndex* pindex = item.second;
@@ -6092,7 +6096,7 @@ bool static LoadBlockIndexDB()
         if (pindex->nTx > 0) {
             if (pindex->pprev) {
                 if (pindex->pprev->nChainTx) {
-
+                    pindex->nChainTx = pindex->pprev->nChainTx + pindex->nTx;
                     if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                         pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
                     } else {
@@ -6138,7 +6142,7 @@ bool static LoadBlockIndexDB()
             pindexBestHeader = pindex;
         //komodo_pindex_init(pindex,(int32_t)pindex->GetHeight());
     }
-    //fprintf(stderr,"load blockindexDB chained %u\n",(uint32_t)time(NULL));
+    fprintf(stderr,"load blockindexDB chained %u\n",(uint32_t)time(NULL));
 
     // Load block file info
     pblocktree->ReadLastBlockFile(nLastBlockFile);
@@ -6231,6 +6235,8 @@ bool static LoadBlockIndexDB()
 
     // Set hashFinalSproutRoot for the end of best chain
     it->second->hashFinalSproutRoot = pcoinsTip->GetBestAnchor(SPROUT);
+
+    fprintf(stderr,"about to prune block index\n");
 
     PruneBlockIndexCandidates();
 

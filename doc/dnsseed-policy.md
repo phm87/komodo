@@ -42,13 +42,13 @@ details of their operating practices.
 related to the DNS seed operation.
 
 If these expectations cannot be satisfied the operator should discontinue
-providing services and contact the active Zcash development team as well as
-creating an issue in the [Zcash repository](https://github.com/zcash/zcash).
+providing services and contact the active Hush development team as well as
+creating an issue in the [Hush Github repository](https://github.com/MyHush/hush3).
 
 Behavior outside of these expectations may be reasonable in some
 situations but should be discussed in public in advance.
 
 See also
 ----------
-- [zcash-seeder](https://github.com/zcash/zcash-seeder) is a reference
+- [hush-seeder](https://github.com/MyHush/hush-seeder) is a reference
   implementation of a DNS seed.

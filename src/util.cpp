@@ -539,10 +539,10 @@ boost::filesystem::path GetDefaultDataDir()
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         strcpy(symbol,ASSETCHAINS_SYMBOL);
     else symbol[0] = 0;
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
-    // Mac: ~/Library/Application Support/Zcash
-    // Unix: ~/.zcash
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Komodo
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Komodo
+    // Mac: ~/Library/Application Support/Komodo
+    // Unix: ~/.komodo
 #ifdef _WIN32
     // Windows
     if ( symbol[0] == 0 )
@@ -589,6 +589,7 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashParams
     // Mac: ~/Library/Application Support/ZcashParams
     // Unix: ~/.zcash-params
+	// Debian packages: /usr/share/hush
     fs::path pathRet;
 #ifdef _WIN32
     return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashParams";

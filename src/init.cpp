@@ -97,6 +97,9 @@ using namespace std;
 extern void ThreadSendAlert();
 extern bool komodo_dailysnapshot(int32_t height);
 extern int32_t KOMODO_LOADINGBLOCKS;
+extern char ASSETCHAINS_SYMBOL[];
+extern int32_t KOMODO_SNAPSHOT_INTERVAL;
+
 extern void komodo_init(int32_t height);
 
 ZCJoinSplit* pzcashParams = NULL;
@@ -164,6 +167,7 @@ std::atomic<bool> fRequestShutdown(false);
 
 void StartShutdown()
 {
+	fprintf(stderr,"%s: fRequestShudown=true\n", __FUNCTION__);
     fRequestShutdown = true;
 }
 bool ShutdownRequested()
@@ -207,6 +211,7 @@ void Interrupt(boost::thread_group& threadGroup)
 
 void Shutdown()
 {
+	fprintf(stderr,"%s: start\n", __FUNCTION__);
     LogPrintf("%s: In progress...\n", __func__);
     static CCriticalSection cs_Shutdown;
     TRY_LOCK(cs_Shutdown, lockShutdown);
@@ -218,11 +223,11 @@ void Shutdown()
     /// Be sure that anything that writes files or flushes caches only does this if the respective
     /// module was initialized.
     static char shutoffstr[128];
-    sprintf(shutoffstr,"%s-shutoff",ASSETCHAINS_SYMBOL);
-    //RenameThread("verus-shutoff");
+    sprintf(shutoffstr,"%s-shutoff","hush");
     RenameThread(shutoffstr);
     mempool.AddTransactionsUpdated(1);
 
+	fprintf(stderr,"%s: stopping HTTP/REST/RPC\n", __FUNCTION__);
     StopHTTPRPC();
     StopREST();
     StopRPC();
@@ -238,6 +243,7 @@ void Shutdown()
     GenerateBitcoins(false, 0);
  #endif
 #endif
+	fprintf(stderr,"%s: stopping node\n", __FUNCTION__);
     StopNode();
     StopTorControl();
     UnregisterNodeSignals(GetNodeSignals());
@@ -312,11 +318,13 @@ void Shutdown()
  */
 void HandleSIGTERM(int)
 {
+	fprintf(stderr,"%s\n",__FUNCTION__);
     fRequestShutdown = true;
 }
 
 void HandleSIGHUP(int)
 {
+	fprintf(stderr,"%s\n",__FUNCTION__);
     fReopenDebugLog = true;
 }
 
@@ -674,7 +682,7 @@ void CleanupBlockRevFiles()
 
 void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
 {
-    RenameThread("zcash-loadblk");
+    RenameThread("hush-loadblk");
     // -reindex
     if (fReindex) {
         CImportingNow imp;
@@ -748,17 +756,20 @@ void ThreadNotifyRecentlyAdded()
 }
 
 /** Sanity checks
- *  Ensure that Bitcoin is running in a usable environment with all
+ *  Ensure that Hush is running in a usable environment with all
  *  necessary library support.
  */
 bool InitSanityCheck(void)
 {
     if(!ECC_InitSanityCheck()) {
         InitError("Elliptic curve cryptography sanity check failure. Aborting.");
+		fprintf(stderr,"%s: ECC insanity!\n", __FUNCTION__);
         return false;
     }
-    if (!glibc_sanity_test() || !glibcxx_sanity_test())
+    if (!glibc_sanity_test() || !glibcxx_sanity_test()) {
+		fprintf(stderr,"%s: glibc insanity!\n", __FUNCTION__);
         return false;
+	}
 
     return true;
 }
@@ -766,6 +777,7 @@ bool InitSanityCheck(void)
 void NoParamsShutdown(void)
 {
     //TODO: error message incorrect about location
+	fprintf(stderr,"%s: no params!\n", __FUNCTION__);
     LogPrintf("Could not find Sapling params anywhere! Exiting...");
     uiInterface.ThreadSafeMessageBox(strprintf(
         _("Cannot find the Sapling network parameters in the following directory:\n"
@@ -777,6 +789,10 @@ void NoParamsShutdown(void)
     return;
 }
 
+bool files_exist(boost::filesystem::path file1, boost::filesystem::path file2) {
+    return boost::filesystem::exists(file1) && boost::filesystem::exists(file2);
+}
+
 static void ZC_LoadParams(
     const CChainParams& chainparams
 )
@@ -784,55 +800,66 @@ static void ZC_LoadParams(
     namespace fs = boost::filesystem;
     struct timeval tv_start, tv_end;
     float elapsed;
+    bool found = false;
 
-    // First check the per-user installation location
-    boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
-    boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
+	// Some people have previous partial downloads of zcash params, so check that last
+	// Sapling Param Search path: . /usr/share/hush .. ../hush3 ~/.zcash-params
 
-    // Debian packages install globally into /usr/share/hush
-    if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-        boost::filesystem::path sapling_spend  = fs::path("/usr/share/hush") / "sapling-spend.params";
-        boost::filesystem::path sapling_output = fs::path("/usr/share/hush") / "sapling-output.params";
+    // PWD
+	boost::filesystem::path sapling_spend  = "sapling-spend.params";
+	boost::filesystem::path sapling_output = "sapling-output.params";
+	if (files_exist(sapling_spend, sapling_output)) {
+		fprintf(stderr,"Found sapling params in .\n");
+        found = true;
+	}
 
-        // NOTE: This means that sapling params do not need to be installed, just findable
-        if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-            // Not globally installed, use local copies if they exist
-            // First check ., then .., then ../hush3
-            sapling_spend =  "sapling-spend.params";
-            sapling_output = "sapling-output.params";
-
-            // This is the most common case, for binaries distributed with params
-            if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-                // Not in PWD, try ..
-                sapling_spend =  boost::filesystem::path("..") / "sapling-spend.params";
-                sapling_output = boost::filesystem::path("..") / "sapling-output.params";
-
-                // Try .. in case this binary has no params
-                if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-                    // Not in .., try ../hush3 (the case of SilentDragon installed in same directory as hush3)
-                    sapling_spend =  boost::filesystem::path("..") / "hush3" / "sapling-spend.params";
-                    sapling_output = boost::filesystem::path("..") / "hush3" / "sapling-output.params";
-
-                    // This will catch the case of any external software (i.e. GUI wallets) needing params and installed in same dir as hush3.git
-                    if (!( boost::filesystem::exists(sapling_spend) && boost::filesystem::exists(sapling_output))) {
-                        // No Sapling params, at least we tried
-                        NoParamsShutdown();
-                        return;
-                    } else {
-                        fprintf(stderr,"Found sapling params in ../hush3\n");
-                    }
-                } else {
-                    fprintf(stderr,"Found sapling params in ..\n");
-                }
-            } else {
-                fprintf(stderr,"Found sapling params in PWD\n");
-            }
-    } else {
-        fprintf(stderr,"Found sapling params in /usr/share/hush\n");
+    if (!found) {
+       // Debian global install dir: /usr/share/hush
+       sapling_spend  = fs::path("/usr/share/hush") / "sapling-spend.params";
+       sapling_output = fs::path("/usr/share/hush") / "sapling-output.params";
+       if (files_exist(sapling_spend, sapling_output)) {
+            fprintf(stderr,"Found sapling params in /usr/share/hush\n");
+            found=true;
+       }
     }
-    } else {
-        fprintf(stderr,"Found sapling params in %s\n", ZC_GetParamsDir().string().c_str() );
+
+    if (!found) {
+        // Try ..
+        sapling_spend =  boost::filesystem::path("..") / "sapling-spend.params";
+        sapling_output = boost::filesystem::path("..") / "sapling-output.params";
+	    if (files_exist(sapling_spend, sapling_output)) {
+            fprintf(stderr,"Found sapling params in ..\n");
+            found = true;
+	    }
     }
+
+    if (!found) {
+        // This will catch the case of any external software (i.e. GUI wallets) needing params and installed in same dir as hush3.git
+        sapling_spend =  boost::filesystem::path("..") / "hush3" / "sapling-spend.params";
+        sapling_output = boost::filesystem::path("..") / "hush3" / "sapling-output.params";
+	    if (files_exist(sapling_spend, sapling_output)) {
+            fprintf(stderr,"Found sapling params in ../hush3\n");
+            found = true;
+	    }
+    }
+
+    if (!found) {
+        // The traditional place Zcash params are stored, should not hit this case in normal circumstances,
+        // as Hush packages sapling params now
+        sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
+        sapling_output = ZC_GetParamsDir() / "sapling-output.params";
+	    if (files_exist(sapling_spend, sapling_output)) {
+            fprintf(stderr,"Found sapling params in ~/.zcash\n");
+            found = true;
+	    }
+    }
+
+    if (!found) {
+        // No Sapling params, at least we tried
+        NoParamsShutdown();
+        return;
+    }
+
 
 
     //LogPrintf("Loading verifying key from %s\n", vk_path.string().c_str());
@@ -895,6 +922,7 @@ extern int32_t KOMODO_REWIND;
 
 bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
+	fprintf(stderr,"%s start\n", __FUNCTION__);
     // ********************************************************* Step 1: setup
 #ifdef _MSC_VER
     // Turn off Microsoft heap dump noise
@@ -921,6 +949,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (!SetupNetworking())
         return InitError("Error: Initializing networking failed");
+	fprintf(stderr,"%s networking setup\n", __FUNCTION__);
 
 #ifndef _WIN32
     if (GetBoolArg("-sysperms", false)) {
@@ -929,9 +958,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             return InitError("Error: -sysperms is not allowed in combination with enabled wallet functionality");
 #endif
     } else {
+	    //fprintf(stderr,"%s setting umask\n", __FUNCTION__);
         umask(077);
     }
 
+	//fprintf(stderr,"%s tik1\n", __FUNCTION__);
     // Clean shutdown on SIGTERM
     struct sigaction sa;
     sa.sa_handler = HandleSIGTERM;
@@ -953,31 +984,42 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     std::set_new_handler(new_handler_terminate);
 
+    fprintf(stderr,"%s: set signal handlers\n", __FUNCTION__);
+
     // ********************************************************* Step 2: parameter interactions
     const CChainParams& chainparams = Params();
+
+    fprintf(stderr,"%s: got chain params\n", __FUNCTION__);
 
     // Set this early so that experimental features are correctly enabled/disabled
     fExperimentalMode = GetBoolArg("-experimentalfeatures", true);
 
+    fprintf(stderr,"%s: fExperimentalMode=%d\n", __FUNCTION__, fExperimentalMode);
+
     // Fail early if user has set experimental options without the global flag
     if (!fExperimentalMode) {
         if (mapArgs.count("-developerencryptwallet")) {
+			fprintf(stderr,"%s wallet encryption error\n", __FUNCTION__);
             return InitError(_("Wallet encryption requires -experimentalfeatures."));
         }
         else if (mapArgs.count("-paymentdisclosure")) {
+			fprintf(stderr,"%s payment disclosure error\n", __FUNCTION__);
             return InitError(_("Payment disclosure requires -experimentalfeatures."));
         } else if (mapArgs.count("-zmergetoaddress")) {
+			fprintf(stderr,"%s zmerge error\n", __FUNCTION__);
             return InitError(_("RPC method z_mergetoaddress requires -experimentalfeatures."));
         }
-    }
+    } 
+	//fprintf(stderr,"%s tik2\n", __FUNCTION__);
 
     // Set this early so that parameter interactions go to console
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
-    fLogTimestamps = GetBoolArg("-logtimestamps", true);
-    fLogIPs = GetBoolArg("-logips", false);
+    fLogTimestamps  = GetBoolArg("-logtimestamps", true);
+    fLogIPs         = GetBoolArg("-logips", false);
+
 
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-    LogPrintf("Zcash version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
+    LogPrintf("Hush version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
 
     // when specifying an explicit binding address, you want to listen on it
     // even when -connect or -proxy is specified
@@ -990,6 +1032,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             LogPrintf("%s: parameter interaction: -whitebind set -> setting -listen=1\n", __func__);
     }
 
+	//fprintf(stderr,"%s tik3\n", __FUNCTION__);
     if (mapArgs.count("-connect") && mapMultiArgs["-connect"].size() > 0) {
         // when only connecting to trusted nodes, do not seed via DNS, or listen by default
         if (SoftSetBoolArg("-dnsseed", false))
@@ -1032,6 +1075,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (SoftSetBoolArg("-rescan", true))
             LogPrintf("%s: parameter interaction: -zapwallettxes=<mode> -> setting -rescan=1\n", __func__);
     }
+	//fprintf(stderr,"%s tik4\n", __FUNCTION__);
 
     // Make sure enough file descriptors are available
     int nBind = std::max((int)mapArgs.count("-bind") + (int)mapArgs.count("-whitebind"), 1);
@@ -1039,12 +1083,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     //fprintf(stderr,"nMaxConnections %d\n",nMaxConnections);
     nMaxConnections = std::max(std::min(nMaxConnections, (int)(FD_SETSIZE - nBind - MIN_CORE_FILEDESCRIPTORS)), 0);
     int nFD = RaiseFileDescriptorLimit(nMaxConnections + MIN_CORE_FILEDESCRIPTORS);
-    //fprintf(stderr,"nMaxConnections %d FD_SETSIZE.%d nBind.%d expr.%d \n",nMaxConnections,FD_SETSIZE,nBind,(int)(FD_SETSIZE - nBind - MIN_CORE_FILEDESCRIPTORS));
+    fprintf(stderr,"nMaxConnections %d FD_SETSIZE.%d nBind.%d expr.%d \n",nMaxConnections,FD_SETSIZE,nBind,(int)(FD_SETSIZE - nBind - MIN_CORE_FILEDESCRIPTORS));
     if (nFD < MIN_CORE_FILEDESCRIPTORS)
         return InitError(_("Not enough file descriptors available."));
     if (nFD - MIN_CORE_FILEDESCRIPTORS < nMaxConnections)
         nMaxConnections = nFD - MIN_CORE_FILEDESCRIPTORS;
-    fprintf(stderr,"nMaxConnections %d\n",nMaxConnections);
+    //fprintf(stderr,"nMaxConnections %d\n",nMaxConnections);
     // if using block pruning, then disable txindex
     // also disable the wallet (for now, until SPV support is implemented in wallet)
     if (GetArg("-prune", 0)) {
@@ -1077,6 +1121,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
+	//fprintf(stderr,"%s tik5\n", __FUNCTION__);
     // Check for -debugnet
     if (GetBoolArg("-debugnet", false))
         InitWarning(_("Warning: Unsupported argument -debugnet ignored, use -debug=net."));
@@ -1108,6 +1153,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         nScriptCheckThreads = MAX_SCRIPTCHECK_THREADS;
 
     fServer = GetBoolArg("-server", false);
+	//fprintf(stderr,"%s tik6\n", __FUNCTION__);
 
     // block pruning; get the amount of disk space (in MB) to allot for block & undo files
     int64_t nSignedPruneTarget = GetArg("-prune", 0) * 1024 * 1024;
@@ -1195,6 +1241,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     expiryDelta = GetArg("-txexpirydelta", DEFAULT_TX_EXPIRY_DELTA);
     bSpendZeroConfChange = GetBoolArg("-spendzeroconfchange", true);
     fSendFreeTransactions = GetBoolArg("-sendfreetransactions", false);
+	//fprintf(stderr,"%s tik7\n", __FUNCTION__);
 
     std::string strWalletFile = GetArg("-wallet", "wallet.dat");
 #endif // ENABLE_WALLET
@@ -1213,6 +1260,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             nLocalServices |= NODE_BLOOM;
     }
     nMaxTipAge = GetArg("-maxtipage", DEFAULT_MAX_TIP_AGE);
+	//fprintf(stderr,"%s tik8\n", __FUNCTION__);
 
 #ifdef ENABLE_MINING
     if (mapArgs.count("-mineraddress")) {
@@ -1235,6 +1283,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
+	//fprintf(stderr,"%s tik9\n", __FUNCTION__);
     if (!mapMultiArgs["-nuparams"].empty()) {
         // Allow overriding network upgrade parameters for testing
         if (Params().NetworkIDString() != "regtest") {
@@ -1272,6 +1321,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // Initialize libsodium
     if (init_and_check_sodium() == -1) {
+		fprintf(stderr,"%s: libsodium init failed!\n", __FUNCTION__);
         return false;
     }
 
@@ -1279,6 +1329,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     ECC_Start();
     globalVerifyHandle.reset(new ECCVerifyHandle());
 
+	/*
     // set the hash algorithm to use for this chain
     // Again likely better solution here, than using long IF ELSE. 
     extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH, ASSETCHAINS_VERUSHASHV1_1;
@@ -1294,10 +1345,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         // initialize VerusHashV2
         CBlockHeader::SetVerusHashV2();
     }
+	*/
 
+	//fprintf(stderr,"%s tik10\n", __FUNCTION__);
     // Sanity check
     if (!InitSanityCheck())
-        return InitError(_("Initialization sanity check failed. Komodo is shutting down."));
+        return InitError(_("Initialization sanity check failed. Please check for insanity. Hush is shutting down!"));
 
     std::string strDataDir = GetDataDir().string();
 #ifdef ENABLE_WALLET
@@ -1305,19 +1358,20 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (strWalletFile != boost::filesystem::basename(strWalletFile) + boost::filesystem::extension(strWalletFile))
         return InitError(strprintf(_("Wallet %s resides outside data directory %s"), strWalletFile, strDataDir));
 #endif
-    // Make sure only a single Bitcoin process is using the data directory.
+    // Make sure only a single Hush process is using the data directory.
     boost::filesystem::path pathLockFile = GetDataDir() / ".lock";
     FILE* file = fopen(pathLockFile.string().c_str(), "a"); // empty lock file; created if it doesn't exist.
     if (file) fclose(file);
 
 
+	//fprintf(stderr,"%s tik11\n", __FUNCTION__);
     fprintf(stderr,"Attempting to obtain lock %s\n", pathLockFile.string().c_str());
     try {
         static boost::interprocess::file_lock lock(pathLockFile.string().c_str());
         if (!lock.try_lock())
-            return InitError(strprintf(_("Cannot obtain a lock on data directory %s. Komodo is probably already running."), strDataDir));
+            return InitError(strprintf(_("Cannot obtain a lock on data directory %s. Hush is probably already running."), strDataDir));
     } catch(const boost::interprocess::interprocess_exception& e) {
-        return InitError(strprintf(_("Cannot obtain a lock on data directory %s. Komodo is probably already running.") + " %s.", strDataDir, e.what()));
+        return InitError(strprintf(_("Cannot obtain a lock on data directory %s. Hush is probably already running.") + " %s.", strDataDir, e.what()));
     }
 
 #ifndef _WIN32
@@ -1325,8 +1379,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #endif
     if (GetBoolArg("-shrinkdebugfile", !fDebug))
         ShrinkDebugFile();
+
+	//fprintf(stderr,"%s tik12\n", __FUNCTION__);
+
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-    LogPrintf("Komodo version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
+    LogPrintf("Hush version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
 
     if (fPrintToDebugLog)
         OpenDebugLog();
@@ -1348,12 +1405,15 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             threadGroup.create_thread(&ThreadScriptCheck);
     }
 
+	//fprintf(stderr,"%s tik13\n", __FUNCTION__);
+
     // Start the lightweight task scheduler thread
     CScheduler::Function serviceLoop = boost::bind(&CScheduler::serviceQueue, &scheduler);
     threadGroup.create_thread(boost::bind(&TraceThread<CScheduler::Function>, "scheduler", serviceLoop));
 
     // Count uptime
     MarkStartTime();
+	//fprintf(stderr,"%s tik14\n", __FUNCTION__);
 
     if ((chainparams.NetworkIDString() != "regtest") &&
             GetBoolArg("-showmetrics", 0) &&
@@ -1363,6 +1423,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         threadGroup.create_thread(&ThreadShowMetricsScreen);
     }
 
+	//fprintf(stderr,"%s tik15\n", __FUNCTION__);
     // These must be disabled for now, they are buggy and we probably don't
     // want any of libsnark's profiling in production anyway.
     libsnark::inhibit_profiling_info = true;
@@ -1384,6 +1445,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (!AppInitServers(threadGroup))
             return InitError(_("Unable to start HTTP server. See debug log for details."));
     }
+	//fprintf(stderr,"%s tik16\n", __FUNCTION__);
 
     int64_t nStart;
 
@@ -1408,6 +1470,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #endif // ENABLE_WALLET
     // ********************************************************* Step 6: network initialization
 
+	//fprintf(stderr,"%s tik17\n", __FUNCTION__);
     RegisterNodeSignals(GetNodeSignals());
 
     // sanitize comments per BIP-0014, format user agent and check total size
@@ -1423,6 +1486,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError(strprintf("Total length of network version string %i exceeds maximum of %i characters. Reduce the number and/or size of uacomments.",
             strSubVersion.size(), MAX_SUBVERSION_LENGTH));
     }
+	//fprintf(stderr,"%s tik18\n", __FUNCTION__);
 
     if (mapArgs.count("-onlynet")) {
         std::set<enum Network> nets;
@@ -1439,6 +1503,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
+	//fprintf(stderr,"%s tik19\n", __FUNCTION__);
     if (mapArgs.count("-whitelist")) {
         BOOST_FOREACH(const std::string& net, mapMultiArgs["-whitelist"]) {
             CSubNet subnet(net);
@@ -1464,6 +1529,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         SetNameProxy(addrProxy);
         SetLimited(NET_TOR, false); // by default, -proxy sets onion as reachable, unless -noonion later
     }
+	//fprintf(stderr,"%s tik20\n", __FUNCTION__);
 
     // -onion can be used to set only a proxy for .onion, or override normal proxy for .onion addresses
     // -noonion (or -onion=0) disables connecting to .onion entirely
@@ -1482,10 +1548,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     // see Step 2: parameter interactions for more information about these
-    fListen = GetBoolArg("-listen", DEFAULT_LISTEN);
-    fDiscover = GetBoolArg("-discover", true);
+    fListen     = GetBoolArg("-listen", DEFAULT_LISTEN);
+    fDiscover   = GetBoolArg("-discover", true);
     fNameLookup = GetBoolArg("-dns", true);
 
+	//fprintf(stderr,"%s tik22\n", __FUNCTION__);
     bool fBound = false;
     if (fListen) {
         if (mapArgs.count("-bind") || mapArgs.count("-whitebind")) {
@@ -1522,6 +1589,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             AddLocal(CService(strAddr, GetListenPort(), fNameLookup), LOCAL_MANUAL);
         }
     }
+
+	//fprintf(stderr,"%s tik23\n", __FUNCTION__);
 
     BOOST_FOREACH(const std::string& strDest, mapMultiArgs["-seednode"])
         AddOneShot(strDest);
@@ -1562,6 +1631,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return !fRequestShutdown;
     }
     // ********************************************************* Step 7: load block chain
+	//fprintf(stderr,"%s tik24\n", __FUNCTION__);
 
     fReindex = GetBoolArg("-reindex", false);
 
@@ -1758,6 +1828,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (!fLoaded) {
             // first suggest a reindex
             if (!fReset) {
+			    fprintf(stderr,"%s error in hd data\n", __FUNCTION__);
                 bool fRet = uiInterface.ThreadSafeMessageBox(
                     strLoadError + ".\n\n" + _("error in HDD data, might just need to update to latest, if that doesnt work, then you need to resync"),
                     "", CClientUIInterface::MSG_ERROR | CClientUIInterface::BTN_ABORT);
@@ -1792,6 +1863,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         mempool.ReadFeeEstimates(est_filein);
     fFeeEstimatesInitialized = true;
 
+	//fprintf(stderr,"%s tik25\n", __FUNCTION__);
 
     // ********************************************************* Step 8: load wallet
 #ifdef ENABLE_WALLET
@@ -1998,6 +2070,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         CValidationState state;
         if ( !ActivateBestChain(true,state))
             strErrors << "Failed to connect best block";
+    } else {
+        fprintf(stderr,"KOMODO_REWIND < 0\n");
     }
     std::vector<boost::filesystem::path> vImportFiles;
     if (mapArgs.count("-loadblock"))
@@ -2012,8 +2086,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             MilliSleep(10);
     }
 
+	fprintf(stderr,"%s fRequestShutdown=%d\n", __FUNCTION__, !!fRequestShutdown);
+
     // ********************************************************* Step 11: start node
 
+    fprintf(stderr,"Checking disk space...\n");
     if (!CheckDiskSpace())
         return false;
 
@@ -2031,6 +2108,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("mapAddressBook.size() = %u\n",  pwalletMain ? pwalletMain->mapAddressBook.size() : 0);
 #endif
 
+	fprintf(stderr,"%s fRequestShutdown=%d\n", __FUNCTION__, !!fRequestShutdown);
     // Start the thread that notifies listeners of transactions that have been
     // recently added to the mempool.
     threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "txnotify", &ThreadNotifyRecentlyAdded));
@@ -2038,12 +2116,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (GetBoolArg("-listenonion", DEFAULT_LISTEN_ONION))
         StartTorControl(threadGroup, scheduler);
 
+    fprintf(stderr,"Starting txnotify thread\n");
     StartNode(threadGroup, scheduler);
 
 #ifdef ENABLE_MINING
     // Generate coins in the background
  #ifdef ENABLE_WALLET
-    VERUS_MINTBLOCKS = GetBoolArg("-mint", false);
 
     if (pwalletMain || !GetArg("-mineraddress", "").empty())
         GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", -1));
@@ -2055,13 +2133,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // ********************************************************* Step 11: finished
 
     SetRPCWarmupFinished();
-    uiInterface.InitMessage(_("Done loading"));
+    fprintf(stderr,"RPC warmump finished\n");
+    uiInterface.InitMessage(_("Done loading!"));
+	fprintf(stderr,"%s fRequestShutdown=%d\n", __FUNCTION__, !!fRequestShutdown);
 
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
+	     fprintf(stderr,"%s reaccepting wallet xtns\n", __FUNCTION__);
         // Add wallet transactions that aren't already in a block to mapTransactions
         pwalletMain->ReacceptWalletTransactions();
 
+	     fprintf(stderr,"%s starting wallet flusher thread\n", __FUNCTION__);
         // Run a thread to flush wallet periodically
         threadGroup.create_thread(boost::bind(&ThreadFlushWalletDB, boost::ref(pwalletMain->strWalletFile)));
     }
@@ -2070,5 +2152,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // SENDALERT
     threadGroup.create_thread(boost::bind(ThreadSendAlert));
 
+	fprintf(stderr,"%s end fRequestShutdown=%d\n", __FUNCTION__, !!fRequestShutdown);
     return !fRequestShutdown;
 }

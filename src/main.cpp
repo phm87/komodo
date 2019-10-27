@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -141,7 +142,7 @@ static void CheckBlockIndex();
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "Komodo Signed Message:\n";
+const string strMessageMagic = "Hush Signed Message:\n";
 
 // Internal stuff
 namespace {
@@ -1950,17 +1951,18 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
 
         CAmount nValueOut = tx.GetValueOut();
-        CAmount nFees = nValueIn-nValueOut;
-        double dPriority = 0;
+        double dPriority  = 0;
+        CAmount nFees     = 0;
+
         if (!fSkipExpiry)
         {
             dPriority = view.GetPriority(tx, chainActive.Height());
-            nFees = 0;
+            nFees = nValueIn-nValueOut;
         }
 
         if ( nValueOut > 777777*COIN && KOMODO_VALUETOOBIG(nValueOut - 777777*COIN) != 0 ) // some room for blockreward and txfees
             return state.DoS(100, error("AcceptToMemoryPool: GetValueOut too big"),REJECT_INVALID,"tx valueout is too big");
-  
+
         // Keep track of transactions that spend a coinbase, which we re-scan
         // during reorgs to ensure COINBASE_MATURITY is still met.
         bool fSpendsCoinbase = false;
@@ -1973,7 +1975,6 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 }
             }
         }
-//fprintf(stderr,"addmempool 5\n");
 
         // Grab the branch ID we expect this transaction to commit to. We don't
         // yet know if it does, but if the entry gets added to the mempool, then
@@ -2088,6 +2089,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             }
         }
     }
+	//SyncWithWallets(tx,NULL);
 
     return true;
 }
@@ -3352,7 +3354,7 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 static CCheckQueue<CScriptCheck> scriptcheckqueue(128);
 
 void ThreadScriptCheck() {
-    RenameThread("zcash-scriptch");
+    RenameThread("hush-scriptch");
     scriptcheckqueue.Thread();
 }
 
@@ -4260,6 +4262,7 @@ static int64_t nTimePostConnect = 0;
  */
 bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *pblock) {
 
+	//fprintf(stderr, "%s: Start\n", __FUNCTION__);
     assert(pindexNew->pprev == chainActive.Tip());
     // Read block from disk.
     int64_t nTime1 = GetTimeMicros();
@@ -4270,7 +4273,8 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         pblock = &block;
     }
     KOMODO_CONNECTING = (int32_t)pindexNew->GetHeight();
-    //fprintf(stderr,"%s connecting ht.%d maxsize.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)pindexNew->GetHeight(),MAX_BLOCK_SIZE(pindexNew->GetHeight()),(int32_t)::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
+    fprintf(stderr,"%s connecting ht.%d maxsize.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)pindexNew->GetHeight(),MAX_BLOCK_SIZE(pindexNew->GetHeight()),(int32_t)::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
+
     // Get the current commitment tree
     SproutMerkleTree oldSproutTree;
     SaplingMerkleTree oldSaplingTree;
@@ -4355,6 +4359,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         komodo_broadcast(pblock,4);*/
     if ( KOMODO_NSPV_FULLNODE )
     {
+		//fprintf(stderr,"%s: KOMODO_NSPV_FULLNODE\n", __FUNCTION__);
         if ( ASSETCHAINS_CBOPRET != 0 )
             komodo_pricesupdate(pindexNew->GetHeight(),pblock);
         if ( ASSETCHAINS_SAPLING <= 0 && pindexNew->nTime > KOMODO_SAPLING_ACTIVATION - 24*3600 )
@@ -4370,6 +4375,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
             fprintf(stderr, "snapshot completed in: %d seconds\n", (int32_t)(time(NULL)-start));
         }
     }
+	//fprintf(stderr,"%s: returning true\n", __FUNCTION__);
     return true;
 }
 
@@ -4433,12 +4439,16 @@ static CBlockIndex* FindMostWorkChain() {
 
 /** Delete all entries in setBlockIndexCandidates that are worse than the current tip. */
 static void PruneBlockIndexCandidates() {
+	fprintf(stderr,"%s:, setBlockIndexCandidates.size=%d\n", __FUNCTION__, setBlockIndexCandidates.size() );
     // Note that we can't delete the current block itself, as we may need to return to it later in case a
     // reorganization to a better block fails.
     std::set<CBlockIndex*, CBlockIndexWorkComparator>::iterator it = setBlockIndexCandidates.begin();
     while (it != setBlockIndexCandidates.end() && setBlockIndexCandidates.value_comp()(*it, chainActive.LastTip())) {
+	    fprintf(stderr,"%s:, erasing blockindexcandidate element height=%d, time=%d\n", __FUNCTION__, (*it)->GetHeight(), (*it)->GetBlockTime() );
         setBlockIndexCandidates.erase(it++);
+	    //fprintf(stderr,"%s:, erased element\n", __FUNCTION__);
     }
+    fprintf(stderr,"%s:, setBlockIndexCandidates.size()=%d\n", __FUNCTION__, setBlockIndexCandidates.size() );
     // Either the current tip or a successor of it we're working towards is left in setBlockIndexCandidates.
     assert(!setBlockIndexCandidates.empty());
 }
@@ -4448,6 +4458,7 @@ static void PruneBlockIndexCandidates() {
  * pblock is either NULL or a pointer to a CBlock corresponding to pindexMostWork.
  */
 static bool ActivateBestChainStep(bool fSkipdpow, CValidationState &state, CBlockIndex *pindexMostWork, CBlock *pblock) {
+	fprintf(stderr,"%s: fSkipdpow=%d\n", __FUNCTION__, fSkipdpow);
     AssertLockHeld(cs_main);
     bool fInvalidFound = false;
     const CBlockIndex *pindexOldTip = chainActive.Tip();
@@ -4583,6 +4594,7 @@ static bool ActivateBestChainStep(bool fSkipdpow, CValidationState &state, CBloc
  * that is already loaded (to avoid loading it again from disk).
  */
 bool ActivateBestChain(bool fSkipdpow, CValidationState &state, CBlock *pblock) {
+	fprintf(stderr,"%s: fSkipdpow=%d\n", __FUNCTION__, fSkipdpow);
     CBlockIndex *pindexNewTip = NULL;
     CBlockIndex *pindexMostWork = NULL;
     const CChainParams& chainParams = Params();
@@ -4776,14 +4788,9 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
 {
     pindexNew->nTx            = block.vtx.size();
     pindexNew->nChainTx       = 0;
-    pindexNew->nChainPayments = 0;
     CAmount sproutValue       = 0;
     CAmount saplingValue      = 0;
     bool isShieldedTx         = false;
-    int64_t nShieldedSpends=0,nShieldedOutputs=0,nPayments=0;
-    int64_t nShieldedTx=0,nFullyShieldedTx=0,nDeshieldingTx=0,nShieldingTx=0;
-    int64_t nShieldedPayments=0,nFullyShieldedPayments=0,nShieldingPayments=0,nDeshieldingPayments=0;
-    int64_t nNotarizations=0;
 
     for (auto tx : block.vtx) {
         // Negative valueBalance "takes" money from the transparent value pool
@@ -4796,70 +4803,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             sproutValue += js.vpub_old;
             sproutValue -= js.vpub_new;
         }
-
-        // Ignore following stats unless -zindex
-        if (!fZindex)
-            continue;
-
-        nShieldedSpends   = tx.vShieldedSpend.size();
-        nShieldedOutputs  = tx.vShieldedOutput.size();
-        isShieldedTx      = (nShieldedSpends + nShieldedOutputs) > 0 ? true : false;
-
-        // We want to avoid full verification with a low false-positive rate
-        if(tx.vin.size()==13 && tx.vout.size()==2 && tx.vout[1].scriptPubKey.IsOpReturn() && tx.vout[1].nValue==0) {
-            nNotarizations++;
-        }
-
-        if(isShieldedTx) {
-            nShieldedTx++;
-            if(tx.vin.size()==0 && tx.vout.size()==0) {
-                nFullyShieldedTx++;
-            } else if(tx.vin.size()>0) {
-                nShieldingTx++;
-            } else if(tx.vout.size()>0) {
-                nDeshieldingTx++;
-            }
-            //NOTE: These are at best heuristics. Improve them as much as possible.
-            //      You cannot compare stats generated from different sets of heuristics, so
-            //      if you change this code, you must delete and resync from scratch, or you
-            //      will be mixing together data from two set of heuristics.
-
-            if (nShieldedOutputs >= 1) {
-                // If there are shielded outputs, count each as a payment
-                // By default, if there is more than 1 output, we assume 1 change output which is not a payment.
-                // In the case of multiple outputs which spend inputs exactly, there is no change output and this
-                // heuristic will undercount payments. Since this edge case is rare, this seems acceptable.
-                // t->(t,t,z)   = 1 shielded payment
-                // z->(z,z)     = 1 shielded payment + shielded change
-                // t->(z,z)     = 1 shielded payment + shielded change
-                // t->(t,z)     = 1 shielded payment + transparent change
-                // (z,z)->z     = 1 shielded payment (has this xtn ever occurred?)
-                // z->(z,z,z)   = 2 shielded payments + shielded change
-                // Assume that there is always 1 change output when there are more than one
-                nShieldedPayments  += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
-
-                // Fully shielded do not count toward shielding/deshielding
-                if(tx.vin.size()==0 && tx.vout.size()==0) {
-                    nFullyShieldedPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
-                } else {
-                    nShieldingPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
-                }
-            } else if (nShieldedSpends >=1) {
-                // Shielded inputs with no shielded outputs. We know none are change output because
-                // change would flow back to the zaddr
-                // z->t         = 1 shielded payment
-                // z->(t,t)     = 2 shielded payments
-                // z->(t,t,t)   = 3 shielded payments
-                nShieldedPayments    += tx.vout.size();
-                nDeshieldingPayments += tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
-            }
-            //TODO:  correctly add shielded payments to total chain payments
-            nPayments += nShieldedPayments;
-        } else {
-            // No shielded payments, add transparent payments minus a change address
-            nPayments +=  tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
-        }
-    }
+	}
 
     pindexNew->nSproutValue = sproutValue;
     pindexNew->nChainSproutValue = boost::none;
@@ -4870,19 +4814,6 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     pindexNew->nUndoPos = 0;
     pindexNew->nStatus |= BLOCK_HAVE_DATA;
     pindexNew->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
-
-    if (fZindex) {
-        pindexNew->nPayments              = nPayments;
-        pindexNew->nShieldedTx            = nShieldedTx;
-        pindexNew->nFullyShieldedTx       = nFullyShieldedTx;
-        pindexNew->nDeshieldingTx         = nDeshieldingTx;
-        pindexNew->nShieldingTx           = nShieldingTx;
-        pindexNew->nShieldedPayments      = nShieldedPayments;
-        pindexNew->nFullyShieldedPayments = nFullyShieldedPayments;
-        pindexNew->nDeshieldingPayments   = nDeshieldingPayments;
-        pindexNew->nShieldingPayments     = nShieldingPayments;
-        pindexNew->nNotarizations         = nNotarizations;
-    }
 
     setDirtyBlockIndex.insert(pindexNew);
 
@@ -4895,23 +4826,11 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         while (!queue.empty()) {
             CBlockIndex *pindex = queue.front();
             queue.pop_front();
-
-            if (fZindex) {
-                pindex->nChainTx                    = (pindex->pprev ? pindex->pprev->nChainTx         : 0) + pindex->nTx;
-                pindex->nChainNotarizations         = (pindex->pprev ? pindex->pprev->nChainNotarizations : 0) + pindex->nNotarizations;
-                pindex->nChainShieldedTx            = (pindex->pprev ? pindex->pprev->nChainShieldedTx : 0) + pindex->nShieldedTx;
-                pindex->nChainFullyShieldedTx       = (pindex->pprev ? pindex->pprev->nChainFullyShieldedTx : 0) + pindex->nFullyShieldedTx;
-                pindex->nChainShieldingTx           = (pindex->pprev ? pindex->pprev->nChainShieldingTx : 0) + pindex->nShieldingTx;
-                pindex->nChainDeshieldingTx         = (pindex->pprev ? pindex->pprev->nChainDeshieldingTx : 0) + pindex->nDeshieldingTx;
-
-                pindex->nChainPayments              = (pindex->pprev ? pindex->pprev->nChainPayments         : 0) + pindex->nPayments;
-                pindex->nChainShieldedPayments      = (pindex->pprev ? pindex->pprev->nChainShieldedPayments : 0) + pindex->nShieldedPayments;
-                pindex->nChainFullyShieldedPayments = (pindex->pprev ? pindex->pprev->nChainFullyShieldedPayments : 0) + pindex->nFullyShieldedPayments;
-                pindex->nChainShieldingPayments     = (pindex->pprev ? pindex->pprev->nChainShieldingPayments : 0) + pindex->nShieldingPayments;
-                pindex->nChainDeshieldingPayments   = (pindex->pprev ? pindex->pprev->nChainDeshieldingPayments : 0) + pindex->nDeshieldingPayments;
-            }
+            pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
 
             if (pindex->pprev) {
+                pindex->nChainTx = pindex->pprev->nChainTx + pindex->nTx;
+
                 if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                     pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
                 } else {
@@ -4946,10 +4865,6 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             mapBlocksUnlinked.insert(std::make_pair(pindexNew->pprev, pindexNew));
         }
     }
-
-    if (fZindex)
-        fprintf(stderr, "ht.%d, ShieldedPayments=%d, ShieldedTx=%d, FullyShieldedTx=%d, ntz=%d\n",
-            pindexNew->GetHeight(), nShieldedPayments, nShieldedTx,  nFullyShieldedTx, nNotarizations );
 
     return true;
 }
@@ -6169,9 +6084,9 @@ bool static LoadBlockIndexDB()
         vSortedByHeight.push_back(make_pair(pindex->GetHeight(), pindex));
         //komodo_pindex_init(pindex,(int32_t)pindex->GetHeight());
     }
-    //fprintf(stderr,"load blockindexDB paired %u\n",(uint32_t)time(NULL));
+    fprintf(stderr,"load blockindexDB paired %u\n",(uint32_t)time(NULL));
     sort(vSortedByHeight.begin(), vSortedByHeight.end());
-    //fprintf(stderr,"load blockindexDB sorted %u\n",(uint32_t)time(NULL));
+    fprintf(stderr,"load blockindexDB sorted %u\n",(uint32_t)time(NULL));
     BOOST_FOREACH(const PAIRTYPE(int, CBlockIndex*)& item, vSortedByHeight)
     {
         CBlockIndex* pindex = item.second;
@@ -6181,20 +6096,7 @@ bool static LoadBlockIndexDB()
         if (pindex->nTx > 0) {
             if (pindex->pprev) {
                 if (pindex->pprev->nChainTx) {
-
-                    if (fZindex) {
-                        pindex->nChainNotarizations         = pindex->pprev->nChainNotarizations + pindex->nNotarizations;
-                        pindex->nChainTx                    = pindex->pprev->nChainTx + pindex->nTx;
-                        pindex->nChainShieldedTx            = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
-                        pindex->nChainShieldedPayments      = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
-                        pindex->nChainShieldingTx           = pindex->pprev->nChainShieldingTx + pindex->nShieldingTx;
-                        pindex->nChainShieldingPayments     = pindex->pprev->nChainShieldingPayments + pindex->nShieldingPayments;
-                        pindex->nChainDeshieldingTx         = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
-                        pindex->nChainDeshieldingPayments   = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
-                        pindex->nChainFullyShieldedTx       = pindex->pprev->nChainFullyShieldedTx + pindex->nFullyShieldedTx;
-                        pindex->nChainFullyShieldedPayments = pindex->pprev->nChainFullyShieldedPayments + pindex->nFullyShieldedPayments;
-                    }
-
+                    pindex->nChainTx = pindex->pprev->nChainTx + pindex->nTx;
                     if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                         pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
                     } else {
@@ -6207,17 +6109,6 @@ bool static LoadBlockIndexDB()
                     }
                 } else {
                     pindex->nChainTx                    = 0;
-                    if (fZindex) {
-                        pindex->nChainNotarizations         = 0;
-                        pindex->nChainShieldedTx            = 0;
-                        pindex->nChainFullyShieldedTx       = 0;
-                        pindex->nChainShieldedPayments      = 0;
-                        pindex->nChainShieldingPayments     = 0;
-                        pindex->nChainDeshieldingTx         = 0;
-                        pindex->nChainDeshieldingPayments   = 0;
-                        pindex->nChainFullyShieldedTx       = 0;
-                        pindex->nChainFullyShieldedPayments = 0;
-                    }
                     pindex->nChainSproutValue           = boost::none;
                     pindex->nChainSaplingValue          = boost::none;
                     mapBlocksUnlinked.insert(std::make_pair(pindex->pprev, pindex));
@@ -6226,16 +6117,6 @@ bool static LoadBlockIndexDB()
                 pindex->nChainTx                    = pindex->nTx;
                 pindex->nChainSproutValue           = pindex->nSproutValue;
                 pindex->nChainSaplingValue          = pindex->nSaplingValue;
-                if (fZindex) {
-                    pindex->nChainNotarizations         = pindex->nNotarizations;
-                    pindex->nChainShieldedTx            = pindex->nShieldedTx;
-                    pindex->nChainShieldedPayments      = pindex->nShieldedPayments;
-                    pindex->nChainShieldingTx           = pindex->nShieldingTx;
-                    pindex->nChainShieldingPayments     = pindex->nShieldingPayments;
-                    pindex->nChainDeshieldingTx         = pindex->nDeshieldingTx;
-                    pindex->nChainDeshieldingPayments   = pindex->nDeshieldingPayments;
-                    pindex->nChainFullyShieldedPayments = pindex->nFullyShieldedPayments;
-                }
             }
         }
         // Construct in-memory chain of branch IDs.
@@ -6261,7 +6142,7 @@ bool static LoadBlockIndexDB()
             pindexBestHeader = pindex;
         //komodo_pindex_init(pindex,(int32_t)pindex->GetHeight());
     }
-    //fprintf(stderr,"load blockindexDB chained %u\n",(uint32_t)time(NULL));
+    fprintf(stderr,"load blockindexDB chained %u\n",(uint32_t)time(NULL));
 
     // Load block file info
     pblocktree->ReadLastBlockFile(nLastBlockFile);
@@ -6354,6 +6235,8 @@ bool static LoadBlockIndexDB()
 
     // Set hashFinalSproutRoot for the end of best chain
     it->second->hashFinalSproutRoot = pcoinsTip->GetBestAnchor(SPROUT);
+
+    fprintf(stderr,"about to prune block index\n");
 
     PruneBlockIndexCandidates();
 

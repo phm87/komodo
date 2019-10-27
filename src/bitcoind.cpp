@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2013 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -70,22 +71,14 @@ CBlockIndex *komodo_chainactive(int32_t height);
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
     int32_t i,height; CBlockIndex *pindex; bool fShutdown = ShutdownRequested(); const uint256 zeroid;
-    // Tell the main threads to shutdown.
-    if (komodo_currentheight()>KOMODO_EARLYTXID_HEIGHT && KOMODO_EARLYTXID!=zeroid && ((height=tx_height(KOMODO_EARLYTXID))==0 || height>KOMODO_EARLYTXID_HEIGHT))
-    {
-        fprintf(stderr,"error: earlytx must be before block height %d or tx does not exist\n",KOMODO_EARLYTXID_HEIGHT);
-        StartShutdown();
-    }
-    /*if ( ASSETCHAINS_STAKED == 0 && ASSETCHAINS_ADAPTIVEPOW == 0 && (pindex= komodo_chainactive(1)) != 0 )
-    {
-        if ( pindex->nTime > ADAPTIVEPOW_CHANGETO_DEFAULTON )
-        {
-            ASSETCHAINS_ADAPTIVEPOW = 1;
-            fprintf(stderr,"default activate adaptivepow\n");
-        } else fprintf(stderr,"height1 time %u vs %u\n",pindex->nTime,ADAPTIVEPOW_CHANGETO_DEFAULTON);
-    } //else fprintf(stderr,"cant find height 1\n");*/
-    if ( ASSETCHAINS_CBOPRET != 0 )
+    //fprintf(stderr,"%s: fShutdown=%d, KOMODO_EARLYTXID_HEIGHT=%d\n", __FUNCTION__, fShutdown, KOMODO_EARLYTXID_HEIGHT);
+	//fprintf(stderr,"%s: earlytxid=%s, tx_height=%d\n", __FUNCTION__, KOMODO_EARLYTXID.GetHex(), tx_height(KOMODO_EARLYTXID) );
+    //fprintf(stderr,"%s: komodo_currentheight=%d\n", __FUNCTION__, komodo_currentheight() );
+
+    if ( ASSETCHAINS_CBOPRET != 0 ) {
         komodo_pricesinit();
+	}
+
     while (!fShutdown)
     {
         //fprintf(stderr,"call passport iteration\n");
@@ -100,9 +93,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
                     break;
                 MilliSleep(1000);
             }
-        }
-        else
-        {
+        } else {
             //komodo_interestsum();
             //komodo_longestchain();
             if ( ASSETCHAINS_CBOPRET != 0 )
@@ -117,6 +108,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         }
         fShutdown = ShutdownRequested();
     }
+    //fprintf(stderr,"%s: fShutdown=%d\n", __FUNCTION__, fShutdown);
+
     if (threadGroup)
     {
         Interrupt(*threadGroup);
@@ -141,6 +134,8 @@ bool AppInit(int argc, char* argv[])
 
     bool fRet = false;
 
+
+	//fprintf(stderr, "%s start, argc=%d\n", __FUNCTION__, argc);
     //
     // Parameters
     //
@@ -150,7 +145,7 @@ bool AppInit(int argc, char* argv[])
     // Process help and version before taking care about datadir
     if (mapArgs.count("-?") || mapArgs.count("-h") ||  mapArgs.count("-help") || mapArgs.count("-version"))
     {
-        std::string strUsage = _("Komodo Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
+        std::string strUsage = _("Hush Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
 
         if (mapArgs.count("-version"))
         {
@@ -159,7 +154,7 @@ bool AppInit(int argc, char* argv[])
         else
         {
             strUsage += "\n" + _("Usage:") + "\n" +
-                  "  komodod [options]                     " + _("Start Komodo Daemon") + "\n";
+                  "  komodod [options]                     " + _("Start Hush-flavored Komodo Daemon") + "\n";
 
             strUsage += "\n" + HelpMessage(HMM_BITCOIND);
         }
@@ -189,24 +184,26 @@ bool AppInit(int argc, char* argv[])
         }
         try
         {
+			fprintf(stderr, "%s reading config file\n", __FUNCTION__);
             ReadConfigFile(mapArgs, mapMultiArgs);
         } catch (const missing_zcash_conf& e) {
             fprintf(stderr,
-                (_("Before starting komodod, you need to create a configuration file:\n"
+                (_("Before starting hushd, you need to create a configuration file:\n"
                    "%s\n"
                    "It can be completely empty! That indicates you are happy with the default\n"
-                   "configuration of komodod. But requiring a configuration file to start ensures\n"
-                   "that komodod won't accidentally compromise your privacy if there was a default\n"
+                   "configuration of hushd. But requiring a configuration file to start ensures\n"
+                   "that hushd won't accidentally compromise your privacy if there was a default\n"
                    "option you needed to change.\n"
                    "\n"
                    "You can look at the example configuration file for suggestions of default\n"
                    "options that you may want to change. It should be in one of these locations,\n"
-                   "depending on how you installed Komodo:\n") +
+                   "depending on how you installed Hush\n") +
                  _("- Source code:  %s\n"
                    "- .deb package: %s\n")).c_str(),
                 GetConfigFile().string().c_str(),
-                "contrib/debian/examples/komodo.conf",
-                "/usr/share/doc/komodo/examples/komodo.conf");
+                "contrib/debian/examples/HUSH3.conf",
+                "/usr/share/doc/hush/examples/HUSH3.conf",
+                "https://github.com/MyHush/hush3/blob/master/contrib/debian/examples/HUSH3.conf");
             return false;
         } catch (const std::exception& e) {
             fprintf(stderr,"Error reading configuration file: %s\n", e.what());
@@ -215,9 +212,12 @@ bool AppInit(int argc, char* argv[])
 
         // Command-line RPC
         bool fCommandLine = false;
-        for (int i = 1; i < argc; i++)
-            if (!IsSwitchChar(argv[i][0]) && !boost::algorithm::istarts_with(argv[i], "komodo:"))
+        for (int i = 1; i < argc; i++) {
+			//TODO: should this be hush: or komodo: ??
+            if (!IsSwitchChar(argv[i][0]) && !boost::algorithm::istarts_with(argv[i], "komodo:")) {
                 fCommandLine = true;
+			}
+		}
 
         if (fCommandLine)
         {
@@ -251,20 +251,23 @@ bool AppInit(int argc, char* argv[])
 #endif
         SoftSetBoolArg("-server", true);
 
+		//fprintf(stderr,"%s: Running AppInit2()\n", __FUNCTION__);
         fRet = AppInit2(threadGroup, scheduler);
-    }
-    catch (const std::exception& e) {
+		//fprintf(stderr,"%s: Finished AppInit2(), fRet=%d\n", __FUNCTION__, fRet);
+    } catch (const std::exception& e) {
         PrintExceptionContinue(&e, "AppInit()");
     } catch (...) {
         PrintExceptionContinue(NULL, "AppInit()");
     }
     if (!fRet)
     {
+		//fprintf(stderr,"%s: Interrupting threadGroup\n", __FUNCTION__);
         Interrupt(threadGroup);
         // threadGroup.join_all(); was left out intentionally here, because we didn't re-test all of
         // the startup-failure cases to make sure they don't result in a hang due to some
         // thread-blocking-waiting-for-another-thread-during-startup case
     } else {
+		//fprintf(stderr,"%s: Waiting for Shutdown\n", __FUNCTION__);
         WaitForShutdown(&threadGroup);
     }
     Shutdown();

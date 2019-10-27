@@ -1,5 +1,15 @@
 # Installing Hush
 
+## Installing Binaries
+
+To install a Debian package:
+
+	dpkg -i hush-3.2.0-amd4.deb
+
+To uninstall:
+
+	apt-get remove hush
+
 ## Build HUSH dependencies
 
 The following build process generally applies to Ubuntu (and similar) Linux

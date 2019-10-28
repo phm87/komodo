@@ -984,12 +984,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     std::set_new_handler(new_handler_terminate);
 
-    fprintf(stderr,"%s: set signal handlers\n", __FUNCTION__);
+    //fprintf(stderr,"%s: set signal handlers\n", __FUNCTION__);
 
     // ********************************************************* Step 2: parameter interactions
     const CChainParams& chainparams = Params();
 
-    fprintf(stderr,"%s: got chain params\n", __FUNCTION__);
+    //fprintf(stderr,"%s: got chain params\n", __FUNCTION__);
 
     // Set this early so that experimental features are correctly enabled/disabled
     fExperimentalMode = GetBoolArg("-experimentalfeatures", true);
@@ -2086,8 +2086,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             MilliSleep(10);
     }
 
-	fprintf(stderr,"%s fRequestShutdown=%d\n", __FUNCTION__, !!fRequestShutdown);
-
     // ********************************************************* Step 11: start node
 
     fprintf(stderr,"Checking disk space...\n");
@@ -2108,7 +2106,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("mapAddressBook.size() = %u\n",  pwalletMain ? pwalletMain->mapAddressBook.size() : 0);
 #endif
 
-	fprintf(stderr,"%s fRequestShutdown=%d\n", __FUNCTION__, !!fRequestShutdown);
     // Start the thread that notifies listeners of transactions that have been
     // recently added to the mempool.
     threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "txnotify", &ThreadNotifyRecentlyAdded));
@@ -2135,15 +2132,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     SetRPCWarmupFinished();
     fprintf(stderr,"RPC warmump finished\n");
     uiInterface.InitMessage(_("Done loading!"));
-	fprintf(stderr,"%s fRequestShutdown=%d\n", __FUNCTION__, !!fRequestShutdown);
 
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
-	     fprintf(stderr,"%s reaccepting wallet xtns\n", __FUNCTION__);
+	     fprintf(stderr,"%s Reaccepting wallet xtns\n", __FUNCTION__);
         // Add wallet transactions that aren't already in a block to mapTransactions
         pwalletMain->ReacceptWalletTransactions();
 
-	     fprintf(stderr,"%s starting wallet flusher thread\n", __FUNCTION__);
+	     fprintf(stderr,"%s Starting wallet flusher thread\n", __FUNCTION__);
         // Run a thread to flush wallet periodically
         threadGroup.create_thread(boost::bind(&ThreadFlushWalletDB, boost::ref(pwalletMain->strWalletFile)));
     }

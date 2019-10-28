@@ -71,9 +71,21 @@ CBlockIndex *komodo_chainactive(int32_t height);
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
     int32_t i,height; CBlockIndex *pindex; bool fShutdown = ShutdownRequested(); const uint256 zeroid;
-    //fprintf(stderr,"%s: fShutdown=%d, KOMODO_EARLYTXID_HEIGHT=%d\n", __FUNCTION__, fShutdown, KOMODO_EARLYTXID_HEIGHT);
-	//fprintf(stderr,"%s: earlytxid=%s, tx_height=%d\n", __FUNCTION__, KOMODO_EARLYTXID.GetHex(), tx_height(KOMODO_EARLYTXID) );
-    //fprintf(stderr,"%s: komodo_currentheight=%d\n", __FUNCTION__, komodo_currentheight() );
+    // Tell the main threads to shutdown.
+    if (komodo_currentheight()>KOMODO_EARLYTXID_HEIGHT && KOMODO_EARLYTXID!=zeroid && ((height=tx_height(KOMODO_EARLYTXID))==0 || height>KOMODO_EARLYTXID_HEIGHT))
+    {
+        fprintf(stderr,"%s: error: earlytx must be before block height %d or tx does not exist\n",__FUNCTION__, KOMODO_EARLYTXID_HEIGHT);
+	    fprintf(stderr,"%s: earlytxid=%s, tx_height=%d, komodo_currentheight=%d\n", __FUNCTION__, KOMODO_EARLYTXID.GetHex().c_str(), tx_height(KOMODO_EARLYTXID), komodo_currentheight() );
+        StartShutdown();
+    }
+    /*if ( ASSETCHAINS_STAKED == 0 && ASSETCHAINS_ADAPTIVEPOW == 0 && (pindex= komodo_chainactive(1)) != 0 )
+    {
+        if ( pindex->nTime > ADAPTIVEPOW_CHANGETO_DEFAULTON )
+        {
+            ASSETCHAINS_ADAPTIVEPOW = 1;
+            fprintf(stderr,"default activate adaptivepow\n");
+        } else fprintf(stderr,"height1 time %u vs %u\n",pindex->nTime,ADAPTIVEPOW_CHANGETO_DEFAULTON);
+    } //else fprintf(stderr,"cant find height 1\n");*/
 
     if ( ASSETCHAINS_CBOPRET != 0 ) {
         komodo_pricesinit();

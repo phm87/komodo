@@ -4594,7 +4594,7 @@ static bool ActivateBestChainStep(bool fSkipdpow, CValidationState &state, CBloc
  * that is already loaded (to avoid loading it again from disk).
  */
 bool ActivateBestChain(bool fSkipdpow, CValidationState &state, CBlock *pblock) {
-	fprintf(stderr,"%s: fSkipdpow=%d\n", __FUNCTION__, fSkipdpow);
+	//fprintf(stderr,"%s: fSkipdpow=%d\n", __FUNCTION__, fSkipdpow);
     CBlockIndex *pindexNewTip = NULL;
     CBlockIndex *pindexMostWork = NULL;
     const CChainParams& chainParams = Params();

@@ -30,8 +30,6 @@
 #define portable_mutex_lock pthread_mutex_lock
 #define portable_mutex_unlock pthread_mutex_unlock
 
-extern void verus_hash(void *result, const void *data, size_t len);
-
 struct allocitem { uint32_t allocsize,type; };
 struct queueitem { struct queueitem *next,*prev; uint32_t allocsize,type;  };
 
@@ -1026,45 +1024,24 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 // from all other blocks. the sequence is extremely likely, but not guaranteed to be unique for each block chain
 uint64_t komodo_block_prg(uint32_t nHeight)
 {
-    if (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || nHeight >= 12800)
+    int i;
+    uint8_t hashSrc[8];
+    uint64_t result=0, hashSrc64 = (uint64_t)ASSETCHAINS_MAGIC << 32 + nHeight;
+    bits256 hashResult;
+
+    for ( i = 0; i < sizeof(hashSrc); i++ )
     {
-        uint64_t i, result = 0, hashSrc64 = ((uint64_t)ASSETCHAINS_MAGIC << 32) | (uint64_t)nHeight;
-        uint8_t hashSrc[8];
-        bits256 hashResult;
-
-        for ( i = 0; i < sizeof(hashSrc); i++ )
-        {
-            uint64_t x = hashSrc64 >> (i * 8);
-            hashSrc[i] = (uint8_t)(x & 0xff);
-        }
-        verus_hash(hashResult.bytes, hashSrc, sizeof(hashSrc));
-        for ( i = 0; i < 8; i++ )
-        {
-            result = (result << 8) | hashResult.bytes[i];
-        }
-        return result;
+        hashSrc[i] = hashSrc64 & 0xff;
+        hashSrc64 >>= 8;
+        int8_t b = hashSrc[i];
     }
-    else
+
+    vcalc_sha256(0, hashResult.bytes, hashSrc, sizeof(hashSrc));
+    for ( i = 0; i < 8; i++ )
     {
-        int i;
-        uint8_t hashSrc[8];
-        uint64_t result=0, hashSrc64 = (uint64_t)ASSETCHAINS_MAGIC << 32 + nHeight;
-        bits256 hashResult;
-
-        for ( i = 0; i < sizeof(hashSrc); i++ )
-        {
-            hashSrc[i] = hashSrc64 & 0xff;
-            hashSrc64 >>= 8;
-            int8_t b = hashSrc[i];
-        }
-
-        vcalc_sha256(0, hashResult.bytes, hashSrc, sizeof(hashSrc));
-        for ( i = 0; i < 8; i++ )
-        {
-            result = (result << 8) + hashResult.bytes[i];
-        }
-        return result;
+        result = (result << 8) + hashResult.bytes[i];
     }
+    return result;
 }
 
 // given a block height, this returns the unlock time for that block height, derived from

@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -650,11 +651,13 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
 
         CBlockHeader hdr = pindexFirst->GetBlockHeader();
 
+		/*
         if (hdr.IsVerusPOSBlock())
         {
             nBits = hdr.GetVerusPOSTarget();
             break;
         }
+		*/
         pindexFirst = pindexFirst->pprev;
     }
 
@@ -675,11 +678,13 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
                 return nProofOfStakeLimit;
 
             CBlockHeader hdr = pindexFirst->GetBlockHeader();
+			/*
             if (hdr.IsVerusPOSBlock())
             {
                 nBits = hdr.GetVerusPOSTarget();
                 break;
             }
+			*/
         }
 
         if (x)
@@ -870,7 +875,8 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
     //else if ( ASSETCHAINS_ADAPTIVEPOW > 0 && ASSETCHAINS_STAKED == 0 )
     //    bnTarget = komodo_adaptivepow_target(height,bnTarget,blkHeader.nTime);
     // Check proof of work matches claimed amount
-    if ( UintToArith256(hash = blkHeader.GetHash()) > bnTarget && !blkHeader.IsVerusPOSBlock() )
+    //if ( UintToArith256(hash = blkHeader.GetHash()) > bnTarget && !blkHeader.IsVerusPOSBlock() )
+    if ( UintToArith256(hash = blkHeader.GetHash()) > bnTarget )
     {
         if ( KOMODO_LOADINGBLOCKS != 0 )
             return true;

@@ -29,6 +29,11 @@ When in doubt, if you run into a compile error, especially if it mentions
 `OCTET_STRING`, run `build.sh` again. Running `make clean` before switching
 branches can often prevent those problems.
 
+```
+cryptoconditions/src/asn/SimpleSha256Condition.h:14:10: fatal error: OCTET_STRING.h: No such file or directory
+```
+
+
 ## Partial compiles
 
 At any point, you can modify hush source code and then use `make` or `build.sh`

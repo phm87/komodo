@@ -1110,42 +1110,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  */
 bool ContextualCheckCoinbaseTransaction(int32_t slowflag,const CBlock *block,CBlockIndex * const previndex,const CTransaction& tx, const int nHeight,int32_t validateprices)
 {
-    // if time locks are on, ensure that this coin base is time locked exactly as it should be
-    if (((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE) ||
-        (((nHeight >= 31680) || strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0) && komodo_ac_block_subsidy(nHeight) >= ASSETCHAINS_TIMELOCKGTE))
-    {
-        CScriptID scriptHash;
-
-        // to be valid, it must be a P2SH transaction and have an op_return in vout[1] that
-        // holds the full output script, which may include multisig, etc., but starts with
-        // the time lock verify of the correct time lock for this block height
-        if (tx.vout.size() == 2 &&
-            CScriptExt(tx.vout[0].scriptPubKey).IsPayToScriptHash(&scriptHash) &&
-            tx.vout[1].scriptPubKey.size() >= 7 && // minimum for any possible future to prevent out of bounds
-            tx.vout[1].scriptPubKey[0] == OP_RETURN)
-        {
-            opcodetype op;
-            std::vector<uint8_t> opretData = std::vector<uint8_t>();
-            CScript::const_iterator it = tx.vout[1].scriptPubKey.begin() + 1;
-            if (tx.vout[1].scriptPubKey.GetOp2(it, op, &opretData))
-            {
-                if (opretData.size() > 0 && opretData.data()[0] == OPRETTYPE_TIMELOCK)
-                {
-                    int64_t unlocktime;
-                    CScriptExt opretScript = CScriptExt(&opretData[1], &opretData[opretData.size()]);
-
-                    if (CScriptID(opretScript) == scriptHash &&
-                        opretScript.IsCheckLockTimeVerify(&unlocktime) &&
-                        komodo_block_unlocktime(nHeight) == unlocktime)
-                    {
-                        return(true);
-                    }
-                }
-            }
-        }
-        return(false);
-    }
-    else if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
+    if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
     {
         
     }
@@ -2837,16 +2802,6 @@ namespace Consensus {
                                          REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
                 }
 
-                // Ensure that coinbases cannot be spent to transparent outputs
-                // Disabled on regtest
-                if (fCoinbaseEnforcedProtectionEnabled &&
-                    consensusParams.fCoinbaseMustBeProtected &&
-                    !(tx.vout.size() == 0 || (tx.vout.size() == 1 && tx.vout[0].nValue == 0)) &&
-                    (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || (nSpendHeight >= 12800 && coins->nHeight >= 12800))) {
-                    return state.DoS(100,
-                                     error("CheckInputs(): tried to spend coinbase with transparent outputs"),
-                                     REJECT_INVALID, "bad-txns-coinbase-spend-has-transparent-outputs");
-                }
             }
 
             // Check for negative or overflow input values

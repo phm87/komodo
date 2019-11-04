@@ -1,3 +1,5 @@
+// Copyright 2019 The Hush Developers
+
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
@@ -1481,11 +1483,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     }
     if ( m+n < 100 )
     {
-        // We do actual PoS % at the start. Requires coin distribution in first 10 blocks! 
-        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
-            percPoS = (percPoS*100) / (m+n); 
-        else
-            percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;            
+		percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;            
     } 
     if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
         fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
@@ -1583,24 +1581,6 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( blocktime+iter+segid*2 < txtime+minage )
             continue;
         diff = (iter + blocktime - txtime - minage);
-        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
-        {
-            /*if ( PoSperc < ASSETCHAINS_STAKED )
-            {
-                // Under PoS % target and we need to increase diff.
-                //fprintf(stderr, "PoS too low diff.%i changed to.",diff);
-                diff = diff * ( (ASSETCHAINS_STAKED - PoSperc + 1) * (ASSETCHAINS_STAKED - PoSperc + 1) * ( nHeight < 50 ? 1000 : 1));
-                //fprintf(stderr, "%i \n",diff);
-            }
-            else */ 
-            if ( PoSperc > ASSETCHAINS_STAKED )
-            {
-                // Over PoS target need to lower diff.
-                //fprintf(stderr, "PoS too high diff.%i changed to.",diff);
-                diff = diff / ( (PoSperc - ASSETCHAINS_STAKED + 1) * (PoSperc - ASSETCHAINS_STAKED + 1) );
-                //fprintf(stderr, "%i \n",diff);
-            }
-        }
         if ( diff < 0 )
             diff = 60;
         else if ( diff > 3600*24*30 )
@@ -1611,17 +1591,6 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( iter > 0 )
             diff += segid*2;
         coinage = (value * diff);
-        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
-        {
-            if ( PoSperc < ASSETCHAINS_STAKED )
-            {
-                // Under PoS % target and we need to increase diff.
-                //fprintf(stderr, "PoS too low diff.%i changed to.",diff);
-                if ( blocktime+iter+segid*2 > prevtime+128 )
-                    coinage *= ((blocktime+iter+segid*2) - (prevtime+102));
-                //fprintf(stderr, "%i \n",diff);
-            }   
-        }
         if ( blocktime+iter+segid*2 > prevtime+480 )
             coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
         coinage256 = arith_uint256(coinage+1);
@@ -1752,11 +1721,6 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
 bool GetStakeParams(const CTransaction &stakeTx, CStakeParams &stakeParams);
 bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTransaction &stakeTx, bool &cheating);
 
-// for now, we will ignore slowFlag in the interest of keeping success/fail simpler for security purposes
-bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
-{
-	return false;
-}
 
 uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
 {
@@ -2120,13 +2084,6 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     //    bnTarget = komodo_adaptivepow_target(height,bnTarget,pblock->nTime);
     if ( ASSETCHAINS_LWMAPOS != 0 && bhash > bnTarget )
     {
-		/*
-        // if proof of stake is active, check if this is a valid PoS block before we fail
-        if (verusCheckPOSBlock(slowflag, pblock, height))
-        {
-            return(0);
-        }
-		*/
     }
     if ( (ASSETCHAINS_SYMBOL[0] != 0 || height > 792000) && bhash > bnTarget )
     {

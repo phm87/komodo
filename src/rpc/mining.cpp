@@ -162,7 +162,6 @@ UniValue getnetworkhashps(const UniValue& params, bool fHelp)
 }
 
 #ifdef ENABLE_MINING
-extern bool VERUS_MINTBLOCKS;
 UniValue getgenerate(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -184,7 +183,7 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
     UniValue obj(UniValue::VOBJ);
-    bool staking = VERUS_MINTBLOCKS;
+    bool staking = false;
     if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
         staking = true;
     obj.push_back(Pair("staking",          staking));
@@ -374,13 +373,11 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
     {
         if (fGenerate && !nGenProcLimit)
         {
-            VERUS_MINTBLOCKS = 1;
             fGenerate = GetBoolArg("-gen", false);
             KOMODO_MININGTHREADS = nGenProcLimit;
         }
         else if (!fGenerate)
         {
-            VERUS_MINTBLOCKS = 0;
             KOMODO_MININGTHREADS = 0;
         }
         else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
@@ -499,9 +496,7 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
 #ifdef ENABLE_MINING
-    bool staking = VERUS_MINTBLOCKS;
-    if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
-        staking = true;
+    bool staking = false;
     obj.push_back(Pair("staking",          staking));
     obj.push_back(Pair("generate",         GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) != 0 ));
     obj.push_back(Pair("numthreads",       (int64_t)KOMODO_MININGTHREADS));

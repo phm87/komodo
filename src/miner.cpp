@@ -593,7 +593,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 blocktime = GetAdjustedTime();
                 siglen = komodo_staked(txStaked, pblock->nBits, &blocktime, &txtime, &utxotxid, &utxovout, &utxovalue, utxosig);
                 // if you skip this check it will create a block too far into the future and not pass ProcessBlock or AcceptBlock.
-                // This has been moved from the mining loop to save CPU, and to also make ac_staked work with the verus miner.
+                // This has been moved from the mining loop to save CPU, and to also make ac_staked work
                 while ( blocktime-57 > GetAdjustedTime() )
                 {
                     sleep(1);
@@ -1634,7 +1634,7 @@ void static BitcoinMiner()
                 return;
         }
 
-        if ((nThreads == 0 || !fGenerate) && (VERUS_MINTBLOCKS == 0 || pwallet == NULL))
+        if ((nThreads == 0 || !fGenerate) && (pwallet == NULL))
             return;
 
         minerThreads = new boost::thread_group();

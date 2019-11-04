@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright 2019 The Hush developers
+
 set -e -o pipefail
 
 CURDIR=$(cd $(dirname "$0"); pwd)
@@ -14,7 +16,6 @@ testScripts=(
     'dpow.py'
     'dpowconfs.py'
     'ac_private.py'
-    'verushash.py'
     'paymentdisclosure.py'
     'prioritisetransaction.py'
     'wallet_treestate.py'

@@ -353,7 +353,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
         if ( ASSETCHAINS_STAKED != 0 )
             obj.push_back(Pair("staked",        ASSETCHAINS_STAKED));
         if ( ASSETCHAINS_LWMAPOS != 0 )
-            obj.push_back(Pair("veruspos", ASSETCHAINS_LWMAPOS));
+            obj.push_back(Pair("lwmapos", ASSETCHAINS_LWMAPOS));
         if ( ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH )
             obj.push_back(Pair("algo",ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]));
     }

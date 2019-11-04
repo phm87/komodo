@@ -1055,19 +1055,11 @@ int64_t komodo_block_unlocktime(uint32_t nHeight)
         unlocktime = ASSETCHAINS_TIMEUNLOCKTO;
     else
     {
-        if (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || nHeight >= 12800)
-        {
-            unlocktime = komodo_block_prg(nHeight) % (ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM);
-            unlocktime += ASSETCHAINS_TIMEUNLOCKFROM;
-        }
-        else
-        {
-            unlocktime = komodo_block_prg(nHeight) / (0xffffffffffffffff / ((ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM) + 1));
-            // boundary and power of 2 can make it exceed to time by 1
-            unlocktime = unlocktime + ASSETCHAINS_TIMEUNLOCKFROM;
-            if (unlocktime > ASSETCHAINS_TIMEUNLOCKTO)
-                unlocktime--;
-        }
+        unlocktime = komodo_block_prg(nHeight) / (0xffffffffffffffff / ((ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM) + 1));
+        // boundary and power of 2 can make it exceed to time by 1
+        unlocktime = unlocktime + ASSETCHAINS_TIMEUNLOCKFROM;
+        if (unlocktime > ASSETCHAINS_TIMEUNLOCKTO)
+            unlocktime--;
     }
     return ((int64_t)unlocktime);
 }
@@ -1977,7 +1969,7 @@ void komodo_args(char *argv0)
 
         // for now, we only support 50% PoS due to other parts of the algorithm needing adjustment for
         // other values
-        if ( (ASSETCHAINS_LWMAPOS = GetArg("-ac_veruspos",0)) != 0 )
+        if ( (ASSETCHAINS_LWMAPOS = GetArg("-ac_lwmapos",0)) != 0 )
         {
             ASSETCHAINS_LWMAPOS = 50;
         }
@@ -2339,8 +2331,6 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
             ASSETCHAINS_HALVING[0] *= 5;
             fprintf(stderr,"PIRATE halving changed to %d %.1f days ASSETCHAINS_LASTERA.%llu\n",(int32_t)ASSETCHAINS_HALVING[0],(double)ASSETCHAINS_HALVING[0]/1440,(long long)ASSETCHAINS_LASTERA);
         }
-        else if ( strcmp("VRSC",ASSETCHAINS_SYMBOL) == 0 )
-            dpowconfs = 0;
         else if ( ASSETCHAINS_PRIVATE != 0 )
         {
             fprintf(stderr,"-ac_private for a non-PIRATE chain is not supported. The only reason to have an -ac_private chain is for total privacy and that is best achieved with the largest anon set. PIRATE has that and it is recommended to just use PIRATE\n");

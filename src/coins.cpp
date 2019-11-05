@@ -622,6 +622,7 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
 
 bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
 {
+	/*
     boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
 
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit)
@@ -650,13 +651,17 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
 
         intermediates.insert(std::make_pair(tree.root(), tree));
     }
+	*/
 
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-        if (GetNullifier(spendDescription.nullifier, SAPLING)) // Prevent double spends
+        if (GetNullifier(spendDescription.nullifier, SAPLING)) { // Prevent double spends
+			fprintf(stderr,"%s: existing nullifier!",__FUNCTION__);
             return false;
+		}
 
         SaplingMerkleTree tree;
         if (!GetSaplingAnchorAt(spendDescription.anchor, tree)) {
+			fprintf(stderr,"%s: missing Sapling anchor!",__FUNCTION__);
             return false;
         }
     }

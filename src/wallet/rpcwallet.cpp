@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -1858,11 +1859,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                     entry.push_back(Pair("involvesWatchonly", true));
                 entry.push_back(Pair("account", account));
 
-                CTxDestination dest;
-                if (CScriptExt::ExtractVoutDestination(wtx, r.vout, dest))
-                    MaybePushAddress(entry, dest);
-                else
-                    MaybePushAddress(entry, r.destination);
+			    MaybePushAddress(entry, r.destination);
 
                 if (bIsCoinbase)
                 {

@@ -691,31 +691,10 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         }
         else if ( (uint64_t)(txNew.vout[0].nValue) >= ASSETCHAINS_TIMELOCKGTE)
         {
-            int32_t opretlen, p2shlen, scriptlen;
-            CScriptExt opretScript = CScriptExt();
-            
-            txNew.vout.resize(2);
-            
-            // prepend time lock to original script unless original script is P2SH, in which case, we will leave the coins
-            // protected only by the time lock rather than 100% inaccessible
-            opretScript.AddCheckLockTimeVerify(komodo_block_unlocktime(nHeight));
-            if (scriptPubKeyIn.IsPayToScriptHash() || scriptPubKeyIn.IsPayToCryptoCondition())
-            {
-                fprintf(stderr,"CreateNewBlock: attempt to add timelock to pay2sh or pay2cc\n");
-                if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
-                {
-                    LEAVE_CRITICAL_SECTION(cs_main);
-                    LEAVE_CRITICAL_SECTION(mempool.cs);
-                }
-                return 0;
-            }
-            
-            opretScript += scriptPubKeyIn;
-            
-            txNew.vout[0].scriptPubKey = CScriptExt().PayToScriptHash(CScriptID(opretScript));
-            txNew.vout[1].scriptPubKey = CScriptExt().OpReturnScript(opretScript, OPRETTYPE_TIMELOCK);
-            txNew.vout[1].nValue = 0;
-            // timelocks and commissions are currently incompatible due to validation complexity of the combination
+			fprintf(stderr,"timelocked chains not supported in this code!\n");
+			LEAVE_CRITICAL_SECTION(cs_main);
+			LEAVE_CRITICAL_SECTION(mempool.cs);
+			return(0);
         } 
         else if ( fNotarisationBlock && ASSETCHAINS_NOTARY_PAY[0] != 0 && pblock->vtx[1].vout.size() == 2 && pblock->vtx[1].vout[1].nValue == 0 )
         {
@@ -749,7 +728,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
 
-        // if not Verus stake, setup nonce, otherwise, leave it alone
+        // if not staking, setup nonce, otherwise, leave it alone
         if (!isStake || ASSETCHAINS_LWMAPOS == 0)
         {
             // Randomise nonce
@@ -765,7 +744,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->hashFinalSaplingRoot   = sapling_tree.root();
 
-        // all Verus PoS chains need this data in the block at all times
+        // all PoS chains need this data in the block at all times
         if ( ASSETCHAINS_LWMAPOS || ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 || KOMODO_MININGTHREADS > 0 )
         {
             UpdateTime(pblock, Params().GetConsensus(), pindexPrev);

@@ -103,17 +103,6 @@ struct CC_utxo
     int32_t vout;
 };
 
-// these are the parameters stored after Verus crypto-condition vouts. new versions may change
-// the format
-struct CC_meta
-{
-    std::vector<unsigned char> version;
-    uint8_t evalCode;
-    bool is1of2;
-    uint8_t numDestinations;
-    // followed by address destinations
-};
-
 struct CCcontract_info
 {
 	// this is for spending from 'unspendable' CC address

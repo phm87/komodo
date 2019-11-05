@@ -457,7 +457,6 @@ libbitcoin_common_a_SOURCES = \
   script/cc.cpp \
   script/interpreter.cpp \
   script/script.cpp \
-  script/script_ext.cpp \
   script/script_error.cpp \
   script/sign.cpp \
   script/standard.cpp \

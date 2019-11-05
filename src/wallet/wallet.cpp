@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -2084,13 +2085,13 @@ bool CWallet::IsMine(const CTransaction& tx)
     return false;
 }
 
-// special case handling for non-standard/Verus OP_RETURN script outputs, which need the transaction
+// special case handling for non-standard OP_RETURN script outputs, which need the transaction
 // to determine ownership
 isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
-    const CScriptExt scriptPubKey = CScriptExt(tx.vout[voutNum].scriptPubKey);
+    const CScript scriptPubKey = CScript(tx.vout[voutNum].scriptPubKey);
 
     if (!Solver(scriptPubKey, whichType, vSolutions)) {
         if (this->HaveWatchOnly(scriptPubKey))
@@ -2100,7 +2101,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 
     CKeyID keyID;
     CScriptID scriptID;
-    CScriptExt subscript;
+    CScript subscript;
     int voutNext = voutNum + 1;
 
     switch (whichType)
@@ -2134,6 +2135,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 
         case TX_SCRIPTHASH:
             scriptID = CScriptID(uint160(vSolutions[0]));
+			//TODO: remove CLTV stuff not relevant to Hush
             if (this->GetCScript(scriptID, subscript))
             {
                 // if this is a CLTV, handle it differently

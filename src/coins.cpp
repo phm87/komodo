@@ -333,13 +333,6 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt, ShieldedType type) {
 }
 
 void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
-    for (const JSDescription &joinsplit : tx.vjoinsplit) {
-        for (const uint256 &nullifier : joinsplit.nullifiers) {
-            std::pair<CNullifiersMap::iterator, bool> ret = cacheSproutNullifiers.insert(std::make_pair(nullifier, CNullifiersCacheEntry()));
-            ret.first->second.entered = spent;
-            ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
-        }
-    }
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
         std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(spendDescription.nullifier, CNullifiersCacheEntry()));
         ret.first->second.entered = spent;

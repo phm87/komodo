@@ -333,13 +333,6 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt, ShieldedType type) {
 }
 
 void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
-    for (const JSDescription &joinsplit : tx.vjoinsplit) {
-        for (const uint256 &nullifier : joinsplit.nullifiers) {
-            std::pair<CNullifiersMap::iterator, bool> ret = cacheSproutNullifiers.insert(std::make_pair(nullifier, CNullifiersCacheEntry()));
-            ret.first->second.entered = spent;
-            ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
-        }
-    }
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
         std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(spendDescription.nullifier, CNullifiersCacheEntry()));
         ret.first->second.entered = spent;
@@ -622,41 +615,14 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
 
 bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
 {
-    boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
-
-    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit)
-    {
-        BOOST_FOREACH(const uint256& nullifier, joinsplit.nullifiers)
-        {
-            if (GetNullifier(nullifier, SPROUT)) {
-                // If the nullifier is set, this transaction
-                // double-spends!
-                return false;
-            }
-        }
-
-        SproutMerkleTree tree;
-        auto it = intermediates.find(joinsplit.anchor);
-        if (it != intermediates.end()) {
-            tree = it->second;
-        } else if (!GetSproutAnchorAt(joinsplit.anchor, tree)) {
-            return false;
-        }
-
-        BOOST_FOREACH(const uint256& commitment, joinsplit.commitments)
-        {
-            tree.append(commitment);
-        }
-
-        intermediates.insert(std::make_pair(tree.root(), tree));
-    }
-
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
         if (GetNullifier(spendDescription.nullifier, SAPLING)) // Prevent double spends
+            fprintf(stderr,"%s: sapling nullifier %s exists, preventing double spend\n", __FUNCTION__, spendDescription.nullifier);
             return false;
 
         SaplingMerkleTree tree;
         if (!GetSaplingAnchorAt(spendDescription.anchor, tree)) {
+            fprintf(stderr,"%s: missing sapling anchor: %s \n", __FUNCTION__, spendDescription.anchor);
             return false;
         }
     }

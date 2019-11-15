@@ -1604,28 +1604,18 @@ void static BitcoinMiner()
             minerThreads = NULL;
         }
 
-        //fprintf(stderr,"nThreads.%d fGenerate.%d\n",(int32_t)nThreads,fGenerate);
-        if ( ASSETCHAINS_STAKED > 0 && nThreads == 0 && fGenerate )
-        {
-            if ( pwallet != NULL )
-                nThreads = 1;
-            else
-                return;
-        }
+        fprintf(stderr,"%s: nThreads.%d fGenerate.%d\n",__FUNCTION__, (int32_t)nThreads,fGenerate);
 
-        if ((nThreads == 0 || !fGenerate) && (pwallet == NULL))
+        if (nThreads == 0)
+            return;
+        if (!fGenerate)
+            return;
+        if (pwallet == NULL)
             return;
 
         minerThreads = new boost::thread_group();
 
-#ifdef ENABLE_WALLET
-        if (ASSETCHAINS_LWMAPOS != 0)
-        {
-        }
-#endif
-
         for (int i = 0; i < nThreads; i++) {
-
 #ifdef ENABLE_WALLET
             if ( ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH )
                 minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet));

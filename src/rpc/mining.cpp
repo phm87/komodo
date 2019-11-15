@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -369,25 +370,11 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
         //if (nGenProcLimit == 0)
         //    fGenerate = false;
     }
-    if ( ASSETCHAINS_LWMAPOS != 0 )
-    {
-        if (fGenerate && !nGenProcLimit)
-        {
-            fGenerate = GetBoolArg("-gen", false);
-            KOMODO_MININGTHREADS = nGenProcLimit;
-        }
-        else if (!fGenerate)
-        {
-            KOMODO_MININGTHREADS = 0;
-        }
-        else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
-    }
-    else
-    {
-        KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
-    }
 
-    mapArgs["-gen"] = (fGenerate ? "1" : "0");
+    KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
+	fprintf(stderr,"%s:KOMODO_MININGTHREADS=%d\n", __FUNCTION__, KOMODO_MININGTHREADS);
+
+    mapArgs["-gen"]           = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
 
 #ifdef ENABLE_WALLET

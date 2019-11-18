@@ -8,8 +8,8 @@ Exit
 :RegExport
 Set RegFile="%Temp%\~etsaclu.tmp"
 
-Set "pirate=%~dp0"
-set "pirate=%pirate:\=\\%"
+Set "hush=%~dp0"
+set "hush=%hush:\=\\%"
 
 If Exist %RegFile% (
  Attrib -R -S -H %RegFile% &  Del /F /Q %RegFile%
@@ -22,7 +22,7 @@ If Exist %RegFile% (
 >> %RegFile% Echo "URL Protocol"=""
 >> %RegFile% Echo.
 >> %RegFile% Echo [HKEY_CLASSES_ROOT\hush\DefaultIcon]
->> %RegFile% Echo @="sevenseas.exe"
+>> %RegFile% Echo @="silentdragon.exe"
 >> %RegFile% Echo.
 >> %RegFile% Echo [HKEY_CLASSES_ROOT\hush\Shell]
 >> %RegFile% Echo.

@@ -1,4 +1,5 @@
 // Copyright (c) 2012-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -616,9 +617,10 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
 bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
 {
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-        if (GetNullifier(spendDescription.nullifier, SAPLING)) // Prevent double spends
+        if (GetNullifier(spendDescription.nullifier, SAPLING)) { // Prevent double spends
             fprintf(stderr,"%s: sapling nullifier %s exists, preventing double spend\n", __FUNCTION__, spendDescription.nullifier);
             return false;
+        }
 
         SaplingMerkleTree tree;
         if (!GetSaplingAnchorAt(spendDescription.anchor, tree)) {

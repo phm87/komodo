@@ -775,14 +775,23 @@ bool InitSanityCheck(void)
 
 void NoParamsShutdown(void)
 {
-    //TODO: error message incorrect about location
-	fprintf(stderr,"%s: no params!\n", __FUNCTION__);
-    LogPrintf("Could not find Sapling params anywhere! Exiting...");
+    fprintf(stderr,"%s: no params!\n", __FUNCTION__);
+    LogPrintf("Could not find valid Sapling params anywhere! Exiting...");
     uiInterface.ThreadSafeMessageBox(strprintf(
-        _("Cannot find the Sapling network parameters in the following directory:\n"
-            "%s\n"
-            "Please run join our Discord for help: https://myhush.org/discord/"),
-            ZC_GetParamsDir()),
+        _("Cannot find the Sapling network parameters! Something is very wrong.\n"
+            "Please join our Discord for help: https://myhush.org/discord/")),
+        "", CClientUIInterface::MSG_ERROR);
+    StartShutdown();
+    return;
+}
+
+void CorruptParamsShutdown(void)
+{
+    fprintf(stderr,"%s: corrupt params!\n", __FUNCTION__);
+    LogPrintf("We detected corrupt Sapling params! Exiting...");
+    uiInterface.ThreadSafeMessageBox(strprintf(
+        _("Corrupt Sapling network parameters were detected! Something is very wrong.\n"
+            "Please join our Discord for help: https://myhush.org/discord/")),
         "", CClientUIInterface::MSG_ERROR);
     StartShutdown();
     return;
@@ -801,16 +810,19 @@ static void ZC_LoadParams(
     float elapsed;
     bool found = false;
 
-	// Some people have previous partial downloads of zcash params, so check that last
-	// Sapling Param Search path: . /usr/share/hush .. ../hush3 ~/.zcash-params
+    // Some people have previous partial downloads of zcash params, so check that last
+    // Sapling Param Search path: . /usr/share/hush .. ../hush3 ./Contents/MacOS/ ~/.zcash-params
+
+    LogPrintf("Looking for sapling params...");
+    gettimeofday(&tv_start, 0);
 
     // PWD
-	boost::filesystem::path sapling_spend  = "sapling-spend.params";
-	boost::filesystem::path sapling_output = "sapling-output.params";
-	if (files_exist(sapling_spend, sapling_output)) {
-		fprintf(stderr,"Found sapling params in .\n");
+    boost::filesystem::path sapling_spend  = "sapling-spend.params";
+    boost::filesystem::path sapling_output = "sapling-output.params";
+    if (files_exist(sapling_spend, sapling_output)) {
+        fprintf(stderr,"Found sapling params in .\n");
         found = true;
-	}
+    }
 
     if (!found) {
        // Debian global install dir: /usr/share/hush
@@ -824,33 +836,43 @@ static void ZC_LoadParams(
 
     if (!found) {
         // Try ..
-        sapling_spend =  boost::filesystem::path("..") / "sapling-spend.params";
+        sapling_spend  = boost::filesystem::path("..") / "sapling-spend.params";
         sapling_output = boost::filesystem::path("..") / "sapling-output.params";
-	    if (files_exist(sapling_spend, sapling_output)) {
+        if (files_exist(sapling_spend, sapling_output)) {
             fprintf(stderr,"Found sapling params in ..\n");
             found = true;
-	    }
+        }
     }
 
     if (!found) {
         // This will catch the case of any external software (i.e. GUI wallets) needing params and installed in same dir as hush3.git
-        sapling_spend =  boost::filesystem::path("..") / "hush3" / "sapling-spend.params";
+        sapling_spend  = boost::filesystem::path("..") / "hush3" / "sapling-spend.params";
         sapling_output = boost::filesystem::path("..") / "hush3" / "sapling-output.params";
-	    if (files_exist(sapling_spend, sapling_output)) {
+        if (files_exist(sapling_spend, sapling_output)) {
             fprintf(stderr,"Found sapling params in ../hush3\n");
             found = true;
-	    }
+        }
+    }
+
+    if (!found) {
+        // DMG Support: Apple just has to do things differently...
+        sapling_spend  = boost::filesystem::path("Contents/MacOS") / "hush3" / "sapling-spend.params";
+        sapling_output = boost::filesystem::path("Contents/MacOS") / "hush3" / "sapling-output.params";
+        if (files_exist(sapling_spend, sapling_output)) {
+            fprintf(stderr,"Found sapling params in ../Contents/MacOS\n");
+            found = true;
+        }
     }
 
     if (!found) {
         // The traditional place Zcash params are stored, should not hit this case in normal circumstances,
         // as Hush packages sapling params now
-        sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
+        sapling_spend  = ZC_GetParamsDir() / "sapling-spend.params";
         sapling_output = ZC_GetParamsDir() / "sapling-output.params";
-	    if (files_exist(sapling_spend, sapling_output)) {
+        if (files_exist(sapling_spend, sapling_output)) {
             fprintf(stderr,"Found sapling params in ~/.zcash\n");
             found = true;
-	    }
+        }
     }
 
     if (!found) {
@@ -859,20 +881,36 @@ static void ZC_LoadParams(
         return;
     }
 
+    boost::system::error_code ec1, ec2;
+    boost::uintmax_t spend_size  = file_size(sapling_spend, ec1);
+    boost::uintmax_t output_size = file_size(sapling_output, ec2);
+    fprintf(stderr,"Sapling spend: %d bytes, output: %d bytes\n", spend_size, output_size);
 
+    // We could check sha hashes, but we mostly want to detect on-disk file corruption
+    // or people having a full harddrive. Full validation happens in librustzcash_init_zksnark_params
+    // This prevents users seeing very low-level errors from that routine
+    boost::uintmax_t spend_valid  = 47958396;
+    boost::uintmax_t output_valid = 3592860;
+    //TODO: passing the exact reason for corruption to GUI
+    if (spend_size != spend_valid) {
+        fprintf(stderr,"Sapling spend %d bytes != %d is invalid!\n", spend_size, spend_valid);
+        CorruptParamsShutdown();
+        return;
+    }
 
-    //LogPrintf("Loading verifying key from %s\n", vk_path.string().c_str());
-    gettimeofday(&tv_start, 0);
-
-    //pzcashParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
+    if (output_size != output_valid) {
+        fprintf(stderr,"Sapling ouput %d bytes != %d is invalid!\n", output_size, output_valid);
+        CorruptParamsShutdown();
+        return;
+    }
 
     gettimeofday(&tv_end, 0);
     elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
-    LogPrintf("Loaded verifying key in %fs seconds.\n", elapsed);
+    LogPrintf("Found sapling param in %fs seconds.\n", elapsed);
 
     static_assert( sizeof(boost::filesystem::path::value_type) == sizeof(codeunit), "librustzcash not configured correctly");
 
-    auto sapling_spend_str = sapling_spend.native();
+    auto sapling_spend_str  = sapling_spend.native();
     auto sapling_output_str = sapling_output.native();
 
     LogPrintf("Loading Sapling (Spend) parameters from %s\n", sapling_spend.string().c_str());
@@ -886,7 +924,7 @@ static void ZC_LoadParams(
         reinterpret_cast<const codeunit*>(sapling_output_str.c_str()),
         sapling_output_str.length(),
         "657e3d38dbb5cb5e7dd2970e8b03d69b4787dd907285b5a7f0790dcc8072f60bf593b32cc2d1c030e00ff5ae64bf84c5c3beb84ddc841d48264b4a171744d028",
-	// These are dummy arguments, ignored by Hush-flavored librustzcash
+        // These are dummy arguments, ignored by Hush-flavored librustzcash
         reinterpret_cast<const codeunit*>(sapling_output_str.c_str()),
         sapling_output_str.length(),
         "657e3d38dbb5cb5e7dd2970e8b03d69b4787dd907285b5a7f0790dcc8072f60bf593b32cc2d1c030e00ff5ae64bf84c5c3beb84ddc841d48264b4a171744d028"

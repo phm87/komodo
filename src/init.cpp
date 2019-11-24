@@ -858,11 +858,21 @@ static void ZC_LoadParams(
     }
 
     if (!found) {
-        // DMG Support: Apple just has to do things differently...
-        sapling_spend  = boost::filesystem::path("silentdragon.app/Contents/MacOS") / "hush3" / "sapling-spend.params";
-        sapling_output = boost::filesystem::path("silentdragon.app/Contents/MacOS") / "hush3" / "sapling-output.params";
+        // This will only work when SD is installed into /Applications, which is the only supported method
+        sapling_spend  = boost::filesystem::path("/Applications/silentdragon.app/Contents/MacOS") / "sapling-spend.params";
+        sapling_output = boost::filesystem::path("/Applications/silentdragon.app/Contents/MacOS") / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in ../Contents/MacOS\n");
+            fprintf(stderr,"Found sapling params in /Applications/Contents/MacOS\n");
+            found = true;
+        }
+    }
+
+    if (!found) {
+        // DMG Support: Apple just has to do things differently...
+        sapling_spend  = boost::filesystem::path("./silentdragon.app/Contents/MacOS") / "sapling-spend.params";
+        sapling_output = boost::filesystem::path("./silentdragon.app/Contents/MacOS") / "sapling-output.params";
+        if (files_exist(sapling_spend, sapling_output)) {
+            fprintf(stderr,"Found sapling params in /Applications/Contents/MacOS\n");
             found = true;
         }
     }

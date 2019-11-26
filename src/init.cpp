@@ -810,11 +810,13 @@ static void ZC_LoadParams(
     struct timeval tv_start, tv_end;
     float elapsed;
     bool found = false;
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+
+    LogPrintf("Looking for sapling params, PWD=%s\n", cwd);
 
     // Some people have previous partial downloads of zcash params, so check that last
     // Sapling Param Search path: . /usr/share/hush .. ../hush3 ./Contents/MacOS/ ~/.zcash-params
-
-    LogPrintf("Looking for sapling params...");
     gettimeofday(&tv_start, 0);
 
     // PWD
@@ -856,11 +858,21 @@ static void ZC_LoadParams(
     }
 
     if (!found) {
-        // DMG Support: Apple just has to do things differently...
-        sapling_spend  = boost::filesystem::path("Contents/MacOS") / "hush3" / "sapling-spend.params";
-        sapling_output = boost::filesystem::path("Contents/MacOS") / "hush3" / "sapling-output.params";
+        // This will only work when SD is installed into /Applications, which is the only supported method
+        sapling_spend  = boost::filesystem::path("/Applications/silentdragon.app/Contents/MacOS") / "sapling-spend.params";
+        sapling_output = boost::filesystem::path("/Applications/silentdragon.app/Contents/MacOS") / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in ../Contents/MacOS\n");
+            fprintf(stderr,"Found sapling params in /Applications/Contents/MacOS\n");
+            found = true;
+        }
+    }
+
+    if (!found) {
+        // DMG Support: Apple just has to do things differently...
+        sapling_spend  = boost::filesystem::path("./silentdragon.app/Contents/MacOS") / "sapling-spend.params";
+        sapling_output = boost::filesystem::path("./silentdragon.app/Contents/MacOS") / "sapling-output.params";
+        if (files_exist(sapling_spend, sapling_output)) {
+            fprintf(stderr,"Found sapling params in /Applications/Contents/MacOS\n");
             found = true;
         }
     }

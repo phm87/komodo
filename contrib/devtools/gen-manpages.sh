@@ -11,7 +11,7 @@ KOMODOTX=${KOMODOTX:-$SRCDIR/komodo-tx}
 [ ! -x $KOMODOD ] && echo "$KOMODOD not found or not executable." && exit 1
 
 # The autodetected version git tag can screw up manpage output a little bit
-KMDVER="v3.2.1"
+KMDVER="v3.2.2"
 
 # Create a footer file with copyright content.
 # This gets autodetected fine for komodod if --version-string is not set,

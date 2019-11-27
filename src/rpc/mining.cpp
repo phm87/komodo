@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -162,7 +163,6 @@ UniValue getnetworkhashps(const UniValue& params, bool fHelp)
 }
 
 #ifdef ENABLE_MINING
-extern bool VERUS_MINTBLOCKS;
 UniValue getgenerate(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -184,7 +184,7 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
     UniValue obj(UniValue::VOBJ);
-    bool staking = VERUS_MINTBLOCKS;
+    bool staking = false;
     if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
         staking = true;
     obj.push_back(Pair("staking",          staking));
@@ -370,27 +370,11 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
         //if (nGenProcLimit == 0)
         //    fGenerate = false;
     }
-    if ( ASSETCHAINS_LWMAPOS != 0 )
-    {
-        if (fGenerate && !nGenProcLimit)
-        {
-            VERUS_MINTBLOCKS = 1;
-            fGenerate = GetBoolArg("-gen", false);
-            KOMODO_MININGTHREADS = nGenProcLimit;
-        }
-        else if (!fGenerate)
-        {
-            VERUS_MINTBLOCKS = 0;
-            KOMODO_MININGTHREADS = 0;
-        }
-        else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
-    }
-    else
-    {
-        KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
-    }
 
-    mapArgs["-gen"] = (fGenerate ? "1" : "0");
+    KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
+	fprintf(stderr,"%s:KOMODO_MININGTHREADS=%d\n", __FUNCTION__, KOMODO_MININGTHREADS);
+
+    mapArgs["-gen"]           = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
 
 #ifdef ENABLE_WALLET
@@ -499,9 +483,7 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
 #ifdef ENABLE_MINING
-    bool staking = VERUS_MINTBLOCKS;
-    if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
-        staking = true;
+    bool staking = false;
     obj.push_back(Pair("staking",          staking));
     obj.push_back(Pair("generate",         GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) != 0 ));
     obj.push_back(Pair("numthreads",       (int64_t)KOMODO_MININGTHREADS));

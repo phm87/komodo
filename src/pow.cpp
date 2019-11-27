@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -643,18 +644,13 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
     // if we have had no POS block in the threshold number of blocks, we must return the default, otherwise, we'll now have
     // a starting point
     uint32_t nBits = nProofOfStakeLimit;
-    for (int64_t i = 0; i < VERUS_NOPOS_THRESHHOLD; i++)
+    for (int64_t i = 0; i < KOMODO_NOPOS_THRESHHOLD; i++)
     {
         if (!pindexFirst)
             return nProofOfStakeLimit;
 
         CBlockHeader hdr = pindexFirst->GetBlockHeader();
 
-        if (hdr.IsVerusPOSBlock())
-        {
-            nBits = hdr.GetVerusPOSTarget();
-            break;
-        }
         pindexFirst = pindexFirst->pprev;
     }
 
@@ -664,10 +660,10 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
 
     for (int64_t i = N - 1; i >= 0; i--)
     {
-        // we measure our solve time in passing of blocks, where one bock == VERUS_BLOCK_POSUNITS units
+        // we measure our solve time in passing of blocks, where one bock == KOMODO_BLOCK_POSUNITS units
         // consecutive blocks in either direction have their solve times exponentially multiplied or divided by power of 2
         int x;
-        for (x = 0; x < VERUS_CONSECUTIVE_POS_THRESHOLD; x++)
+        for (x = 0; x < KOMODO_CONSECUTIVE_POS_THRESHOLD; x++)
         {
             pindexFirst = pindexFirst->pprev;
 
@@ -675,27 +671,17 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
                 return nProofOfStakeLimit;
 
             CBlockHeader hdr = pindexFirst->GetBlockHeader();
-            if (hdr.IsVerusPOSBlock())
-            {
-                nBits = hdr.GetVerusPOSTarget();
-                break;
-            }
         }
 
         if (x)
         {
             idx[i].consecutive = false;
-            if (!memcmp(ASSETCHAINS_SYMBOL, "VRSC", 4) && pindexLast->GetHeight() < 67680)
-            {
-                idx[i].solveTime = VERUS_BLOCK_POSUNITS * (x + 1);
-            }
-            else
             {
                 int64_t lastSolveTime = 0;
-                idx[i].solveTime = VERUS_BLOCK_POSUNITS;
+                idx[i].solveTime = KOMODO_BLOCK_POSUNITS;
                 for (int64_t j = 0; j < x; j++)
                 {
-                    lastSolveTime = VERUS_BLOCK_POSUNITS + (lastSolveTime >> 1);
+                    lastSolveTime = KOMODO_BLOCK_POSUNITS + (lastSolveTime >> 1);
                     idx[i].solveTime += lastSolveTime;
                 }
             }
@@ -707,13 +693,13 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
             idx[i].nBits = nBits;
             // go forward and halve the minimum solve time for all consecutive blocks in this run, to get here, our last block is POS,
             // and if there is no POS block in front of it, it gets the normal solve time of one block
-            uint32_t st = VERUS_BLOCK_POSUNITS;
+            uint32_t st = KOMODO_BLOCK_POSUNITS;
             for (int64_t j = i; j < N; j++)
             {
                 if (idx[j].consecutive == true)
                 {
                     idx[j].solveTime = st;
-                    if ((j - i) >= VERUS_CONSECUTIVE_POS_THRESHOLD)
+                    if ((j - i) >= KOMODO_CONSECUTIVE_POS_THRESHOLD)
                     {
                         // if this is real time, return zero
                         if (j == (N - 1))
@@ -870,7 +856,7 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
     //else if ( ASSETCHAINS_ADAPTIVEPOW > 0 && ASSETCHAINS_STAKED == 0 )
     //    bnTarget = komodo_adaptivepow_target(height,bnTarget,blkHeader.nTime);
     // Check proof of work matches claimed amount
-    if ( UintToArith256(hash = blkHeader.GetHash()) > bnTarget && !blkHeader.IsVerusPOSBlock() )
+    if ( UintToArith256(hash = blkHeader.GetHash()) > bnTarget )
     {
         if ( KOMODO_LOADINGBLOCKS != 0 )
             return true;

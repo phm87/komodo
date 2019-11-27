@@ -608,7 +608,6 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-ac_timelockgte",  _("Timelocked coinbase minimum amount to be locked"));
     strUsage += HelpMessageOpt("-ac_timelockto",   _("Timelocked coinbase stop height"));
     strUsage += HelpMessageOpt("-ac_txpow", _("Enforce transaction-rate limit, default 0"));
-    strUsage += HelpMessageOpt("-ac_veruspos", _("Use Verus Proof-Of-Stake (-ac_veruspos=50) default 0"));
 
     return strUsage;
 }
@@ -1378,24 +1377,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Initialize elliptic curve code
     ECC_Start();
     globalVerifyHandle.reset(new ECCVerifyHandle());
-
-	/*
-    // set the hash algorithm to use for this chain
-    // Again likely better solution here, than using long IF ELSE. 
-    extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH, ASSETCHAINS_VERUSHASHV1_1;
-    CVerusHash::init();
-    CVerusHashV2::init();
-    if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH)
-    {
-        // initialize VerusHash
-        CBlockHeader::SetVerusHash();
-    }
-    else if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1)
-    {
-        // initialize VerusHashV2
-        CBlockHeader::SetVerusHashV2();
-    }
-	*/
 
 	//fprintf(stderr,"%s tik10\n", __FUNCTION__);
     // Sanity check

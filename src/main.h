@@ -37,7 +37,6 @@
 #include "script/script.h"
 #include "script/serverchecker.h"
 #include "script/standard.h"
-#include "script/script_ext.h"
 #include "spentindex.h"
 #include "sync.h"
 #include "tinyformat.h"

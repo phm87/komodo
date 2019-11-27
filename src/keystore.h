@@ -25,7 +25,6 @@
 #include "pubkey.h"
 #include "script/script.h"
 #include "script/standard.h"
-#include "script/script_ext.h"
 #include "sync.h"
 #include "zcash/Address.hpp"
 #include "zcash/NoteEncryption.hpp"

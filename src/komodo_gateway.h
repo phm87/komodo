@@ -1,3 +1,4 @@
+// Copyright 2019 The Hush developers
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
@@ -727,7 +728,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             return(-1);
         }
     }
-    // we don't want these checks in VRSC, leave it at the Sapling upgrade
     if ( ASSETCHAINS_SYMBOL[0] == 0 ||
          ((ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD) && height > 1) ||
          NetworkUpgradeActive(height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING) )

@@ -137,12 +137,7 @@ int64_t GetUptime()
 
 double GetLocalSolPS()
 {
-    if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1)
-    {
-        return miningTimer.rate(nHashCount);
-    }
-    else
-        return miningTimer.rate(solutionTargetChecks);
+	return miningTimer.rate(solutionTargetChecks);
 }
 
 int EstimateNetHeightInner(int height, int64_t tipmediantime,

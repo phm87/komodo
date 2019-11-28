@@ -4109,6 +4109,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "      \"anchor\" : \"anchor\",   (string) The anchor\n"
             "      \"commitment\" : \"commitment\",   (string) The commitment\n"
             "      \"rk\" : \"rk\",   (string) The rk\n"
+            "      \"zkproof\" : \"zkproof\",   (string) Hexadecimal string representation of raw zksnark proof\n"
             "      \"outputPrev\" : n,               (numeric) the index of the output within the vShieldedOutput\n"
             "      \"address\" : \"zcashaddress\",     (string) The Hush shielded address involved in the transaction\n"
             "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
@@ -4121,7 +4122,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "      \"type\" : \"sapling\",      (string) The type of address\n"
             "      \"output\" : n,                   (numeric) the index of the output within the vShieldedOutput\n"
             "      \"address\" : \"hushaddress\",     (string) The Hush address involved in the transaction\n"
-            "      \"recovered\" : true|false        (boolean) True if the output is not for an address in the wallet\n"
+            "      \"outgoing\" : true|false        (boolean) True if the output is not for an address in the wallet\n"
             "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
             "      \"valueZat\" : xxxx               (numeric) The amount in zatoshis\n"
             "      \"memo\" : \"hexmemo\",             (string) Hexademical string representation of the memo field\n"
@@ -4201,20 +4202,20 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         SaplingNotePlaintext notePt;
         SaplingPaymentAddress pa;
-        bool isRecovered;
+        bool isOutgoing;
 
         auto decrypted = wtx.DecryptSaplingNote(op);
         if (decrypted) {
             notePt = decrypted->first;
             pa = decrypted->second;
-            isRecovered = false;
+            isOutgoing = false;
         } else {
             // Try recovering the output
             auto recovered = wtx.RecoverSaplingNote(op, ovks);
             if (recovered) {
                 notePt = recovered->first;
                 pa = recovered->second;
-                isRecovered = true;
+                isOutgoing = true;
             } else {
                 // Unreadable
 			    fprintf(stderr,"Could not recover Sapling note!");
@@ -4226,7 +4227,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("type", ADDR_TYPE_SAPLING));
         entry.push_back(Pair("output", (int)op.n));
-        entry.push_back(Pair("recovered", isRecovered));
+        entry.push_back(Pair("outgoing", isOutgoing));
         entry.push_back(Pair("address", EncodePaymentAddress(pa)));
         entry.push_back(Pair("value", ValueFromAmount(notePt.value())));
         entry.push_back(Pair("valueZat", notePt.value()));

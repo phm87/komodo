@@ -601,14 +601,12 @@ void *chainparams_commandline()
                 {
                         boost::assign::map_list_of
                                 (0, pCurrentParams->consensus.hashGenesisBlock),
-                        (int64_t)1231006505,
-                        (int64_t)1,
+                        (int64_t)1231006505,    // unix timestamp of last checkpoint block
+                        (int64_t)1,             // xtns from genenesis until last checkpointed block
                         (double)2777            // * estimated number of transactions per day after checkpoint
                         //   total number of tx / (checkpoint block height / (24 * 24))
                 };
-    }
-    else
-    {
+    } else {
         checkpointData = //(Checkpoints::CCheckpointData)
                 {
                         boost::assign::map_list_of

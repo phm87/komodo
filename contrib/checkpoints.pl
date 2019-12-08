@@ -1,4 +1,6 @@
 #!/usr/bin/perl
+# Copyright 2019 The Hush developers
+# Released under the GPLv3
 use warnings;
 use strict;
 # Generate checkpoint data for use in src/main.cpp
@@ -12,7 +14,10 @@ my $count   = 0;
 my $blocks  = qx{$hush getblockcount};
 my $prev    = $blocks - $perday;
 my $last    = 0;
+my $now     = time();
 chomp($blocks);
+
+print "// Generated at $now via hush3 contrib/checkpoints.pl by Duke Leto\n";
 
 while (1) {
 	$count++;

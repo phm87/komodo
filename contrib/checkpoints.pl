@@ -24,7 +24,7 @@ while (1) {
 	my $block = $stride*$count;
 	if ($block > $blocks) {
 		$last = $stride*($count-1);
-        print "last checkpointed block=$last\n";
+        #print "last checkpointed block=$last\n";
         last;
     }
 	my $blockhash = qx{$gethash $block};

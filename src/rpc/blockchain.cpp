@@ -1665,6 +1665,7 @@ void NetworkUpgradeDescPushBack(
 
 UniValue getblockchaininfo(const UniValue& params, bool fHelp)
 {
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,longestchain,kmdnotarized_height,txid_height;
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getblockchaininfo\n"
@@ -1678,6 +1679,8 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
             "  \"headers\": xxxxxx,        (numeric) the current number of headers we have validated\n"
             "  \"bestblockhash\": \"...\", (string) the hash of the currently best block\n"
             "  \"difficulty\": xxxxxx,     (numeric) the current difficulty\n"
+            "  \"longestchain\": xxxxxx,   (numeric) the longest high of the chain\n"
+            "  \"notarized\": xxxxxx,      (numeric) last notarized Block\n"
             "  \"verificationprogress\": xxxx, (numeric) estimate of verification progress [0..1]\n"
             "  \"chainwork\": \"xxxx\"     (string) total amount of work in active chain, in hexadecimal\n"
             "  \"commitments\": xxxxxx,    (numeric) the current number of note commitments in the commitment tree\n"
@@ -1720,10 +1723,13 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
         int32_t longestchain = KOMODO_LONGESTCHAIN;//komodo_longestchain();
 	    progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;
     }
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("chain",                 Params().NetworkIDString()));
     obj.push_back(Pair("blocks",                (int)chainActive.Height()));
     obj.push_back(Pair("synced",                KOMODO_INSYNC!=0));
+    obj.push_back(Pair("longestchain",        KOMODO_LONGESTCHAIN));
+    obj.push_back(Pair("notarized", notarized_height));
     obj.push_back(Pair("headers",               pindexBestHeader ? pindexBestHeader->GetHeight() : -1));
     obj.push_back(Pair("bestblockhash",         chainActive.LastTip()->GetBlockHash().GetHex()));
     obj.push_back(Pair("difficulty",            (double)GetNetworkDifficulty()));

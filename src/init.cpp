@@ -1666,6 +1666,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     fReindex = GetBoolArg("-reindex", false);
 
+    boost::filesystem::path blocksDir = GetDataDir() / "blocks";
+    if (!boost::filesystem::exists(blocksDir))
+    {
+        boost::filesystem::create_directories(blocksDir);
+    }
+
     // block tree db settings
     int dbMaxOpenFiles = GetArg("-dbmaxopenfiles", DEFAULT_DB_MAX_OPEN_FILES);
     bool dbCompression = GetBoolArg("-dbcompression", DEFAULT_DB_COMPRESSION);

@@ -2539,3 +2539,11 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     }
     return(siglen);
 }
+
+bool komodo_hardfork_active(uint32_t time)
+{
+	//TODO: set hardfork height for HUSH
+	return false;
+    //return ( (ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Height() > nDecemberHardforkHeight) || (ASSETCHAINS_SYMBOL[0] != 0 && time > nStake
+}
+

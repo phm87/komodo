@@ -695,6 +695,29 @@ int32_t komodo_WhoStaked(CBlock *pblock, CTxDestination &addressout)
     return(0);
 }
 
+int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp)
+{
+    if ( timestamp > nStakedDecemberHardforkTimestamp || komodo_heightstamp(height) > nStakedDecemberHardforkTimestamp ) //December 2019 hardfork
+        return(1);
+    else return(0);
+}
+
+int32_t komodo_hasOpRet(int32_t height, uint32_t timestamp)
+{    
+    return((ASSETCHAINS_MARMARA!=0 || komodo_newStakerActive(height, timestamp) == 1));
+}
+
+bool komodo_checkopret(CBlock *pblock, CScript &merkleroot)
+{
+    merkleroot = pblock->vtx.back().vout.back().scriptPubKey;
+    return(merkleroot.IsOpReturn() && merkleroot == komodo_makeopret(pblock, false));
+}
+
+bool komodo_hardfork_active(uint32_t time)
+{
+    return ( (ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Height() > nDecemberHardforkHeight) || (ASSETCHAINS_SYMBOL[0] != 0 && time > nStakedDecemberHardforkTimestamp) ); //December 2019 hardfork
+}
+
 bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx);
 
 int32_t komodo_isPoS2(CBlock *pblock)

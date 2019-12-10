@@ -695,15 +695,8 @@ int32_t komodo_WhoStaked(CBlock *pblock, CTxDestination &addressout)
     return(0);
 }
 
-int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp)
-{
-    if ( timestamp > nStakedDecemberHardforkTimestamp || komodo_heightstamp(height) > nStakedDecemberHardforkTimestamp ) //December 2019 hardfork
-        return(1);
-    else return(0);
-}
-
 int32_t komodo_hasOpRet(int32_t height, uint32_t timestamp)
-{    
+{
     return((ASSETCHAINS_MARMARA!=0 || komodo_newStakerActive(height, timestamp) == 1));
 }
 
@@ -715,69 +708,14 @@ bool komodo_checkopret(CBlock *pblock, CScript &merkleroot)
 
 bool komodo_hardfork_active(uint32_t time)
 {
+	//TODO: set a block height for ~ Jan 21 3pm
     return ( (ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Height() > nDecemberHardforkHeight) || (ASSETCHAINS_SYMBOL[0] != 0 && time > nStakedDecemberHardforkTimestamp) ); //December 2019 hardfork
 }
 
 bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx);
 
-int32_t komodo_isPoS2(CBlock *pblock)
-{
-    CBlockIndex *pindex = komodo_blockindex(pblock->GetHash());
-    if ( pindex != 0 && pindex->segid >= -1 )
-    {
-        //fprintf(stderr,"isPoSblock segid.%d\n",pindex->segid);
-        if ( pindex->segid == -1 )
-            return(0);
-        else return(1);
-    }
-    return (-1);
-}
-
 int32_t komodo_isPoS(CBlock *pblock,int32_t height,bool fJustCheck)
 {
-    int32_t n,vout,numvouts,ret; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid; CScript opret;
-    if ( ASSETCHAINS_STAKED != 0 )
-    {
-        if ( fJustCheck )
-        {
-            // check pindex first, if that does not work, continue with slow check.
-            if ( (ret= komodo_isPoS2(pblock)) == 1 )
-                return (1);
-            else if ( ret == 0 )
-                return (0);
-        }
-        n = pblock->vtx.size();
-        //fprintf(stderr,"ht.%d check for PoS numtx.%d numvins.%d numvouts.%d\n",height,n,(int32_t)pblock->vtx[n-1].vin.size(),(int32_t)pblock->vtx[n-1].vout.size());
-        if ( n > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1+(ASSETCHAINS_MARMARA!=0) )
-        {
-            txid = pblock->vtx[n-1].vin[0].prevout.hash;
-            vout = pblock->vtx[n-1].vin[0].prevout.n;
-            txtime = komodo_txtime(opret,&value,txid,vout,destaddr);
-            if ( ExtractDestination(pblock->vtx[n-1].vout[0].scriptPubKey,voutaddress) )
-            {
-                strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
-                //fprintf(stderr,"voutaddr.%s vs destaddr.%s\n",voutaddr,destaddr);
-                if ( pblock->vtx[n-1].vout[0].nValue == value && strcmp(destaddr,voutaddr) == 0 )
-                {
-                    if ( ASSETCHAINS_MARMARA == 0 )
-                        return(1);
-                    else
-                    {
-                        if ( pblock->vtx[n-1].vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 && (numvouts= pblock->vtx[n-1].vout.size()) == 2 )
-                        {
-//fprintf(stderr,"validate proper %s %s signature and unlockht preservation\n",voutaddr,destaddr);
-                            return(MarmaraPoScheck(destaddr,opret,pblock->vtx[n-1]));
-                        }
-                        else
-                        {
-                            fprintf(stderr,"reject ht.%d PoS block\n",height);
-                            return(strcmp(ASSETCHAINS_SYMBOL,"MTST2") == 0); // allow until MTST3
-                        }
-                    }
-                }
-            }
-        }
-    }
     return(0);
 }
 

@@ -896,7 +896,7 @@ static void ZC_LoadParams(
     boost::system::error_code ec1, ec2;
     boost::uintmax_t spend_size  = file_size(sapling_spend, ec1);
     boost::uintmax_t output_size = file_size(sapling_output, ec2);
-    fprintf(stderr,"Sapling spend: %d bytes, output: %d bytes\n", spend_size, output_size);
+    fprintf(stderr,"Sapling spend: %d bytes, output: %d bytes\n", (int)spend_size, (int)output_size);
 
     // We could check sha hashes, but we mostly want to detect on-disk file corruption
     // or people having a full harddrive. Full validation happens in librustzcash_init_zksnark_params
@@ -905,13 +905,13 @@ static void ZC_LoadParams(
     boost::uintmax_t output_valid = 3592860;
     //TODO: passing the exact reason for corruption to GUI
     if (spend_size != spend_valid) {
-        fprintf(stderr,"Sapling spend %d bytes != %d is invalid!\n", spend_size, spend_valid);
+        LogPrintf("Sapling spend %d bytes != %d is invalid!\n", (int)spend_size, (int)spend_valid);
         CorruptParamsShutdown();
         return;
     }
 
     if (output_size != output_valid) {
-        fprintf(stderr,"Sapling ouput %d bytes != %d is invalid!\n", output_size, output_valid);
+        LogPrintf("Sapling ouput %d bytes != %d is invalid!\n", (int)output_size, (int)output_valid);
         CorruptParamsShutdown();
         return;
     }

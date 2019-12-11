@@ -695,11 +695,6 @@ int32_t komodo_WhoStaked(CBlock *pblock, CTxDestination &addressout)
     return(0);
 }
 
-int32_t komodo_hasOpRet(int32_t height, uint32_t timestamp)
-{
-    return((ASSETCHAINS_MARMARA!=0 || komodo_newStakerActive(height, timestamp) == 1));
-}
-
 bool komodo_checkopret(CBlock *pblock, CScript &merkleroot)
 {
     merkleroot = pblock->vtx.back().vout.back().scriptPubKey;

@@ -96,6 +96,13 @@ extern int32_t komodo_get_current_height();
 #define PUBKEY_SPOOFING_FIX_ACTIVATION 1563148800
 #define CC_MARKER_VALUE 10000
 
+int32_t GetLatestTimestamp(int32_t height)
+{
+    if ( KOMODO_NSPV_SUPERLITE ) return (NSPV_blocktime(height));
+    return(komodo_heightstamp(height));
+}
+
+
 // start of consensus code
 CScript EncodeOraclesCreateOpRet(uint8_t funcid,std::string name,std::string description,std::string format)
 {

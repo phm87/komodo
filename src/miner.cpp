@@ -591,7 +591,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             else
             {
                 blocktime = GetAdjustedTime();
-                siglen = komodo_staked(txStaked, pblock->nBits, &blocktime, &txtime, &utxotxid, &utxovout, &utxovalue, utxosig);
+                //siglen = komodo_staked(txStaked, pblock->nBits, &blocktime, &txtime, &utxotxid, &utxovout, &utxovalue, utxosig);
                 // if you skip this check it will create a block too far into the future and not pass ProcessBlock or AcceptBlock.
                 // This has been moved from the mining loop to save CPU, and to also make ac_staked work
                 while ( blocktime-57 > GetAdjustedTime() )

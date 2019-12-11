@@ -4,7 +4,7 @@
 #include "cc/eval.h"
 #include "crosschain.h"
 #include "main.h"
-#include "notaries_staked.h"
+
 
 #include <boost/foreach.hpp>
 

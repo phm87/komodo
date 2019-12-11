@@ -810,7 +810,7 @@ static void ZC_LoadParams(
     float elapsed;
     bool found = false;
     char cwd[1024];
-    getcwd(cwd, sizeof(cwd));
+    bool ret = getcwd(cwd, sizeof(cwd));
 
     LogPrintf("Looking for sapling params, PWD=%s\n", cwd);
 
@@ -822,7 +822,7 @@ static void ZC_LoadParams(
     boost::filesystem::path sapling_spend  = "sapling-spend.params";
     boost::filesystem::path sapling_output = "sapling-output.params";
     if (files_exist(sapling_spend, sapling_output)) {
-        fprintf(stderr,"Found sapling params in .\n");
+        LogPrintf("Found sapling params in .\n");
         found = true;
     }
 
@@ -831,7 +831,7 @@ static void ZC_LoadParams(
        sapling_spend  = fs::path("/usr/share/hush") / "sapling-spend.params";
        sapling_output = fs::path("/usr/share/hush") / "sapling-output.params";
        if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in /usr/share/hush\n");
+            LogPrintf("Found sapling params in /usr/share/hush\n");
             found=true;
        }
     }
@@ -841,7 +841,7 @@ static void ZC_LoadParams(
         sapling_spend  = boost::filesystem::path("..") / "sapling-spend.params";
         sapling_output = boost::filesystem::path("..") / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in ..\n");
+            LogPrintf("Found sapling params in ..\n");
             found = true;
         }
     }
@@ -851,7 +851,7 @@ static void ZC_LoadParams(
         sapling_spend  = boost::filesystem::path("..") / "hush3" / "sapling-spend.params";
         sapling_output = boost::filesystem::path("..") / "hush3" / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in ../hush3\n");
+            LogPrintf("Found sapling params in ../hush3\n");
             found = true;
         }
     }
@@ -861,7 +861,7 @@ static void ZC_LoadParams(
         sapling_spend  = boost::filesystem::path("/Applications/silentdragon.app/Contents/MacOS") / "sapling-spend.params";
         sapling_output = boost::filesystem::path("/Applications/silentdragon.app/Contents/MacOS") / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in /Applications/Contents/MacOS\n");
+            LogPrintf("Found sapling params in /Applications/Contents/MacOS\n");
             found = true;
         }
     }
@@ -871,7 +871,7 @@ static void ZC_LoadParams(
         sapling_spend  = boost::filesystem::path("./silentdragon.app/Contents/MacOS") / "sapling-spend.params";
         sapling_output = boost::filesystem::path("./silentdragon.app/Contents/MacOS") / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in /Applications/Contents/MacOS\n");
+            LogPrintf("Found sapling params in /Applications/Contents/MacOS\n");
             found = true;
         }
     }
@@ -882,13 +882,14 @@ static void ZC_LoadParams(
         sapling_spend  = ZC_GetParamsDir() / "sapling-spend.params";
         sapling_output = ZC_GetParamsDir() / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in ~/.zcash\n");
+            LogPrintf("Found sapling params in ~/.zcash\n");
             found = true;
         }
     }
 
     if (!found) {
         // No Sapling params, at least we tried
+	    LogPrintf("No Sapling params found! :(\n");
         NoParamsShutdown();
         return;
     }

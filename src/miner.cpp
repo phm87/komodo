@@ -55,7 +55,7 @@
 
 #include "sodium.h"
 
-
+#include "notaries_staked.h"
 
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple.hpp>

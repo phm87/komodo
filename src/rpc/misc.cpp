@@ -28,7 +28,7 @@
 #include "timedata.h"
 #include "txmempool.h"
 #include "util.h"
-
+#include "notaries_staked.h"
 #include "cc/eval.h"
 #include "cc/CCinclude.h"
 #ifdef ENABLE_WALLET

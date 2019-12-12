@@ -319,6 +319,7 @@ libbitcoin_server_a_SOURCES = \
   metrics.h \
   miner.cpp \
   net.cpp \
+  notaries_staked.cpp \
   noui.cpp \
   notarisationdb.cpp \
   paymentdisclosure.cpp \

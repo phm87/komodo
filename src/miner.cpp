@@ -121,6 +121,8 @@ public:
     }
 };
 
+extern int8_t ASSETCHAINS_ADAPTIVEPOW;
+
 void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
     if ( ASSETCHAINS_ADAPTIVEPOW <= 0 )

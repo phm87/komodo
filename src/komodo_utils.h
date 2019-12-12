@@ -1965,9 +1965,6 @@ void komodo_args(char *argv0)
         }
         
 
-        if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
-            ASSETCHAINS_STAKED = 100;
-
         ASSETCHAINS_SAPLING = GetArg("-ac_sapling", -1);
         if (ASSETCHAINS_SAPLING == -1)
         {

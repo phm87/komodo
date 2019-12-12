@@ -97,7 +97,7 @@ int32_t getera(int timestamp)
     return(0);
 }
 
-UniValue getiguanajson(const UniValue& params, bool fHelp)
+UniValue getiguanajson(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)
       throw runtime_error("getiguanajson\nreturns json for iguana, for the current ERA.");
@@ -137,7 +137,7 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
     return json;
 }
 
-UniValue getnotarysendmany(const UniValue& params, bool fHelp)
+UniValue getnotarysendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 1)
       throw runtime_error(
@@ -165,7 +165,7 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue geterablockheights(const UniValue& params, bool fHelp)
+UniValue geterablockheights(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)
       throw runtime_error(
@@ -191,7 +191,7 @@ UniValue geterablockheights(const UniValue& params, bool fHelp)
     return(ret);
 }
 
-UniValue getinfo(const UniValue& params, bool fHelp)
+UniValue getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,longestchain,kmdnotarized_height,txid_height;
     if (fHelp || params.size() != 0)
@@ -413,7 +413,7 @@ public:
 };
 #endif
 
-UniValue coinsupply(const UniValue& params, bool fHelp)
+UniValue coinsupply(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t height = 0; int32_t currentHeight; int64_t blocks_per_year,zf1,zf3,zf12,sf1,sf3,sf12,sproutfunds,zfunds,supply1,supply3,supply12,supply = 0; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() > 1)
@@ -478,7 +478,7 @@ UniValue coinsupply(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue jumblr_deposit(const UniValue& params, bool fHelp)
+UniValue jumblr_deposit(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t retval; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() != 1)
@@ -498,7 +498,7 @@ UniValue jumblr_deposit(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue jumblr_secret(const UniValue& params, bool fHelp)
+UniValue jumblr_secret(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t retval; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() != 1)
@@ -516,7 +516,7 @@ UniValue jumblr_secret(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue jumblr_pause(const UniValue& params, bool fHelp)
+UniValue jumblr_pause(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t retval; UniValue result(UniValue::VOBJ);
     if (fHelp )
@@ -526,7 +526,7 @@ UniValue jumblr_pause(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue jumblr_resume(const UniValue& params, bool fHelp)
+UniValue jumblr_resume(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t retval; UniValue result(UniValue::VOBJ);
     if (fHelp )
@@ -536,7 +536,7 @@ UniValue jumblr_resume(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue validateaddress(const UniValue& params, bool fHelp)
+UniValue validateaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -630,7 +630,7 @@ public:
     }
 };
 
-UniValue z_validateaddress(const UniValue& params, bool fHelp)
+UniValue z_validateaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -741,7 +741,7 @@ CScript _createmultisig_redeemScript(const UniValue& params)
     return result;
 }
 
-UniValue createmultisig(const UniValue& params, bool fHelp)
+UniValue createmultisig(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() < 2 || params.size() > 2)
     {
@@ -783,7 +783,7 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue verifymessage(const UniValue& params, bool fHelp)
+UniValue verifymessage(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error(
@@ -839,7 +839,7 @@ UniValue verifymessage(const UniValue& params, bool fHelp)
     return (pubkey.GetID() == *keyID);
 }
 
-UniValue setmocktime(const UniValue& params, bool fHelp)
+UniValue setmocktime(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -933,7 +933,7 @@ bool timestampSort(std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta> a,
     return a.second.time < b.second.time;
 }
 
-UniValue getaddressmempool(const UniValue& params, bool fHelp)
+UniValue getaddressmempool(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 2 || params.size() == 0)
         throw runtime_error(
@@ -1005,7 +1005,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue getaddressutxos(const UniValue& params, bool fHelp)
+UniValue getaddressutxos(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 2 || params.size() == 0)
         throw runtime_error(
@@ -1092,7 +1092,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
     }
 }
 
-UniValue getaddressdeltas(const UniValue& params, bool fHelp)
+UniValue getaddressdeltas(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 2 || params.size() == 0 || !params[0].isObject())
         throw runtime_error(
@@ -1242,7 +1242,7 @@ CAmount checkburnaddress(CAmount &received, int64_t &nNotaryPay, int32_t &height
     return balance;
 }
 
-UniValue checknotarization(const UniValue& params, bool fHelp)
+UniValue checknotarization(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -1272,7 +1272,7 @@ UniValue checknotarization(const UniValue& params, bool fHelp)
     return true;
 }
 
-UniValue getnotarypayinfo(const UniValue& params, bool fHelp)
+UniValue getnotarypayinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -1318,7 +1318,7 @@ UniValue getnotarypayinfo(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue getaddressbalance(const UniValue& params, bool fHelp)
+UniValue getaddressbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp ||params.size() > 2 || params.size() == 0)
         throw runtime_error(
@@ -1377,7 +1377,7 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
 
 UniValue komodo_snapshot(int top);
 
-UniValue getsnapshot(const UniValue& params, bool fHelp)
+UniValue getsnapshot(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int64_t total; int32_t top = 0;
 
@@ -1434,7 +1434,7 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue getaddresstxids(const UniValue& params, bool fHelp)
+UniValue getaddresstxids(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 2 || params.size() < 1)
         throw runtime_error(
@@ -1518,7 +1518,7 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
 
 }
 
-UniValue getspentinfo(const UniValue& params, bool fHelp)
+UniValue getspentinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
 
     if (fHelp || params.size() != 1 || !params[0].isObject())
@@ -1566,7 +1566,7 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
     return obj;
 }
 
-UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp)
+UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     bool notarizedconfirmed; uint256 txid;
 
@@ -1592,7 +1592,7 @@ UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue decodeccopret(const UniValue& params, bool fHelp)
+UniValue decodeccopret(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     CTransaction tx; uint256 tokenid,txid,hashblock;
     std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,tokenevalcode;

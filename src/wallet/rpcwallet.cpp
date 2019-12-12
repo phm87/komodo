@@ -38,7 +38,7 @@
 #include "zcbenchmarks.h"
 #include "script/interpreter.h"
 #include "zcash/zip32.h"
-
+#include "cc/CCinclude.h"
 #include "utiltime.h"
 #include "asyncrpcoperation.h"
 #include "asyncrpcqueue.h"
@@ -5622,12 +5622,6 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 else 
                 {
                     result.push_back(Pair("ismine", "true"));
-                    std::string notaryname;
-                    if ( (IS_STAKED_NOTARY= StakedNotaryID(notaryname, Raddress)) > -1 ) 
-                    {
-                        result.push_back(Pair("IsNotary", notaryname));
-                        IS_KOMODO_NOTARY = 0;
-                    }
                 }
                 NOTARY_PUBKEY = params[0].get_str();
                 decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());

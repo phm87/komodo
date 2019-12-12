@@ -311,8 +311,6 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
-            obj.push_back(Pair("StakedEra",        STAKED_ERA));
         //obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
         obj.push_back(Pair("magic",        (int)ASSETCHAINS_MAGIC));
         obj.push_back(Pair("premine",        ASSETCHAINS_SUPPLY));

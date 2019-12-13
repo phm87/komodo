@@ -2999,7 +2999,7 @@ UniValue listunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 bool komodo_updateutxocache(CAmount nValue, CTxDestination notaryaddress, CTransaction* txin, int32_t vout);
 
-UniValue dpowlistunspent(const UniValue& params, bool fHelp)
+UniValue dpowlistunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;

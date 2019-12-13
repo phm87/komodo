@@ -1882,10 +1882,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 entry.push_back(Pair("account", account));
 
                 CTxDestination dest;
-                if (CScriptExt::ExtractVoutDestination(wtx, r.vout, dest))
-                    MaybePushAddress(entry, dest);
-                else
-                    MaybePushAddress(entry, r.destination);
+			    MaybePushAddress(entry, r.destination);
 
                 if (bIsCoinbase)
                 {
@@ -4114,7 +4111,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp, const CPubKey& my
     return result;
 }
 
-UniValue z_viewtransaction(const UniValue& params, bool fHelp)
+UniValue z_viewtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;

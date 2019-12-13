@@ -1509,7 +1509,7 @@ UniValue sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
             CScript tmpspk;
             tmpspk << ParseHex(name_) << OP_CHECKSIG;
             if ( !ExtractDestination(tmpspk, dest, true) )
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Komodo address or pubkey: ") + name_);
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Hush address or pubkey: ") + name_);
         }
 
         CScript scriptPubKey = GetScriptForDestination(dest);
@@ -2620,7 +2620,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
     // slack space in .dat files; that is bad if the old data is
     // unencrypted private keys. So:
     StartShutdown();
-    return "wallet encrypted; Komodo server stopping, restart to run with encrypted wallet. The keypool has been flushed, you need to make a new backup.";
+    return "wallet encrypted; Hush server stopping, restart to run with encrypted wallet. The keypool has been flushed, you need to make a new backup.";
 }
 
 UniValue lockunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)

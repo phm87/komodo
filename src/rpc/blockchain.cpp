@@ -648,79 +648,9 @@ UniValue getblockhash(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue getlastsegidstakes(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "getlastsegidstakes depth\n"
-            "\nReturns object containing the counts of the last X blocks staked by each segid.\n"
-            "\nArguments:\n"
-            "1. depth           (numeric, required) The amount of blocks to scan back."
-            "\nResult:\n"
-            "{\n"
-            "  \"0\" : n,       (numeric) number of stakes from segid 0 in the last X blocks.\n"
-            "  .....\n"
-            "}\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getlastsegidstakes", "1000")
-            + HelpExampleRpc("getlastsegidstakes", "1000")
-        );
-
-    if ( ASSETCHAINS_STAKED == 0 )
-        throw runtime_error("Only applies to ac_staked chains\n");
-
-    LOCK(cs_main);
-
-    int depth = params[0].get_int();
-    if ( depth > chainActive.Height() )
-        throw runtime_error("Not enough blocks to scan back that far.\n");
-    
-    int32_t segids[64] = {0};
-    int32_t pow = 0;
-    int32_t notset = 0;
-
-    for (int64_t i = chainActive.Height(); i >  chainActive.Height()-depth; i--)
-    {
-        int8_t segid = komodo_segid(0,i);
-        //CBlockIndex* pblockindex = chainActive[i];
-        if ( segid >= 0 )
-            segids[segid] += 1;
-        else if ( segid == -1 )
-            pow++;
-        else
-            notset++;
-    }
-    
-    int8_t posperc = 100*(depth-pow)/depth;
-    
     UniValue ret(UniValue::VOBJ);
-    UniValue objsegids(UniValue::VOBJ);
-    for (int8_t i = 0; i < 64; i++)
-    {
-        char str[4];
-        sprintf(str, "%d", i);
-        objsegids.push_back(Pair(str,segids[i]));
-    }
-    ret.push_back(Pair("NotSet",notset));
-    ret.push_back(Pair("PoW",pow));
-    ret.push_back(Pair("PoSPerc",posperc));
-    ret.push_back(Pair("SegIds",objsegids));
     return ret;
 }
-
-/*uint256 _komodo_getblockhash(int32_t nHeight)
-{
-    uint256 hash;
-    LOCK(cs_main);
-    if ( nHeight >= 0 && nHeight <= chainActive.Height() )
-    {
-        CBlockIndex* pblockindex = chainActive[nHeight];
-        hash = pblockindex->GetBlockHash();
-        int32_t i;
-        for (i=0; i<32; i++)
-            printf("%02x",((uint8_t *)&hash)[i]);
-        printf(" blockhash.%d\n",nHeight);
-    } else memset(&hash,0,sizeof(hash));
-    return(hash);
-}*/
 
 UniValue getblockheader(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {

@@ -700,10 +700,12 @@ bool komodo_checkopret(CBlock *pblock, CScript &merkleroot)
     return(merkleroot.IsOpReturn() && merkleroot == komodo_makeopret(pblock, false));
 }
 
-bool komodo_hardfork_active(uint32_t time)
+#define HUSH_HARDFORK1 (162000)
+
+bool hush_hardfork_active(uint32_t time)
 {
-	//TODO: set a block height for ~ Jan 21 3pm
-    return ( (ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Height() > nDecemberHardforkHeight) || (ASSETCHAINS_SYMBOL[0] != 0 && time > nStakedDecemberHardforkTimestamp) ); //December 2019 hardfork
+	// Approximately mid-day Jan 21 EST
+    return ( chainActive.Height() > HUSH_HARDFORK1);
 }
 
 bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx);

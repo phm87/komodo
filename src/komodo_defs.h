@@ -419,7 +419,7 @@ uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 
 int32_t komodo_currentheight();
 int32_t komodo_notarized_bracket(struct notarized_checkpoint *nps[2],int32_t height);
 arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,uint32_t nTime);
-bool komodo_hardfork_active(uint32_t time);
+bool hush_hardfork_active(uint32_t time);
 int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp);
 
 uint256 Parseuint256(const char *hexstr);

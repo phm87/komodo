@@ -89,7 +89,7 @@ uint64_t RewardsCalc(int64_t amount, uint256 txid, int64_t APR, int64_t minsecon
         reward = (((amount * APR) / COIN) * duration) / (365*24*3600LL * 100);
     else reward = (((amount * duration) / (365 * 24 * 3600LL)) * (APR / 1000000)) / 10000;
     */
-    if ( !komodo_hardfork_active(timestamp) )
+    if ( !hush_hardfork_active(timestamp) )
         reward = (((amount * duration) / (365 * 24 * 3600LL)) * (APR / 1000000)) / 10000;
     else 
     {

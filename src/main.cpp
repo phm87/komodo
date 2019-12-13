@@ -936,7 +936,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
         return true;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
-        if ( !komodo_hardfork_active(nBlockTime) && txin.nSequence == 0xfffffffe &&
+        if ( !hush_hardfork_active(nBlockTime) && txin.nSequence == 0xfffffffe &&
         //if ( (nBlockTime <= ASSETCHAINS_STAKED_HF_TIMESTAMP ) && txin.nSequence == 0xfffffffe &&
             (
                 ((int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime > nBlockTime) ||
@@ -947,7 +947,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
 
         }
         //else if ( nBlockTime > ASSETCHAINS_STAKED_HF_TIMESTAMP && txin.nSequence == 0xfffffffe &&
-        else if ( komodo_hardfork_active(nBlockTime) && txin.nSequence == 0xfffffffe &&
+        else if ( hush_hardfork_active(nBlockTime) && txin.nSequence == 0xfffffffe &&
             (
                 ((int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime <= nBlockTime) ||
                 ((int64_t)tx.nLockTime <  LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime <= nBlockHeight))

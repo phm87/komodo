@@ -5682,7 +5682,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
     return result;
 }
 
-UniValue channelsaddress(const UniValue& params, bool fHelp)
+UniValue channelsaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
 

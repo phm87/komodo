@@ -681,8 +681,7 @@ int32_t NSPV_remoterpc(struct NSPV_remoterpcresp *ptr,char *json,int n)
             if (!mypk.IsValid())
                 throw JSONRPCError(RPC_PARSE_ERROR, "Not valid pubkey passed in remote rpc call");
         }
-        //TODO: if ((result = cmd->actor(jreq.params,false,mypk)).isObject() || result.isArray())
-        if ((result = cmd->actor(jreq.params,false)).isObject() || result.isArray())
+        if ((result = cmd->actor(jreq.params,false,mypk)).isObject() || result.isArray())
         {
             rpc_result = JSONRPCReplyObj(result, NullUniValue, jreq.id);
             response=rpc_result.write();

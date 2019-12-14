@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2019 Hush developers
+# Released under the GPLv3
 
 import sys
 import base58

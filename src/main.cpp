@@ -4089,15 +4089,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
-        //if ((i == (block.vtx.size() - 1)) && ((ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock()) || (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block) != 0))))
-        if (0) // komodo_newStakerActive(0, pindexDelete->nTime) == 0 && i == block.vtx.size()-1 && komodo_isPoS((CBlock *)&block,pindexDelete->GetHeight(),0) != 0 )
-        {
-#ifdef ENABLE_WALLET
-             // new staking tx cannot be accepted to mempool and expires in 1 block, so no need for this! :D
-             if ( !GetBoolArg("-disablewallet", false) && KOMODO_NSPV_FULLNODE )
-                 pwalletMain->EraseFromWallet(tx.GetHash());
-#endif
-        } else SyncWithWallets(tx, NULL);
+        SyncWithWallets(tx, NULL);
     }
     // Update cached incremental witnesses
     GetMainSignals().ChainTip(pindexDelete, &block, newSproutTree, newSaplingTree, false);

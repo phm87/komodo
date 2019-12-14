@@ -420,7 +420,6 @@ int32_t komodo_currentheight();
 int32_t komodo_notarized_bracket(struct notarized_checkpoint *nps[2],int32_t height);
 arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,uint32_t nTime);
 bool hush_hardfork_active(uint32_t time);
-int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp);
 
 uint256 Parseuint256(const char *hexstr);
 void komodo_sendmessage(int32_t minpeers, int32_t maxpeers, const char *message, std::vector<uint8_t> payload);

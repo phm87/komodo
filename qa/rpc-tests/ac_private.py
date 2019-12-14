@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# Copyright (c) 2019 The Hush developers
 # Copyright (c) 2018 SuperNET developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -28,7 +29,7 @@ def generate_random_string(length):
 class AssetChainPrivateTest (BitcoinTestFramework):
 
     def setup_chain(self):
-        print("Initializing VerusHash test directory "+self.options.tmpdir)
+        print("Initializing ac_private test directory "+self.options.tmpdir)
         self.num_nodes = 1
         initialize_chain_clean(self.options.tmpdir, self.num_nodes)
 

@@ -608,7 +608,6 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-ac_timelockgte",  _("Timelocked coinbase minimum amount to be locked"));
     strUsage += HelpMessageOpt("-ac_timelockto",   _("Timelocked coinbase stop height"));
     strUsage += HelpMessageOpt("-ac_txpow", _("Enforce transaction-rate limit, default 0"));
-    strUsage += HelpMessageOpt("-ac_veruspos", _("Use Verus Proof-Of-Stake (-ac_veruspos=50) default 0"));
 
     return strUsage;
 }
@@ -1379,24 +1378,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     ECC_Start();
     globalVerifyHandle.reset(new ECCVerifyHandle());
 
-	/*
-    // set the hash algorithm to use for this chain
-    // Again likely better solution here, than using long IF ELSE. 
-    extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH, ASSETCHAINS_VERUSHASHV1_1;
-    CVerusHash::init();
-    CVerusHashV2::init();
-    if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH)
-    {
-        // initialize VerusHash
-        CBlockHeader::SetVerusHash();
-    }
-    else if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1)
-    {
-        // initialize VerusHashV2
-        CBlockHeader::SetVerusHashV2();
-    }
-	*/
-
 	//fprintf(stderr,"%s tik10\n", __FUNCTION__);
     // Sanity check
     if (!InitSanityCheck())
@@ -1685,31 +1666,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     fReindex = GetBoolArg("-reindex", false);
 
-    // Upgrading to 0.8; hard-link the old blknnnn.dat files into /blocks/
     boost::filesystem::path blocksDir = GetDataDir() / "blocks";
     if (!boost::filesystem::exists(blocksDir))
     {
         boost::filesystem::create_directories(blocksDir);
-        bool linked = false;
-        for (unsigned int i = 1; i < 10000; i++) {
-            boost::filesystem::path source = GetDataDir() / strprintf("blk%04u.dat", i);
-            if (!boost::filesystem::exists(source)) break;
-            boost::filesystem::path dest = blocksDir / strprintf("blk%05u.dat", i-1);
-            try {
-                boost::filesystem::create_hard_link(source, dest);
-                LogPrintf("Hardlinked %s -> %s\n", source.string(), dest.string());
-                linked = true;
-            } catch (const boost::filesystem::filesystem_error& e) {
-                // Note: hardlink creation failing is not a disaster, it just means
-                // blocks will get re-downloaded from peers.
-                LogPrintf("Error hardlinking blk%04u.dat: %s\n", i, e.what());
-                break;
-            }
-        }
-        if (linked)
-        {
-            fReindex = true;
-        }
     }
 
     // block tree db settings

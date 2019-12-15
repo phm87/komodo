@@ -3857,9 +3857,6 @@ CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspen
     std::vector<SaplingNoteEntry> saplingEntries;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, address, minDepth, true, ignoreUnspendable);
-    for (auto & entry : sproutEntries) {
-        balance += CAmount(entry.plaintext.value());
-    }
     for (auto & entry : saplingEntries) {
         balance += CAmount(entry.note.value());
     }

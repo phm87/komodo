@@ -2628,17 +2628,15 @@ void static InvalidChainFound(CBlockIndex* pindexNew)
     if (!pindexBestInvalid || pindexNew->chainPower > pindexBestInvalid->chainPower)
         pindexBestInvalid = pindexNew;
 
-    LogPrintf("%s: invalid block=%s  height=%d  log2_work=%.8g  log2_stake=%.8g  date=%s\n", __func__,
+    LogPrintf("%s: invalid block=%s  height=%d  log2_work=%.8g  date=%s\n", __func__,
               pindexNew->GetBlockHash().ToString(), pindexNew->GetHeight(),
               log(pindexNew->chainPower.chainWork.getdouble())/log(2.0),
-              log(pindexNew->chainPower.chainStake.getdouble())/log(2.0),
               DateTimeStrFormat("%Y-%m-%d %H:%M:%S", pindexNew->GetBlockTime()));
     CBlockIndex *tip = chainActive.LastTip();
     assert (tip);
-    LogPrintf("%s:  current best=%s  height=%d  log2_work=%.8g  log2_stake=%.8g  date=%s\n", __func__,
+    LogPrintf("%s:  current best=%s  height=%d  log2_work=%.8g  date=%s\n", __func__,
               tip->GetBlockHash().ToString(), chainActive.Height(),
               log(tip->chainPower.chainWork.getdouble())/log(2.0),
-              log(tip->chainPower.chainStake.getdouble())/log(2.0),
               DateTimeStrFormat("%Y-%m-%d %H:%M:%S", tip->GetBlockTime()));
     CheckForkWarningConditions();
 }
@@ -3965,10 +3963,9 @@ void static UpdateTip(CBlockIndex *pindexNew) {
 	progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;
     }
 
-    LogPrintf("%s: new best=%s  height=%d  log2_work=%.8g  log2_stake=%.8g  tx=%lu  date=%s progress=%f  cache=%.1fMiB(%utx)\n", __func__,
+    LogPrintf("%s: new best=%s  height=%d  log2_work=%.8g  tx=%lu  date=%s progress=%f  cache=%.1fMiB(%utx)\n", __func__,
               chainActive.LastTip()->GetBlockHash().ToString(), chainActive.Height(),
               log(chainActive.Tip()->chainPower.chainWork.getdouble())/log(2.0),
-              log(chainActive.Tip()->chainPower.chainStake.getdouble())/log(2.0),
               (unsigned long)chainActive.LastTip()->nChainTx,
               DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.LastTip()->GetBlockTime()), progress,
               pcoinsTip->DynamicMemoryUsage() * (1.0 / (1<<20)), pcoinsTip->GetCacheSize());

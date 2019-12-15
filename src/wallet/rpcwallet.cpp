@@ -3038,8 +3038,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
             "Optionally filter to only include notes sent to specified addresses.\n"
             "When minconf is 0, unspent notes with zero confirmations are returned, even though they are not immediately spendable.\n"
             "Results are an array of Objects, each of which has:\n"
-            "{txid, jsindex, jsoutindex, confirmations, address, amount, memo} (Sprout)\n"
-            "{txid, outindex, confirmations, address, amount, memo} (Sapling)\n"
+            "{txid, outindex, confirmations, address, amount, memo}\n"
             "\nArguments:\n"
             "1. minconf          (numeric, optional, default=1) The minimum confirmations to filter\n"
             "2. maxconf          (numeric, optional, default=9999999) The maximum confirmations to filter\n"
@@ -3054,7 +3053,6 @@ UniValue z_listunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
             "  {\n"
             "    \"txid\" : \"txid\",          (string) the transaction id \n"
             "    \"jsindex\" : n             (numeric) the joinsplit index\n"
-            "    \"jsoutindex\" (sprout) : n          (numeric) the output index of the joinsplit\n"
             "    \"outindex\" (sapling) : n          (numeric) the output index\n"
             "    \"confirmations\" : n       (numeric) the number of confirmations\n"
             "    \"spendable\" : true|false  (boolean) true if note can be spent by wallet, false if note has zero confirmations, false if address is watchonly\n"
@@ -3711,12 +3709,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    bool allowSapling = (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= chainActive.LastTip()->GetHeight());
-
-    std::string defaultType;
-    if ( GetTime() < KOMODO_SAPLING_ACTIVATION )
-        defaultType = ADDR_TYPE_SPROUT;
-    else defaultType = ADDR_TYPE_SAPLING;
+    std::string defaultType = ADDR_TYPE_SAPLING;
 
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -3725,13 +3718,12 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
             "\nWith no arguments, returns a Sprout address.\n"
             "\nArguments:\n"
             "1. \"type\"         (string, optional, default=\"" + defaultType + "\") The type of address. One of [\""
-            + ADDR_TYPE_SPROUT + "\", \"" + ADDR_TYPE_SAPLING + "\"].\n"
+            + ADDR_TYPE_SAPLING + "\"].\n"
             "\nResult:\n"
             "\"" + strprintf("%s",komodo_chainname()) + "_address\"    (string) The new shielded address.\n"
             "\nExamples:\n"
             + HelpExampleCli("z_getnewaddress", "")
             + HelpExampleCli("z_getnewaddress", ADDR_TYPE_SAPLING)
-            + HelpExampleRpc("z_getnewaddress", "")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -3743,14 +3735,10 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
         addrType = params[0].get_str();
     }
 
-    if (addrType == ADDR_TYPE_SPROUT) {
-        if ( GetTime() >= KOMODO_SAPLING_DEADLINE )
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "sprout not valid anymore");
-        return EncodePaymentAddress(pwalletMain->GenerateNewSproutZKey());
-    } else if (addrType == ADDR_TYPE_SAPLING) {
+    if (addrType == ADDR_TYPE_SAPLING) {
         return EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey());
     } else {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type");
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type!");
     }
 }
 
@@ -3897,8 +3885,6 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp, const CPubK
             "  \"amount\": xxxxx,         (numeric) the amount of value in the note\n"
             "  \"memo\": xxxxx,           (string) hexadecimal string representation of memo field\n"
             "  \"confirmations\" : n,     (numeric) the number of confirmations\n"
-            "  \"jsindex\" (sprout) : n,     (numeric) the joinsplit index\n"
-            "  \"jsoutindex\" (sprout) : n,     (numeric) the output index of the joinsplit\n"
             "  \"outindex\" (sapling) : n,     (numeric) the output index\n"
             "  \"change\": true|false,    (boolean) true if the address that received the note is also one of the sending addresses\n"
             "}\n"
@@ -3942,29 +3928,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp, const CPubK
         nullifierSet = pwalletMain->GetNullifiersForAddresses({zaddr});
     }
 
-    if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr) {
-        for (CSproutNotePlaintextEntry & entry : sproutEntries) {
-            UniValue obj(UniValue::VOBJ);
-            int nHeight   = tx_height(entry.jsop.hash);
-            int dpowconfs = komodo_dpowconfs(nHeight, entry.confirmations);
-            // Only return notarized results when minconf>1
-            if (nMinDepth > 1 && dpowconfs == 1)
-                continue;
-
-            obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
-            obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
-            std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
-            obj.push_back(Pair("memo", HexStr(data)));
-            obj.push_back(Pair("jsindex", entry.jsop.js));
-            obj.push_back(Pair("jsoutindex", entry.jsop.n));
-            obj.push_back(Pair("rawconfirmations", entry.confirmations));
-            obj.push_back(Pair("confirmations", dpowconfs));
-            if (hasSpendingKey) {
-                obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
-            }
-            result.push_back(obj);
-        }
-    } else if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
+    if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
         for (SaplingNoteEntry & entry : saplingEntries) {
             UniValue obj(UniValue::VOBJ);
 

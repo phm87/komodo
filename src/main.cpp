@@ -2461,18 +2461,11 @@ bool IsInitialBlockDownload()
     }
 
     bool state;
-    arith_uint256 bigZero = arith_uint256();
-    arith_uint256 minWork = UintToArith256(chainParams.GetConsensus().nMinimumChainWork);
     CBlockIndex *ptr = chainActive.Tip();
 
     if (ptr == NULL)
     {
         //fprintf(stderr,"nullptr in IsInitialDownload\n");
-        return true;
-    }
-    if (0 && ptr->chainPower < CChainPower(ptr, bigZero, minWork))
-    {
-        fprintf(stderr,"chainpower insufficient in IsInitialDownload\n");
         return true;
     }
     state = ((chainActive.Height() < ptr->GetHeight() - 24*60) ||

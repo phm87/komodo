@@ -541,7 +541,6 @@ std::string HelpMessage(HelpMessageMode mode)
 
 #ifdef ENABLE_MINING
     strUsage += HelpMessageGroup(_("Mining options:"));
-    strUsage += HelpMessageOpt("-mint", strprintf(_("Mint/stake coins automatically (default: %u)"), 0));
     strUsage += HelpMessageOpt("-gen", strprintf(_("Mine/generate coins (default: %u)"), 0));
     strUsage += HelpMessageOpt("-genproclimit=<n>", strprintf(_("Set the number of threads for coin mining if enabled (-1 = all cores, default: %d)"), 0));
     strUsage += HelpMessageOpt("-equihashsolver=<name>", _("Specify the Equihash solver to be used if enabled (default: \"default\")"));
@@ -602,11 +601,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-ac_reward", _("Block reward in satoshis, default is 0"));
     strUsage += HelpMessageOpt("-ac_sapling", _("Sapling activation block height"));
     strUsage += HelpMessageOpt("-ac_script", _("P2SH/multisig address to receive founders rewards"));
-    strUsage += HelpMessageOpt("-ac_staked", _("Percentage of blocks that are Proof-Of-Stake, default 0"));
     strUsage += HelpMessageOpt("-ac_supply", _("Starting supply, default is 0"));
-    strUsage += HelpMessageOpt("-ac_timelockfrom", _("Timelocked coinbase start height"));
-    strUsage += HelpMessageOpt("-ac_timelockgte",  _("Timelocked coinbase minimum amount to be locked"));
-    strUsage += HelpMessageOpt("-ac_timelockto",   _("Timelocked coinbase stop height"));
     strUsage += HelpMessageOpt("-ac_txpow", _("Enforce transaction-rate limit, default 0"));
 
     return strUsage;

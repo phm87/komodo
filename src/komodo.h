@@ -16,7 +16,7 @@
 #ifndef H_KOMODO_H
 #define H_KOMODO_H
 #include "komodo_defs.h"
-#include "notaries_staked.h"
+
 
 #ifdef _WIN32
 #define printf(...)
@@ -835,18 +835,6 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
     }
     //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
     // Wallet Filter. Disabled here. Cant be activated by notaries or pools with some changes.
-    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 || IS_STAKED_NOTARY > -1 )
-    {
-        staked_era = STAKED_era(pindex->GetBlockTime());
-        if ( !fJustCheck && staked_era != lastStakedEra )
-        {
-            uint8_t tmp_pubkeys[64][33];
-            int8_t numSN = numStakedNotaries(tmp_pubkeys,staked_era);
-            UpdateNotaryAddrs(tmp_pubkeys,numSN);
-            STAKED_ERA = staked_era;
-            lastStakedEra = staked_era;
-        }
-    }
     numnotaries = komodo_notaries(pubkeys,pindex->GetHeight(),pindex->GetBlockTime());
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
     if ( pindex->GetHeight() > hwmheight )

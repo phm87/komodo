@@ -17,7 +17,7 @@
 #include "komodo_defs.h"
 #include "komodo_cJSON.h"
 
-#include "notaries_staked.h"
+
 
 #define KOMODO_MAINNET_START 178999
 #define KOMODO_NOTARIES_HEIGHT1 814000
@@ -69,7 +69,7 @@ int32_t getkmdseason(int32_t height)
         return(1);
     for (int32_t i = 1; i < NUM_KMD_SEASONS; i++)
     {
-        if ( height <= KMD_SEASON_HEIGHTS[i] && height >= KMD_SEASON_HEIGHTS[i-1] )
+        if ( height <= KMD_SEASON_HEIGHTS[i] && height > KMD_SEASON_HEIGHTS[i-1] )
             return(i+1);
     }
     return(0);
@@ -81,7 +81,7 @@ int32_t getacseason(uint32_t timestamp)
         return(1);
     for (int32_t i = 1; i < NUM_KMD_SEASONS; i++)
     {
-        if ( timestamp <= KMD_SEASON_TIMESTAMPS[i] && timestamp >= KMD_SEASON_TIMESTAMPS[i-1] )
+        if ( timestamp <= KMD_SEASON_TIMESTAMPS[i] && timestamp > KMD_SEASON_TIMESTAMPS[i-1] )
             return(i+1);
     }
     return(0);
@@ -129,16 +129,6 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             memcpy(pubkeys,kmd_pubkeys[kmd_season-1],NUM_KMD_NOTARIES * 33);
             return(NUM_KMD_NOTARIES);
         }
-    }
-    else if ( timestamp != 0 )
-    { 
-        // here we can activate our pubkeys for LABS chains everythig is in notaries_staked.cpp
-        int32_t staked_era; int8_t numSN;
-        uint8_t staked_pubkeys[64][33];
-        staked_era = STAKED_era(timestamp);
-        numSN = numStakedNotaries(staked_pubkeys,staked_era);
-        memcpy(pubkeys,staked_pubkeys,numSN * 33);
-        return(numSN);
     }
 
     htind = height / KOMODO_ELECTION_GAP;

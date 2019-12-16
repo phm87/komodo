@@ -583,18 +583,6 @@ void *chainparams_commandline()
         pCurrentParams->pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
         fprintf(stderr,">>>>>>>>>> %s: p2p.%u rpc.%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
 
-        if (ASSETCHAINS_LWMAPOS != 0)
-        {
-            pCurrentParams->consensus.posLimit = uint256S("000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
-            pCurrentParams->consensus.nPOSAveragingWindow = 45;
-            // spacing is 1000 units per block to get better resolution, POS is 50% hard coded for now, we can vary it later
-            // when we get reliable integer math on nLwmaPOSAjustedWeight
-            pCurrentParams->consensus.nPOSTargetSpacing = KOMODO_BLOCK_POSUNITS * 2;
-            // nLwmaPOSAjustedWeight = (N+1)/2 * (0.9989^(500/nPOSAveragingWindow)) * nPOSTargetSpacing
-            // this needs to be recalculated if KOMODO_BLOCK_POSUNITS is changed
-            pCurrentParams->consensus.nLwmaPOSAjustedWeight = 46531;
-        }
-
         pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = ASSETCHAINS_SAPLING;
         pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = ASSETCHAINS_OVERWINTER;
 		// Generated at 1575831755 via hush3 contrib/checkpoints.pl by Duke Leto

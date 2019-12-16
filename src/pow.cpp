@@ -613,133 +613,6 @@ bool DoesHashQualify(const CBlockIndex *pbindex)
     return true;
 }
 
-// the goal is to keep POS at a solve time that is a ratio of block time units. the low resolution makes a stable solution more challenging
-// and requires that the averaging window be quite long.
-uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params)
-{
-    arith_uint256 nextTarget {0}, sumTarget {0}, bnTmp, bnLimit;
-    bnLimit = UintToArith256(params.posLimit);
-    uint32_t nProofOfStakeLimit = bnLimit.GetCompact();
-    int64_t t = 0, solvetime = 0;
-    int64_t k = params.nLwmaPOSAjustedWeight;
-    int64_t N = params.nPOSAveragingWindow;
-
-    struct solveSequence {
-        int64_t solveTime;
-        bool consecutive;
-        uint32_t nBits;
-        solveSequence()
-        {
-            consecutive = 0;
-            solveTime = 0;
-            nBits = 0;
-        }
-    };
-
-    // Find the first block in the averaging interval as we total the linearly weighted average
-    // of POS solve times
-    const CBlockIndex* pindexFirst = pindexLast;
-
-    // we need to make sure we have a starting nBits reference, which is either the last POS block, or the default
-    // if we have had no POS block in the threshold number of blocks, we must return the default, otherwise, we'll now have
-    // a starting point
-    uint32_t nBits = nProofOfStakeLimit;
-    for (int64_t i = 0; i < KOMODO_NOPOS_THRESHHOLD; i++)
-    {
-        if (!pindexFirst)
-            return nProofOfStakeLimit;
-
-        CBlockHeader hdr = pindexFirst->GetBlockHeader();
-
-        pindexFirst = pindexFirst->pprev;
-    }
-
-    pindexFirst = pindexLast;
-    std::vector<solveSequence> idx = std::vector<solveSequence>();
-    idx.resize(N);
-
-    for (int64_t i = N - 1; i >= 0; i--)
-    {
-        // we measure our solve time in passing of blocks, where one bock == KOMODO_BLOCK_POSUNITS units
-        // consecutive blocks in either direction have their solve times exponentially multiplied or divided by power of 2
-        int x;
-        for (x = 0; x < KOMODO_CONSECUTIVE_POS_THRESHOLD; x++)
-        {
-            pindexFirst = pindexFirst->pprev;
-
-            if (!pindexFirst)
-                return nProofOfStakeLimit;
-
-            CBlockHeader hdr = pindexFirst->GetBlockHeader();
-        }
-
-        if (x)
-        {
-            idx[i].consecutive = false;
-            {
-                int64_t lastSolveTime = 0;
-                idx[i].solveTime = KOMODO_BLOCK_POSUNITS;
-                for (int64_t j = 0; j < x; j++)
-                {
-                    lastSolveTime = KOMODO_BLOCK_POSUNITS + (lastSolveTime >> 1);
-                    idx[i].solveTime += lastSolveTime;
-                }
-            }
-            idx[i].nBits = nBits;
-        }
-        else
-        {
-            idx[i].consecutive = true;
-            idx[i].nBits = nBits;
-            // go forward and halve the minimum solve time for all consecutive blocks in this run, to get here, our last block is POS,
-            // and if there is no POS block in front of it, it gets the normal solve time of one block
-            uint32_t st = KOMODO_BLOCK_POSUNITS;
-            for (int64_t j = i; j < N; j++)
-            {
-                if (idx[j].consecutive == true)
-                {
-                    idx[j].solveTime = st;
-                    if ((j - i) >= KOMODO_CONSECUTIVE_POS_THRESHOLD)
-                    {
-                        // if this is real time, return zero
-                        if (j == (N - 1))
-                        {
-                            // target of 0 (virtually impossible), if we hit max consecutive POS blocks
-                            nextTarget.SetCompact(0);
-                            return nextTarget.GetCompact();
-                        }
-                    }
-                    st >>= 1;
-                }
-                else
-                    break;
-            }
-        }
-    }
-
-    for (int64_t i = N - 1; i >= 0; i--) 
-    {
-        // weighted sum
-        t += idx[i].solveTime * i;
-
-        // Target sum divided by a factor, (k N^2).
-        // The factor is a part of the final equation. However we divide 
-        // here to avoid potential overflow.
-        bnTmp.SetCompact(idx[i].nBits);
-        sumTarget += bnTmp / (k * N * N);
-    }
-
-    // Keep t reasonable in case strange solvetimes occurred.
-    if (t < N * k / 3)
-        t = N * k / 3;
-
-    nextTarget = t * sumTarget;
-    if (nextTarget > bnLimit)
-        nextTarget = bnLimit;
-
-    return nextTarget.GetCompact();
-}
-
 bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params)
 {
     if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
@@ -780,6 +653,8 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
 int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],uint32_t blocktimes[66],int32_t height,uint8_t pubkey33[33],uint32_t blocktime);
 int32_t komodo_currentheight();
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
+bool komodo_checkopret(CBlock *pblock, CScript &merkleroot);
+CScript komodo_makeopret(CBlock *pblock, bool fNew);
 extern int32_t KOMODO_CHOSEN_ONE;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 #define KOMODO_ELECTION_GAP 2000
@@ -840,8 +715,16 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
             }
             if ( (flag != 0 || special2 > 0) && special2 != -2 )
             {
-                //fprintf(stderr,"EASY MINING ht.%d\n",height);
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+                /*
+                const void* pblock = &blkHeader;
+                CScript merkleroot = CScript();
+                if ( height > nDecemberHardforkHeight && !komodo_checkopret((CBlock*)pblock, merkleroot) ) // December 2019 hardfork
+                {
+                    fprintf(stderr, "failed or missing expected.%s != %s\n", komodo_makeopret((CBlock*)pblock, false).ToString().c_str(), merkleroot.ToString().c_str());
+                    return false;
+                }
+                */
             }
         }
     }

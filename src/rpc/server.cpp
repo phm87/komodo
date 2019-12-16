@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019 The Hush developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -206,7 +206,7 @@ std::string CRPCTable::help(const std::string& strCommand) const
             UniValue params;
             rpcfn_type pfn = pcmd->actor;
             if (setDone.insert(pfn).second)
-                (*pfn)(params, true);
+                (*pfn)(params, true, CPubKey());
         }
         catch (const std::exception& e)
         {
@@ -236,7 +236,7 @@ std::string CRPCTable::help(const std::string& strCommand) const
     return strRet;
 }
 
-UniValue help(const UniValue& params, bool fHelp)
+UniValue help(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -264,14 +264,14 @@ void GenerateBitcoins(bool b, CWallet *pw);
 #endif
 
 
-UniValue stop(const UniValue& params, bool fHelp)
+UniValue stop(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     char buf[66+128];
    // Accept the deprecated and ignored 'detach' boolean argument
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "stop\n"
-            "\nStop Komodo server.");
+            "\nStop Hush server.");
 
 #ifdef ENABLE_WALLET
     GenerateBitcoins(false, pwalletMain, 0);
@@ -281,7 +281,12 @@ UniValue stop(const UniValue& params, bool fHelp)
 
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    sprintf(buf,"%s server stopping",ASSETCHAINS_SYMBOL[0] != 0 ? ASSETCHAINS_SYMBOL : "Komodo");
+
+    if ((strncmp(ASSETCHAINS_SYMBOL, "HUSH3", 5) == 0) ) {
+        sprintf(buf,"Hush server stopping...");
+	} else {
+        sprintf(buf,"%s server stopping...",ASSETCHAINS_SYMBOL);
+	}
     return buf;
 }
 
@@ -429,6 +434,7 @@ static const CRPCCommand vRPCCommands[] =
     { "nSPV",   "nspv_spend",           &nspv_spend,    true },
     { "nSPV",   "nspv_broadcast",       &nspv_broadcast,    true },
     { "nSPV",   "nspv_logout",          &nspv_logout,    true },
+    { "nSPV",   "nspv_listccmoduleunspent",     &nspv_listccmoduleunspent,  true },
 
     // rewards
     { "rewards",       "rewardslist",       &rewardslist,     true },
@@ -871,7 +877,7 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
     try
     {
         // Execute
-        return pcmd->actor(params, false);
+        return pcmd->actor(params, false, CPubKey());
     }
     catch (const std::exception& e)
     {

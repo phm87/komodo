@@ -1,5 +1,6 @@
 #!/bin/bash
 # Copyright 2019 Hush Developers
+# Released under the GPLv3
 ## Usage:
 ##  ./zcutil/build-debian-package.sh
 

@@ -1,4 +1,5 @@
 # mininode.py - Bitcoin P2P network half-a-node
+# Copyright (c) 2019 The Hush developers
 #
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -43,14 +44,14 @@ OVERWINTER_PROTO_VERSION = 170003
 BIP0031_VERSION = 60000
 SPROUT_PROTO_VERSION = 170002  # past bip-31 for ping/pong
 SAPLING_PROTO_VERSION = 170006
-MY_SUBVERSION = "/python-mininode-tester:0.0.1/"
+MY_SUBVERSION = "/python-mininode-hush-tester:0.0.1/"
 
 OVERWINTER_VERSION_GROUP_ID = 0x03C48270
 
 MAX_INV_SZ = 50000
 
 
-COIN = 100000000 # 1 zec in zatoshis
+COIN = 100000000 # 1 HUSH in puposhis
 
 # Keep our own socket map for asyncore, so that we can track disconnects
 # ourselves (to workaround an issue with closing an asyncore socket when

@@ -1,10 +1,6 @@
 *.tar.gz
 *.deb
 src/bitcoin
-src/zcashd
-src/zcash-cli
-src/zcash-gtest
-src/zcash-tx
 src/test/test_bitcoin
 
 *zcashTest.pk
@@ -29,7 +25,7 @@ build-aux/compile
 build-aux/test-driver
 config.log
 config.status
-#configure
+configure
 libtool
 src/config/bitcoin-config.h
 src/config/bitcoin-config.h.in
@@ -44,7 +40,7 @@ src/univalue/gen
 .dirstamp
 .idea
 .libs
-.*.swp
+.*.sw?
 *.*~*
 *.bak
 *.rej
@@ -156,3 +152,9 @@ src/cc/rogue/confdefs.h
 src/cc/rogue/x64
 
 src/cc/dapps/a.out
+src/Makefile.in
+doc/man/Makefile.in
+Makefile.in
+src/libcc.so
+src/cc/customcc.so
+src/HUSH3_7776

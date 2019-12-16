@@ -858,19 +858,24 @@ std::string JSONRPCExecBatch(const UniValue& vReq)
 
 UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params) const
 {
-    // Return immediately if in warmup
-    {
-        LOCK(cs_rpcWarmup);
-        if (fRPCInWarmup)
-            throw JSONRPCError(RPC_IN_WARMUP, rpcWarmupStatus);
-    }
-
-    //printf("RPC call: %s\n", strMethod.c_str());
-
     // Find method
     const CRPCCommand *pcmd = tableRPC[strMethod];
     if (!pcmd)
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found");
+
+    // Return immediately if in warmup
+    {
+        LOCK(cs_rpcWarmup);
+        if (fRPCInWarmup) {
+            // hush-cli stop is the only valid RPC command during warmup
+            // We don't know if we have valid blocks or wallet yet, nothing else is safe
+            if (pcmd->name != "stop") {
+                throw JSONRPCError(RPC_IN_WARMUP, rpcWarmupStatus);
+            }
+        }
+    }
+
+    //printf("RPC call: %s\n", strMethod.c_str());
 
     g_rpcSignals.PreCommand(*pcmd);
 

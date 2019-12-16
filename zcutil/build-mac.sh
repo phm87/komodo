@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2019 The Hush developers
+# Released under the GPLv3
+
 export CC=gcc-8
 export CXX=g++-8
 export LIBTOOL=libtool
@@ -19,9 +22,9 @@ $0 --help
   Show this help message and exit.
 
 $0 [ --enable-lcov ] [ MAKEARGS... ]
-  Build Zcash and most of its transitive dependencies from
-  source. MAKEARGS are applied to both dependencies and Zcash itself. If
-  --enable-lcov is passed, Zcash is configured to add coverage
+  Build Hush and most of its transitive dependencies from
+  source. MAKEARGS are applied to both dependencies and Hush itself. If
+  --enable-lcov is passed, Hush is configured to add coverage
   instrumentation, thus enabling "make cov" to work.
 EOF
     exit 0

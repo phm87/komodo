@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019 The Hush developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -271,7 +271,7 @@ UniValue stop(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "stop\n"
-            "\nStop Komodo server.");
+            "\nStop Hush server.");
 
 #ifdef ENABLE_WALLET
     GenerateBitcoins(false, pwalletMain, 0);
@@ -281,7 +281,12 @@ UniValue stop(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    sprintf(buf,"%s server stopping",ASSETCHAINS_SYMBOL[0] != 0 ? ASSETCHAINS_SYMBOL : "Komodo");
+
+    if ((strncmp(ASSETCHAINS_SYMBOL, "HUSH3", 5) == 0) ) {
+        sprintf(buf,"Hush server stopping...");
+	} else {
+        sprintf(buf,"%s server stopping...",ASSETCHAINS_SYMBOL);
+	}
     return buf;
 }
 

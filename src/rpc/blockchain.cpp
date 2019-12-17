@@ -1874,12 +1874,17 @@ inline CBlockIndex* LookupBlockIndex(const uint256& hash)
     return it == mapBlockIndex.end() ? nullptr : it->second;
 }
 
+// given a transaction count X, subtract out coinbase and dpow transactions
+// to give an "organic count"
+#define ORG(X) (X - blockcount - nNotarizationsDiff)
+
 UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 2)
         throw runtime_error(
                 "getchaintxstats\n"
                 "\nCompute statistics about the total number and rate of transactions in the chain.\n"
+                "\nThis RPC will return a large amount of additional data if the shielded index (zindex) is enabled.\n"
                 "\nArguments:\n"
                 "1. nblocks   (numeric, optional) Number of blocks in averaging window.\n"
                 "2. blockhash (string, optional) The hash of the block which ends the window.\n"
@@ -1965,9 +1970,6 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
         int64_t nFullyShieldedPaymentsDiff = pindex->nChainFullyShieldedPayments - pindexPast->nChainFullyShieldedPayments;
         int64_t nNotarizationsDiff         = pindex->nChainNotarizations - pindexPast->nChainNotarizations;
 
-        ret.pushKV("window_payments", (int) nPaymentsDiff);
-        ret.pushKV("window_notarizations", (int) nNotarizationsDiff);
-
         if (nTimeDiff > 0) {
             ret.pushKV("txrate",                     ((double)nTxDiff)                    / nTimeDiff);
             if (fZindex) {
@@ -1981,6 +1983,8 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
         }
 
         if (fZindex) {
+            ret.pushKV("window_payments", (int) nPaymentsDiff);
+            ret.pushKV("window_notarizations", (int) nNotarizationsDiff);
             ret.pushKV("window_fully_shielded_payments", nFullyShieldedPaymentsDiff);
             ret.pushKV("window_shielded_payments", nShieldedPaymentsDiff);
             ret.pushKV("window_shielding_payments", nShieldingPaymentsDiff);
@@ -2010,8 +2014,31 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
                 shielded.pushKV("shielding_payments_percent",      ((double)nShieldingPaymentsDiff)     / nShieldedPaymentsDiff );
                 shielded.pushKV("deshielding_payments_percent",    ((double)nDeshieldingPaymentsDiff)   / nShieldedPaymentsDiff );
             }
+
             if(nShieldedTxDiff+nShieldedPaymentsDiff > 0)
                 ret.pushKV("shielded", shielded);
+
+            // Organic tx stats = Raw - Coinbase - DPoW
+            if (nTxDiff > 0) {
+                UniValue organic(UniValue::VOBJ);
+
+                organic.pushKV("shielded_tx_percent",             ((double)nShieldedTxDiff)            / ORG(nTxDiff));
+                organic.pushKV("fully_shielded_tx_percent",       ((double)nFullyShieldedTxDiff)       / ORG(nTxDiff));
+                organic.pushKV("shielding_tx_percent",            ((double)nShieldingTxDiff)           / ORG(nTxDiff));
+                organic.pushKV("deshielding_tx_percent",          ((double)nDeshieldingTxDiff)         / ORG(nTxDiff));
+                organic.pushKV("shielded_payments_percent",       ((double)nShieldedPaymentsDiff)      / ORG(nPaymentsDiff));
+                organic.pushKV("fully_shielded_payments_percent", ((double)nFullyShieldedPaymentsDiff) / ORG(nPaymentsDiff));
+                organic.pushKV("shielding_payments_percent",      ((double)nShieldingPaymentsDiff)     / ORG(nPaymentsDiff));
+                organic.pushKV("deshielding_payments_percent",    ((double)nDeshieldingPaymentsDiff)   / ORG(nPaymentsDiff));
+				if (nTimeDiff > 0) {
+                    organic.pushKV("paymentrate",                     ((double)ORG(nPaymentsDiff))         / nTimeDiff);
+                    organic.pushKV("txrate",                          ((double)ORG(nTxDiff))               / nTimeDiff);
+                }
+                organic.pushKV("txcount", (int) ORG(nTxDiff));
+                organic.pushKV("payments", (int) ORG(nPaymentsDiff));
+                ret.pushKV("organic", organic);
+            }
+
          }
     }
 

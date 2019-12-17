@@ -263,7 +263,7 @@ try_again:
         }
         else if ( numretries >= 1 )
         {
-            fprintf(stderr,"Maximum number of retries exceeded!\n");
+            fprintf(stderr,"%s: Maximum number of retries exceeded!\n", __FUNCTION__);
             free(s.ptr);
             return(0);
         }

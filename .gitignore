@@ -158,3 +158,4 @@ Makefile.in
 src/libcc.so
 src/cc/customcc.so
 src/HUSH3_7776
+REGTEST_7776

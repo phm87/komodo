@@ -4717,6 +4717,10 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     CAmount sproutValue       = 0;
     CAmount saplingValue      = 0;
     bool isShieldedTx         = false;
+    unsigned int nShieldedSpends=0,nShieldedOutputs=0,nPayments=0;
+    unsigned int nShieldedTx=0,nFullyShieldedTx=0,nDeshieldingTx=0,nShieldingTx=0;
+    unsigned int nShieldedPayments=0,nFullyShieldedPayments=0,nShieldingPayments=0,nDeshieldingPayments=0;
+    unsigned int nNotarizations=0;
 
     for (auto tx : block.vtx) {
         // Negative valueBalance "takes" money from the transparent value pool
@@ -4729,6 +4733,69 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             sproutValue += js.vpub_old;
             sproutValue -= js.vpub_new;
         }
+
+        // Ignore following stats unless -zindex enabled
+        if (!fZindex)
+            continue;
+
+        nShieldedSpends   = tx.vShieldedSpend.size();
+        nShieldedOutputs  = tx.vShieldedOutput.size();
+        isShieldedTx      = (nShieldedSpends + nShieldedOutputs) > 0 ? true : false;
+
+        // We want to avoid full verification with a low false-positive rate
+        if(tx.vin.size()==13 && tx.vout.size()==2 && tx.vout[1].scriptPubKey.IsOpReturn() && tx.vout[1].nValue==0) {
+            nNotarizations++;
+        }
+
+        if(isShieldedTx) {
+            nShieldedTx++;
+            if(tx.vin.size()==0 && tx.vout.size()==0) {
+                nFullyShieldedTx++;
+            } else if(tx.vin.size()>0) {
+                nShieldingTx++;
+            } else if(tx.vout.size()>0) {
+                nDeshieldingTx++;
+            }
+            //NOTE: These are at best heuristics. Improve them as much as possible.
+            //      You cannot compare stats generated from different sets of heuristics, so
+            //      if you change this code, you must delete and resync from scratch, or you
+            //      will be mixing together data from two set of heuristics.
+
+            if (nShieldedOutputs >= 1) {
+                // If there are shielded outputs, count each as a payment
+                // By default, if there is more than 1 output, we assume 1 change output which is not a payment.
+                // In the case of multiple outputs which spend inputs exactly, there is no change output and this
+                // heuristic will undercount payments. Since this edge case is rare, this seems acceptable.
+                // t->(t,t,z)   = 1 shielded payment
+                // z->(z,z)     = 1 shielded payment + shielded change
+                // t->(z,z)     = 1 shielded payment + shielded change
+                // t->(t,z)     = 1 shielded payment + transparent change
+                // (z,z)->z     = 1 shielded payment (has this xtn ever occurred?)
+                // z->(z,z,z)   = 2 shielded payments + shielded change
+                // Assume that there is always 1 change output when there are more than one
+                nShieldedPayments  += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+
+                // Fully shielded do not count toward shielding/deshielding
+                if(tx.vin.size()==0 && tx.vout.size()==0) {
+                    nFullyShieldedPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+                } else {
+                    nShieldingPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+                }
+            } else if (nShieldedSpends >=1) {
+                // Shielded inputs with no shielded outputs. We know none are change output because
+                // change would flow back to the zaddr
+                // z->t         = 1 shielded payment
+                // z->(t,t)     = 2 shielded payments
+                // z->(t,t,t)   = 3 shielded payments
+                nShieldedPayments    += tx.vout.size();
+                nDeshieldingPayments += tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
+            }
+            //TODO:  correctly add shielded payments to total chain payments
+            nPayments += nShieldedPayments;
+        } else {
+            // No shielded payments, add transparent payments minus a change address
+            nPayments +=  tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
+        }
     }
     pindexNew->nSproutValue = sproutValue;
     pindexNew->nChainSproutValue = boost::none;
@@ -4739,6 +4806,19 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     pindexNew->nUndoPos = 0;
     pindexNew->nStatus |= BLOCK_HAVE_DATA;
     pindexNew->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
+
+    if (fZindex) {
+        pindexNew->nPayments              = nPayments;
+        pindexNew->nShieldedTx            = nShieldedTx;
+        pindexNew->nFullyShieldedTx       = nFullyShieldedTx;
+        pindexNew->nDeshieldingTx         = nDeshieldingTx;
+        pindexNew->nShieldingTx           = nShieldingTx;
+        pindexNew->nShieldedPayments      = nShieldedPayments;
+        pindexNew->nFullyShieldedPayments = nFullyShieldedPayments;
+        pindexNew->nDeshieldingPayments   = nDeshieldingPayments;
+        pindexNew->nShieldingPayments     = nShieldingPayments;
+        pindexNew->nNotarizations         = nNotarizations;
+    }
     setDirtyBlockIndex.insert(pindexNew);
 
     if (pindexNew->pprev == NULL || pindexNew->pprev->nChainTx) {
@@ -4751,6 +4831,22 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             CBlockIndex *pindex = queue.front();
             queue.pop_front();
             pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
+
+            if (fZindex) {
+                fprintf(stderr,"%s: setting chain zstats\n", __FUNCTION__);
+                pindex->nChainNotarizations         = (pindex->pprev ? pindex->pprev->nChainNotarizations : 0) + pindex->nNotarizations;
+                pindex->nChainShieldedTx            = (pindex->pprev ? pindex->pprev->nChainShieldedTx : 0) + pindex->nShieldedTx;
+                pindex->nChainFullyShieldedTx       = (pindex->pprev ? pindex->pprev->nChainFullyShieldedTx : 0) + pindex->nFullyShieldedTx;
+                pindex->nChainShieldingTx           = (pindex->pprev ? pindex->pprev->nChainShieldingTx : 0) + pindex->nShieldingTx;
+                pindex->nChainDeshieldingTx         = (pindex->pprev ? pindex->pprev->nChainDeshieldingTx : 0) + pindex->nDeshieldingTx;
+
+                pindex->nChainPayments              = (pindex->pprev ? pindex->pprev->nChainPayments         : 0) + pindex->nPayments;
+                pindex->nChainShieldedPayments      = (pindex->pprev ? pindex->pprev->nChainShieldedPayments : 0) + pindex->nShieldedPayments;
+                pindex->nChainFullyShieldedPayments = (pindex->pprev ? pindex->pprev->nChainFullyShieldedPayments : 0) + pindex->nFullyShieldedPayments;
+                pindex->nChainShieldingPayments     = (pindex->pprev ? pindex->pprev->nChainShieldingPayments : 0) + pindex->nShieldingPayments;
+                pindex->nChainDeshieldingPayments   = (pindex->pprev ? pindex->pprev->nChainDeshieldingPayments : 0) + pindex->nDeshieldingPayments;
+            }
+
             if (pindex->pprev) {
                 if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                     pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
@@ -4786,6 +4882,9 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             mapBlocksUnlinked.insert(std::make_pair(pindexNew->pprev, pindexNew));
         }
     }
+
+    if (fZindex)
+        fprintf(stderr, "ht.%d, ShieldedPayments=%d, ShieldedTx=%d, FullyShieldedTx=%d, ntz=%d\n", pindexNew->GetHeight(), nShieldedPayments, nShieldedTx,  nFullyShieldedTx, nNotarizations );
 
     return true;
 }
@@ -6035,6 +6134,19 @@ bool static LoadBlockIndexDB()
             if (pindex->pprev) {
                 if (pindex->pprev->nChainTx) {
                     pindex->nChainTx = pindex->pprev->nChainTx + pindex->nTx;
+                    if (fZindex) {
+                        pindex->nChainNotarizations         = pindex->pprev->nChainNotarizations + pindex->nNotarizations;
+                        pindex->nChainShieldedTx            = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
+                        pindex->nChainShieldedPayments      = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
+                        pindex->nChainShieldingTx           = pindex->pprev->nChainShieldingTx + pindex->nShieldingTx;
+
+                        pindex->nChainShieldingPayments     = pindex->pprev->nChainShieldingPayments + pindex->nShieldingPayments;
+                        pindex->nChainDeshieldingTx         = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
+                        pindex->nChainDeshieldingPayments   = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
+                        pindex->nChainFullyShieldedTx       = pindex->pprev->nChainFullyShieldedTx + pindex->nFullyShieldedTx;
+                        pindex->nChainFullyShieldedPayments = pindex->pprev->nChainFullyShieldedPayments + pindex->nFullyShieldedPayments;
+                    }
+
                     if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                         pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
                     } else {
@@ -6047,6 +6159,17 @@ bool static LoadBlockIndexDB()
                     }
                 } else {
                     pindex->nChainTx                    = 0;
+                    if (fZindex) {
+                        pindex->nChainNotarizations         = 0;
+                        pindex->nChainShieldedTx            = 0;
+                        pindex->nChainFullyShieldedTx       = 0;
+                        pindex->nChainShieldedPayments      = 0;
+                        pindex->nChainShieldingPayments     = 0;
+                        pindex->nChainDeshieldingTx         = 0;
+                        pindex->nChainDeshieldingPayments   = 0;
+                        pindex->nChainFullyShieldedTx       = 0;
+                        pindex->nChainFullyShieldedPayments = 0;
+                    }
                     pindex->nChainSproutValue           = boost::none;
                     pindex->nChainSaplingValue          = boost::none;
                     mapBlocksUnlinked.insert(std::make_pair(pindex->pprev, pindex));
@@ -6055,6 +6178,16 @@ bool static LoadBlockIndexDB()
                 pindex->nChainTx                    = pindex->nTx;
                 pindex->nChainSproutValue           = pindex->nSproutValue;
                 pindex->nChainSaplingValue          = pindex->nSaplingValue;
+                if (fZindex) {
+                    pindex->nChainNotarizations         = pindex->nNotarizations;
+                    pindex->nChainShieldedTx            = pindex->nShieldedTx;
+                    pindex->nChainShieldedPayments      = pindex->nShieldedPayments;
+                    pindex->nChainShieldingTx           = pindex->nShieldingTx;
+                    pindex->nChainShieldingPayments     = pindex->nShieldingPayments;
+                    pindex->nChainDeshieldingTx         = pindex->nDeshieldingTx;
+                    pindex->nChainDeshieldingPayments   = pindex->nDeshieldingPayments;
+                    pindex->nChainFullyShieldedPayments = pindex->nFullyShieldedPayments;
+                }
             }
         }
         // Construct in-memory chain of branch IDs.

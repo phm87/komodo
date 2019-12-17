@@ -1,5 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
+
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -33,7 +35,7 @@
 
 using namespace std;
 
-// NOTE: Per issue #3277, do not use the prefix 'X' or 'x' as they were
+// NOTE: Per zcash issue #3277, do not use the prefix 'X' or 'x' as they were
 // previously used by DB_SAPLING_ANCHOR and DB_BEST_SAPLING_ANCHOR.
 static const char DB_SPROUT_ANCHOR = 'A';
 static const char DB_SAPLING_ANCHOR = 'Z';
@@ -720,8 +722,17 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nSaplingValue          = diskindex.nSaplingValue;
                 pindexNew->segid                  = diskindex.segid;
                 pindexNew->nNotaryPay             = diskindex.nNotaryPay;
+                pindexNew->nShieldedTx            = diskindex.nShieldedTx;
+                pindexNew->nShieldedPayments      = diskindex.nShieldedPayments;
+                pindexNew->nShieldingTx           = diskindex.nShieldingTx;
+                pindexNew->nShieldingPayments     = diskindex.nShieldingPayments;
+                pindexNew->nDeshieldingTx         = diskindex.nDeshieldingTx;
+                pindexNew->nDeshieldingPayments   = diskindex.nDeshieldingPayments;
+                pindexNew->nFullyShieldedTx       = diskindex.nFullyShieldedTx;
+                pindexNew->nFullyShieldedPayments = diskindex.nFullyShieldedPayments;
+                pindexNew->nNotarizations         = diskindex.nNotarizations;
 
-//fprintf(stderr,"loadguts ht.%d\n",pindexNew->GetHeight());
+                fprintf(stderr,"loadguts ht.%d\n",pindexNew->GetHeight());
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
                 if (header.GetHash() != pindexNew->GetBlockHash())

@@ -607,20 +607,6 @@ public:
         READWRITE(VARINT(nStatus));
         READWRITE(VARINT(nTx));
 
-        // These values only serialized when -zindex enabled
-        if((s.GetType() & SER_DISK) && fZindex) {
-            READWRITE(VARINT(nShieldedTx));
-            READWRITE(VARINT(nShieldingTx));
-            READWRITE(VARINT(nDeshieldingTx));
-            READWRITE(VARINT(nFullyShieldedTx));
-
-            READWRITE(VARINT(nShieldedPayments));
-            READWRITE(VARINT(nShieldingPayments));
-            READWRITE(VARINT(nDeshieldingPayments));
-            READWRITE(VARINT(nFullyShieldedPayments));
-
-            READWRITE(VARINT(nNotarizations));
-        }
 
         if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))
             READWRITE(VARINT(nFile));
@@ -667,6 +653,21 @@ public:
         {
             READWRITE(nNotaryPay);
             READWRITE(segid);
+        }
+
+        // These values only serialized when -zindex enabled
+        if((s.GetType() & SER_DISK) && fZindex) {
+            READWRITE(VARINT(nShieldedTx));
+            READWRITE(VARINT(nShieldingTx));
+            READWRITE(VARINT(nDeshieldingTx));
+            READWRITE(VARINT(nFullyShieldedTx));
+
+            READWRITE(VARINT(nPayments));
+            READWRITE(VARINT(nNotarizations));
+            READWRITE(VARINT(nShieldedPayments));
+            READWRITE(VARINT(nShieldingPayments));
+            READWRITE(VARINT(nDeshieldingPayments));
+            READWRITE(VARINT(nFullyShieldedPayments));
         }
     }
 

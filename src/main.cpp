@@ -6140,6 +6140,7 @@ bool static LoadBlockIndexDB()
                         pindex->nChainShieldedPayments      = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
                         pindex->nChainShieldingTx           = pindex->pprev->nChainShieldingTx + pindex->nShieldingTx;
 
+                        pindex->nChainPayments              = pindex->pprev->nChainPayments + pindex->nPayments;
                         pindex->nChainShieldingPayments     = pindex->pprev->nChainShieldingPayments + pindex->nShieldingPayments;
                         pindex->nChainDeshieldingTx         = pindex->pprev->nChainShieldedTx + pindex->nShieldedTx;
                         pindex->nChainDeshieldingPayments   = pindex->pprev->nChainShieldedPayments + pindex->nShieldedPayments;
@@ -6160,6 +6161,7 @@ bool static LoadBlockIndexDB()
                 } else {
                     pindex->nChainTx                    = 0;
                     if (fZindex) {
+                        pindex->nChainPayments              = 0;
                         pindex->nChainNotarizations         = 0;
                         pindex->nChainShieldedTx            = 0;
                         pindex->nChainFullyShieldedTx       = 0;
@@ -6179,6 +6181,7 @@ bool static LoadBlockIndexDB()
                 pindex->nChainSproutValue           = pindex->nSproutValue;
                 pindex->nChainSaplingValue          = pindex->nSaplingValue;
                 if (fZindex) {
+                    pindex->nChainPayments              = pindex->nPayments;
                     pindex->nChainNotarizations         = pindex->nNotarizations;
                     pindex->nChainShieldedTx            = pindex->nShieldedTx;
                     pindex->nChainShieldedPayments      = pindex->nShieldedPayments;
@@ -6243,7 +6246,7 @@ bool static LoadBlockIndexDB()
             setBlkDataFiles.insert(pindex->nFile);
         }
     }
-    //fprintf(stderr,"load blockindexDB %u\n",(uint32_t)time(NULL));
+    fprintf(stderr,"load blockindexDB %u\n",(uint32_t)time(NULL));
     for (std::set<int>::iterator it = setBlkDataFiles.begin(); it != setBlkDataFiles.end(); it++)
     {
         CDiskBlockPos pos(*it, 0);

@@ -262,49 +262,49 @@ public:
     unsigned int nTx;
 
     //! Number of notarization transactions in this block.
-    unsigned int nNotarizations;
+    int64_t nNotarizations;
 
     //! (memory only) Number of payments (shielded or transparent) in the block
     //! up to and including this block.  One transaction can contain one or more
     //! payments. This stat allows us to calculate ratios of shielded/transparent
     //! when combined with shielded payment stats
-    unsigned int nPayments;
+    int64_t nPayments;
 
     //! (memory only) Number of shielded transactions (of any kind) in the block up to and including this block.
     //! A shielded transaction is defined as a transaction that contains at least 1 JoinSplit, which includes
     //! shielding/de-shielding and other complex transaction possibilties including multiple taddrs/zaddrs as
     //! inputs and outputs.
-    unsigned int nShieldedTx;
+    int64_t nShieldedTx;
 
     //! (memory only) Number of fully shielded transactions. A fully shielded transaction is defined
     //! as a transaction containing JoinSplits and only shielded inputs and outputs, i.e. no transparent
     // inputs or outputs: z->z or z->(z,z) or z->(z,z,z,) etc...
-    unsigned int nFullyShieldedTx;
+    int64_t nFullyShieldedTx;
 
     //! (memory only) Number of shielding payments. A shielding payment is defined
     //! as having a shielded output but transparent input: t->z
-    unsigned int nShieldingPayments;
+    int64_t nShieldingPayments;
 
     //! (memory only) Number of shielded payments. A shielded payment is defined
     //! as having a shielded input or output: t->z or z->t
-    unsigned int nShieldedPayments;
+    int64_t nShieldedPayments;
 
     //! (memory only) Number of fully shielded payments. A fully shielded payment is defined
     //! as having a shielded input and shielded output: z->z
-    unsigned int nFullyShieldedPayments;
+    int64_t nFullyShieldedPayments;
 
     //! (memory only) Number of deshielding transactions. A deshielding transaction is defined
     //! as a transaction containing JoinSplits and at least one transparent output.
-    unsigned int nDeshieldingTx;
+    int64_t nDeshieldingTx;
 
     //! (memory only) Number of deshielding payments. A deshielding payment is defined
     //! as one transparent input and one shielded output: z->t
-    unsigned int nDeshieldingPayments;
+    int64_t nDeshieldingPayments;
 
     //! (memory only) Number of shielding transactions. A shielding transaction is defined
     //! as a transaction containing JoinSplits and at least one transparent input
     // i.e. t->z or t->(z,t) or z->(z,z,t)
-    unsigned int nShieldingTx;
+    int64_t nShieldingTx;
 
     //! (memory only) Number of transactions in the chain up to and including this block.
     //! This value will be non-zero only if and only if transactions for this block and all its parents are available.
@@ -414,6 +414,7 @@ public:
         chainPower = CChainPower();
         nTx = 0;
         nChainTx = 0;
+
         nChainPayments = 0;
         nChainShieldedTx = 0;
         nChainShieldingTx = 0;
@@ -424,14 +425,18 @@ public:
         nChainShieldingPayments = 0;
         nChainDeshieldingPayments = 0;
         nChainFullyShieldedPayments = 0;
+
+        nPayments = 0;
         nShieldedTx = 0;
         nShieldingTx = 0;
+        nNotarizations = 0;
         nDeshieldingTx = 0;
         nFullyShieldedTx = 0;
         nShieldedPayments = 0;
         nShieldingPayments = 0;
         nDeshieldingPayments = 0;
         nFullyShieldedPayments = 0;
+
         nStatus = 0;
         nCachedBranchId = boost::none;
         hashSproutAnchor = uint256();
@@ -649,25 +654,27 @@ public:
         if ((s.GetType() & SER_DISK) && (nVersion >= SAPLING_VALUE_VERSION)) {
             READWRITE(nSaplingValue);
         }
+		/*
         if ( (s.GetType() & SER_DISK) && (is_STAKED(ASSETCHAINS_SYMBOL) != 0) && ASSETCHAINS_NOTARY_PAY[0] != 0 )
         {
             READWRITE(nNotaryPay);
             READWRITE(segid);
         }
+		*/
 
         // These values only serialized when -zindex enabled
         if((s.GetType() & SER_DISK) && fZindex) {
-            READWRITE(VARINT(nShieldedTx));
-            READWRITE(VARINT(nShieldingTx));
-            READWRITE(VARINT(nDeshieldingTx));
-            READWRITE(VARINT(nFullyShieldedTx));
+            READWRITE(nShieldedTx);
+            READWRITE(nShieldingTx);
+            READWRITE(nDeshieldingTx);
+            READWRITE(nFullyShieldedTx);
 
-            READWRITE(VARINT(nPayments));
-            READWRITE(VARINT(nNotarizations));
-            READWRITE(VARINT(nShieldedPayments));
-            READWRITE(VARINT(nShieldingPayments));
-            READWRITE(VARINT(nDeshieldingPayments));
-            READWRITE(VARINT(nFullyShieldedPayments));
+            READWRITE(nPayments);
+            READWRITE(nNotarizations);
+            READWRITE(nShieldedPayments);
+            READWRITE(nShieldingPayments);
+            READWRITE(nDeshieldingPayments);
+            READWRITE(nFullyShieldedPayments);
         }
     }
 

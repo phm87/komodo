@@ -1996,6 +1996,10 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
         if (fZindex) {
             ret.pushKV("window_payments", (int) nPaymentsDiff);
             ret.pushKV("window_notarizations", (int) nNotarizationsDiff);
+            ret.pushKV("window_fully_shielded_txcount", nFullyShieldedTxDiff);
+            ret.pushKV("window_deshielding_txcount", nDeshieldingTxDiff);
+            ret.pushKV("window_shielding_txcount", nShieldingTxDiff);
+            ret.pushKV("window_shielded_txcount", nShieldedTxDiff);
             ret.pushKV("window_fully_shielded_payments", nFullyShieldedPaymentsDiff);
             ret.pushKV("window_shielded_payments", nShieldedPaymentsDiff);
             ret.pushKV("window_shielding_payments", nShieldingPaymentsDiff);
@@ -2013,7 +2017,7 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
                 ret.pushKV("deshielding_payments_percent",    ((double)nDeshieldingPaymentsDiff)   / nPaymentsDiff);
             }
 
-            // Shielded statistics
+            // Statistics considering only zxtns
             UniValue shielded(UniValue::VOBJ);
             if (nShieldedTxDiff > 0) {
                 shielded.pushKV("fully_shielded_tx_percent", ((double)nFullyShieldedTxDiff) / nShieldedTxDiff );

@@ -32,42 +32,6 @@ class WalletSaplingTest(BitcoinTestFramework):
         self.nodes[2].generate(1)
         self.sync_all()
 
-        # Verify RPCs disallow Sapling value transfer if Sapling is not active
-        tmp_taddr = self.nodes[3].getnewaddress()
-        tmp_zaddr = self.nodes[3].z_getnewaddress('sapling')
-        try:
-            recipients = []
-            recipients.append({"address": tmp_zaddr, "amount": Decimal('20')})
-            self.nodes[3].z_sendmany(tmp_taddr, recipients, 1, 0)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
-        try:
-            recipients = []
-            recipients.append({"address": tmp_taddr, "amount": Decimal('20')})
-            self.nodes[3].z_sendmany(tmp_zaddr, recipients, 1, 0)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
-        try:
-            self.nodes[3].z_shieldcoinbase(tmp_taddr, tmp_zaddr)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
-
-        # Verify z_mergetoaddress RPC does not support Sapling yet
-        try:
-            self.nodes[3].z_mergetoaddress([tmp_taddr], tmp_zaddr)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling is not supported yet by z_mergetoadress", e.error['message'])
-        try:
-            self.nodes[3].z_mergetoaddress([tmp_zaddr], tmp_taddr)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling is not supported yet by z_mergetoadress", e.error['message'])
-
-        # Activate Sapling
         self.nodes[2].generate(2)
         self.sync_all()
 

@@ -1875,8 +1875,8 @@ inline CBlockIndex* LookupBlockIndex(const uint256& hash)
 }
 
 // given a transaction count X, subtract out coinbase and dpow transactions
-// to give an "organic count"
-#define ORG(X) (X - blockcount - nNotarizationsDiff)
+// to give an "organic count". We return 0 instead of negative values
+#define ORG(X)  ( (X - blockcount - nNotarizationsDiff) > 0 ? (X - blockcount - nNotarizationsDiff) : 0 )
 
 UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
@@ -1892,7 +1892,12 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
             "{\n"
             "  \"time\": xxxxx,                         (numeric) The timestamp for the final block in the window in UNIX format.\n"
             "  \"txcount\": xxxxx,                      (numeric) The total number of transactions in the chain up to that point.\n"
-            "  \"window_final_block_hash\": \"...\",      (string) The hash of the final block in the window.\n"
+            "  \"shielded_txcount\": xxxxx,             (numeric) The total number of shielded (containing a zaddr) transactions in the chain up to that point.\n"
+            "  \"shielding_txcount\": xxxxx,            (numeric) The total number of shielding (containing a zaddr output) transactions in the chain up to that point.\n"
+            "  \"deshielding_txcount\": xxxxx,          (numeric) The total number of deshielding (containing a zaddr input) transactions in the chain up to that point.\n"
+            "  \"notarizations\": xxxxx,                (numeric) The total number of notarization transactions in the chain up to that point.\n"
+            "  \"window_final_block_hash\": \"...\",    (string) The hash of the final block in the window.\n"
+            "  \"window_final_block_height\": xxxxx,    (numeric) Block height of final block in window.\n"
             "  \"window_block_count\": xxxxx,           (numeric) Size of the window in number of blocks.\n"
             "  \"window_tx_count\": xxxxx,              (numeric) The number of transactions in the window. Only returned if \"window_block_count\" is > 0.\n"
             "  \"window_interval\": xxxxx,              (numeric) The elapsed time in the window in seconds. Only returned if \"window_block_count\" is > 0.\n"
@@ -2022,15 +2027,19 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
             if (nTxDiff > 0) {
                 UniValue organic(UniValue::VOBJ);
 
-                organic.pushKV("shielded_tx_percent",             ((double)nShieldedTxDiff)            / ORG(nTxDiff));
-                organic.pushKV("fully_shielded_tx_percent",       ((double)nFullyShieldedTxDiff)       / ORG(nTxDiff));
-                organic.pushKV("shielding_tx_percent",            ((double)nShieldingTxDiff)           / ORG(nTxDiff));
-                organic.pushKV("deshielding_tx_percent",          ((double)nDeshieldingTxDiff)         / ORG(nTxDiff));
-                organic.pushKV("shielded_payments_percent",       ((double)nShieldedPaymentsDiff)      / ORG(nPaymentsDiff));
-                organic.pushKV("fully_shielded_payments_percent", ((double)nFullyShieldedPaymentsDiff) / ORG(nPaymentsDiff));
-                organic.pushKV("shielding_payments_percent",      ((double)nShieldingPaymentsDiff)     / ORG(nPaymentsDiff));
-                organic.pushKV("deshielding_payments_percent",    ((double)nDeshieldingPaymentsDiff)   / ORG(nPaymentsDiff));
-				if (nTimeDiff > 0) {
+                if(ORG(nTxDiff) > 0) {
+                    organic.pushKV("shielded_tx_percent",             ((double)nShieldedTxDiff)            / ORG(nTxDiff));
+                    organic.pushKV("fully_shielded_tx_percent",       ((double)nFullyShieldedTxDiff)       / ORG(nTxDiff));
+                    organic.pushKV("shielding_tx_percent",            ((double)nShieldingTxDiff)           / ORG(nTxDiff));
+                    organic.pushKV("deshielding_tx_percent",          ((double)nDeshieldingTxDiff)         / ORG(nTxDiff));
+                }
+                if(ORG(nPaymentsDiff) > 0) {
+                    organic.pushKV("shielded_payments_percent",       ((double)nShieldedPaymentsDiff)      / ORG(nPaymentsDiff));
+                    organic.pushKV("fully_shielded_payments_percent", ((double)nFullyShieldedPaymentsDiff) / ORG(nPaymentsDiff));
+                    organic.pushKV("shielding_payments_percent",      ((double)nShieldingPaymentsDiff)     / ORG(nPaymentsDiff));
+                    organic.pushKV("deshielding_payments_percent",    ((double)nDeshieldingPaymentsDiff)   / ORG(nPaymentsDiff));
+                }
+                if (nTimeDiff > 0) {
                     organic.pushKV("paymentrate",                     ((double)ORG(nPaymentsDiff))         / nTimeDiff);
                     organic.pushKV("txrate",                          ((double)ORG(nTxDiff))               / nTimeDiff);
                 }

@@ -694,23 +694,23 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
     boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
 
     pcursor->Seek(make_pair(DB_BLOCK_INDEX, uint256()));
-    fprintf(stderr,"%s: Seeked cursor to block index\n",__FUNCTION__);
+    //fprintf(stderr,"%s: Seeked cursor to block index\n",__FUNCTION__);
 
     // Load mapBlockIndex
     while (pcursor->Valid()) {
-        fprintf(stderr,"%s: Valid cursor\n",__FUNCTION__);
+        //fprintf(stderr,"%s: Valid cursor\n",__FUNCTION__);
         boost::this_thread::interruption_point();
         std::pair<char, uint256> key;
         if (pcursor->GetKey(key) && key.first == DB_BLOCK_INDEX) {
-            fprintf(stderr,"%s: Found DB_BLOCK_INDEX\n",__FUNCTION__);
+            //fprintf(stderr,"%s: Found DB_BLOCK_INDEX\n",__FUNCTION__);
             CDiskBlockIndex diskindex;
             if (pcursor->GetValue(diskindex)) {
                 // Construct block index object
-                fprintf(stderr,"%s: Creating CBlockIndex...\n",__FUNCTION__);
+                //fprintf(stderr,"%s: Creating CBlockIndex...\n",__FUNCTION__);
                 CBlockIndex* pindexNew    = InsertBlockIndex(diskindex.GetBlockHash());
                 pindexNew->pprev          = InsertBlockIndex(diskindex.hashPrev);
                 pindexNew->SetHeight(diskindex.GetHeight());
-                fprintf(stderr,"%s: Setting CBlockIndex height...\n",__FUNCTION__);
+                //fprintf(stderr,"%s: Setting CBlockIndex height...\n",__FUNCTION__);
                 pindexNew->nFile                  = diskindex.nFile;
                 pindexNew->nDataPos               = diskindex.nDataPos;
                 pindexNew->nUndoPos               = diskindex.nUndoPos;
@@ -727,7 +727,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nTx                    = diskindex.nTx;
                 pindexNew->nSproutValue           = diskindex.nSproutValue;
                 pindexNew->nSaplingValue          = diskindex.nSaplingValue;
-                fprintf(stderr,"%s: Setting CBlockIndex details...\n",__FUNCTION__);
+                //fprintf(stderr,"%s: Setting CBlockIndex details...\n",__FUNCTION__);
                 pindexNew->segid                  = diskindex.segid;
                 pindexNew->nNotaryPay             = diskindex.nNotaryPay;
                 pindexNew->nPayments              = diskindex.nPayments;
@@ -741,7 +741,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nFullyShieldedPayments = diskindex.nFullyShieldedPayments;
                 pindexNew->nNotarizations         = diskindex.nNotarizations;
 
-                fprintf(stderr,"loadguts ht.%d\n",pindexNew->GetHeight());
+                //fprintf(stderr,"loadguts ht.%d\n",pindexNew->GetHeight());
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
                 if (header.GetHash() != pindexNew->GetBlockHash())

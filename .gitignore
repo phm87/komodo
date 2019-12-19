@@ -158,3 +158,6 @@ Makefile.in
 src/libcc.so
 src/cc/customcc.so
 src/HUSH3_7776
+src/cc/librogue.so
+src/cc/games/prices
+src/cc/games/tetris

@@ -1878,8 +1878,13 @@ inline CBlockIndex* LookupBlockIndex(const uint256& hash)
 // to give an "organic count". We return 0 instead of negative values
 #define ORG(X)  ( (X - blockcount - nNotarizationsDiff) > 0 ? (X - blockcount - nNotarizationsDiff) : 0 )
 
+//TODO: Allow custom error message in this macro
+#define THROW_IF_SYNCING(INSYNC)  if (INSYNC == 0) { throw runtime_error(strprintf("%s: Chain still syncing at height %d, aborting to prevent garbage data. Please wait until the chain is synced to run this RPC",__FUNCTION__,chainActive.Tip()->GetHeight())); }
+
 UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
+    THROW_IF_SYNCING(KOMODO_INSYNC);
+
     if (fHelp || params.size() > 2)
         throw runtime_error(
                 "getchaintxstats\n"

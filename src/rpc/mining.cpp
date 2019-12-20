@@ -846,11 +846,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp, const CPubKey& myp
       //  result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
     //}
     result.push_back(Pair("longpollid", chainActive.LastTip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast)));
-
-    /*else if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
-        result.push_back(Pair("target",komodo_adaptivepow_target((int32_t)(pindexPrev->GetHeight()+1),hashTarget,pblock->nTime).GetHex()));*/
-    else
-        result.push_back(Pair("target", hashTarget.GetHex()));
+    result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
     result.push_back(Pair("mutable", aMutable));
     result.push_back(Pair("noncerange", "00000000ffffffff"));

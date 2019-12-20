@@ -4743,12 +4743,22 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         isShieldedTx      = (nShieldedSpends + nShieldedOutputs) > 0 ? true : false;
 
         // We want to avoid full verification with a low false-positive rate
+        // TODO: A nefarious user could create xtns which meet these criteria and skew stats, what
+        // else can we look for which is not full validation?
+        // Can we filter on properties of tx.vout[0] ?
         if(tx.vin.size()==13 && tx.vout.size()==2 && tx.vout[1].scriptPubKey.IsOpReturn() && tx.vout[1].nValue==0) {
             nNotarizations++;
         }
 
+        //NOTE: These are at best heuristics. Improve them as much as possible.
+        //      You cannot compare stats generated from different sets of heuristics, so
+        //      if you change this code, you must reindex or delete datadir + resync from scratch, or you
+        //      will be mixing together data from two set of heuristics.
         if(isShieldedTx) {
             nShieldedTx++;
+            // NOTE: It's possible for very complex transactions to be both shielding and deshielding,
+            // such as (t,z)=>(t,z) Since these transactions cannot be made via RPCs currently, they
+            // would currently need to be made via raw transactions
             if(tx.vin.size()==0 && tx.vout.size()==0) {
                 nFullyShieldedTx++;
             } else if(tx.vin.size()>0) {
@@ -4756,10 +4766,6 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             } else if(tx.vout.size()>0) {
                 nDeshieldingTx++;
             }
-            //NOTE: These are at best heuristics. Improve them as much as possible.
-            //      You cannot compare stats generated from different sets of heuristics, so
-            //      if you change this code, you must reindex or delete and resync from scratch, or you
-            //      will be mixing together data from two set of heuristics.
 
             if (nShieldedOutputs >= 1) {
                 // If there are shielded outputs, count each as a payment
@@ -4773,7 +4779,9 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
                 // (z,z)->z     = 1 shielded payment (has this xtn ever occurred?)
                 // z->(z,z,z)   = 2 shielded payments + shielded change
                 // Assume that there is always 1 change output when there are more than one output
-                nShieldedPayments  += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+                nShieldedPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+                // since we have at least 1 zoutput, all transparent outputs are payments, not change
+                nShieldedPayments += tx.vout.size();
 
                 // Fully shielded do not count toward shielding/deshielding
                 if(tx.vin.size()==0 && tx.vout.size()==0) {
@@ -4792,7 +4800,6 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
                 nShieldedPayments    += tx.vout.size();
                 nDeshieldingPayments += tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
             }
-            //TODO:  correctly add transparent payments
             nPayments += nShieldedPayments;
         } else {
             // No shielded payments, add transparent payments minus a change address

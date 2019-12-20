@@ -4758,12 +4758,12 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             }
             //NOTE: These are at best heuristics. Improve them as much as possible.
             //      You cannot compare stats generated from different sets of heuristics, so
-            //      if you change this code, you must delete and resync from scratch, or you
+            //      if you change this code, you must reindex or delete and resync from scratch, or you
             //      will be mixing together data from two set of heuristics.
 
             if (nShieldedOutputs >= 1) {
                 // If there are shielded outputs, count each as a payment
-                // By default, if there is more than 1 output, we assume 1 change output which is not a payment.
+                // By default, if there is more than 1 output, we assume 1 zaddr change output which is not a payment.
                 // In the case of multiple outputs which spend inputs exactly, there is no change output and this
                 // heuristic will undercount payments. Since this edge case is rare, this seems acceptable.
                 // t->(t,t,z)   = 1 shielded payment
@@ -4772,7 +4772,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
                 // t->(t,z)     = 1 shielded payment + transparent change
                 // (z,z)->z     = 1 shielded payment (has this xtn ever occurred?)
                 // z->(z,z,z)   = 2 shielded payments + shielded change
-                // Assume that there is always 1 change output when there are more than one
+                // Assume that there is always 1 change output when there are more than one output
                 nShieldedPayments  += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
 
                 // Fully shielded do not count toward shielding/deshielding
@@ -4780,6 +4780,8 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
                     nFullyShieldedPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
                 } else {
                     nShieldingPayments += nShieldedOutputs > 1 ? (nShieldedOutputs-1) : 1;
+                    // Also count remaining taddr outputs as payments
+                    nShieldedPayments    += tx.vout.size();
                 }
             } else if (nShieldedSpends >=1) {
                 // Shielded inputs with no shielded outputs. We know none are change output because
@@ -4790,7 +4792,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
                 nShieldedPayments    += tx.vout.size();
                 nDeshieldingPayments += tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
             }
-            //TODO:  correctly add shielded payments to total chain payments
+            //TODO:  correctly add transparent payments
             nPayments += nShieldedPayments;
         } else {
             // No shielded payments, add transparent payments minus a change address
@@ -4833,7 +4835,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
 
             if (fZindex) {
-                fprintf(stderr,"%s: setting chain zstats\n", __FUNCTION__);
+                //fprintf(stderr,"%s: setting chain zstats\n", __FUNCTION__);
                 pindex->nChainNotarizations         = (pindex->pprev ? pindex->pprev->nChainNotarizations : 0) + pindex->nNotarizations;
                 pindex->nChainShieldedTx            = (pindex->pprev ? pindex->pprev->nChainShieldedTx : 0) + pindex->nShieldedTx;
                 pindex->nChainFullyShieldedTx       = (pindex->pprev ? pindex->pprev->nChainFullyShieldedTx : 0) + pindex->nFullyShieldedTx;

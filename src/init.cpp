@@ -1755,11 +1755,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     boost::filesystem::remove(GetDataDir() / "komodostate");
                     boost::filesystem::remove(GetDataDir() / "signedmasks");
                     pblocktree->WriteReindexing(true);
+					fprintf(stderr, "%s: Deleted komodostate and signedmasks...\n", __FUNCTION__);
+
                     //If we're reindexing in prune mode, wipe away unusable block files and all undo data files
                     if (fPruneMode)
                         CleanupBlockRevFiles();
                 }
 
+				fprintf(stderr, "%s: Loading block index...\n", __FUNCTION__);
                 if (!LoadBlockIndex()) {
                     strLoadError = _("Error loading block database");
                     break;
@@ -1819,14 +1822,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 }
                 if ( KOMODO_REWIND == 0 )
                 {
-                    if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 3),
-                                              GetArg("-checkblocks", 288))) {
+                    LogPrintf("Verifying block DB...");
+                    if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 3), GetArg("-checkblocks", 288))) {
                         strLoadError = _("Corrupted block database detected");
                         break;
                     }
                 }
             } catch (const std::exception& e) {
-                if (fDebug) LogPrintf("%s\n", e.what());
+                LogPrintf("%s: Error opening block database: %s\n", __FUNCTION__, e.what());
                 strLoadError = _("Error opening block database");
                 break;
             }
@@ -1837,7 +1840,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (!fLoaded) {
             // first suggest a reindex
             if (!fReset) {
-			    fprintf(stderr,"%s error in hd data\n", __FUNCTION__);
+			    fprintf(stderr,"%s: error in hd data\n", __FUNCTION__);
                 bool fRet = uiInterface.ThreadSafeMessageBox(
                     strLoadError + ".\n\n" + _("error in HDD data, might just need to update to latest, if that doesnt work, then you need to resync"),
                     "", CClientUIInterface::MSG_ERROR | CClientUIInterface::BTN_ABORT);

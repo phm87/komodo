@@ -42,20 +42,18 @@ fi
 
 if [ "x$*" = 'x--help' ]
 then
+    cat ./zcutil/dragon.txt
     cat <<EOF
+Welcome To The Hush Build System, Here Be Dragons!
 Usage:
 $0 --help
   Show this help message and exit.
 $0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --enable-proton ] [ --disable-libs ] [ MAKEARGS... ]
-  Build Hush and most of its transitive dependencies from
-  source. MAKEARGS are applied to both dependencies and Hush itself.
-  If --enable-lcov is passed, Hush is configured to add coverage
-  instrumentation, thus enabling "make cov" to work.
+  Build Hush and most of its transitive dependencies from source. MAKEARGS are applied to both dependencies and Hush itself.
+  If --enable-lcov is passed, Hush is configured to add coverage instrumentation, thus enabling "make cov" to work.
   If --disable-tests is passed instead, the Hush tests are not built.
-  If --disable-mining is passed, Hush is configured to not build any mining
-  code. It must be passed after the test arguments, if present.
-  If --enable-proton is passed, Hush is configured to build the Apache Qpid Proton
-  library required for AMQP support. This library is not built by default.
+  If --disable-mining is passed, Hush is configured to not build any mining code. It must be passed after the test arguments, if present.
+  If --enable-proton is passed, Hush is configured to build the Apache Qpid Proton library required for AMQP support. This library is not built by default.
   It must be passed after the test/mining arguments, if present.
 EOF
     exit 0

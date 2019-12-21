@@ -705,7 +705,11 @@ extern const uint32_t nHushHardforkHeight;
 
 bool hush_hardfork_active(uint32_t time)
 {
-    return (chainActive.Height() > nHushHardforkHeight);
+    //This allows simulating a different height via CLI option, with hardcoded height as default
+    uint32_t nHardForkHeight = GetArg("-hardfork-height", nHushHardforkHeight);
+    bool isactive = chainActive.Height() > nHardforkHeight;
+    fprintf(stderr, "%s: active=%d at height=%d and forkheigt=%d\n", __FUNCTION__, (int)isactive, chainActive.Height(), nHardForkHeight);
+    return isactive;
 }
 
 bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx);

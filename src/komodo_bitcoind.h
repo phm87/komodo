@@ -700,12 +700,12 @@ bool komodo_checkopret(CBlock *pblock, CScript &merkleroot)
     return(merkleroot.IsOpReturn() && merkleroot == komodo_makeopret(pblock, false));
 }
 
-#define HUSH_HARDFORK1 (162000)
+
+extern const uint32_t nHushHardforkHeight;
 
 bool hush_hardfork_active(uint32_t time)
 {
-	// Approximately mid-day Jan 21 EST
-    return ( chainActive.Height() > HUSH_HARDFORK1);
+    return (chainActive.Height() > nHushHardforkHeight);
 }
 
 bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx);

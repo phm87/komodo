@@ -11,6 +11,16 @@ function cmd_pref() {
         eval "$1=$3"
     fi
 }
+cat <<'EOF'
+ ________________
+< Building Hush! >
+ ----------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+EOF
 
 # If a g-prefixed version of the command exists, use it preferentially.
 function gprefix() {
@@ -92,8 +102,10 @@ then
     shift
 fi
 
-eval "$MAKE" --version
-as --version
+# Just show the useful info
+eval "$MAKE" --version | head -n2
+as --version | head -n1
+as --version | tail -n1
 ld -v
 
 HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1

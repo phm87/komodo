@@ -495,11 +495,15 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
                   pwalletMain->nTimeFirstKey = nTimeBegin;
              pwalletMain->ScanForWalletTransactions(pindex);
              pwalletMain->MarkDirty();
-        return NullUniValue; }
 
-        else{
+     if (!fGood)
+         throw JSONRPCError(RPC_WALLET_ERROR, "Error adding some keys to wallet");
+
+         return NullUniValue; }
+
+         else{
              LogPrintf("Importwallet without Rescan successfull\n");
-        return NullUniValue;}
+         return NullUniValue;}
 }
 
 

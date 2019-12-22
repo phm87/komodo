@@ -53,11 +53,11 @@
 // Approximately mid-day Jan 21 EST
 const uint32_t nHushHardforkHeight = 162000;
 
-extern const int32_t nDecemberHardforkHeight;   //December 2019 hardfork
+// No coins/code are currently using timestamp activated fork
+const uint32_t nHushHardforkTimestamp = 1579680124; // Jan 22nd 8am UTC
 
-const uint32_t nStakedDecemberHardforkTimestamp = 1576840000; //December 2019 hardfork 12/20/2019 @ 11:06am (UTC)
-static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, nStakedDecemberHardforkTimestamp, 1751328000};
-static const int32_t KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS] = {1,2,nHushHardforkHeight, 5*nHushHardforkHeight};
+static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, nHushHardforkTimestamp, 1751328000};
+static const int32_t  KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS]    = {1,2,nHushHardforkHeight, 5*nHushHardforkHeight};
 
 // Era array of pubkeys. Add extra seasons to bottom as requried, after adding appropriate info above. 
 static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =

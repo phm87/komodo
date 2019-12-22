@@ -323,19 +323,24 @@ UniValue z_importwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
             "z_importwallet \"filename\"\n"
             "\nImports taddr and zaddr keys from a wallet export file (see z_exportwallet).\n"
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The wallet file\n"
+            "2. rescan      (boolean, optional, default=yes) Rescan the wallet for transactions\n"
             "\nExamples:\n"
             "\nDump the wallet\n"
             + HelpExampleCli("z_exportwallet", "\"nameofbackup\"") +
             "\nImport the wallet\n"
             + HelpExampleCli("z_importwallet", "\"path/to/exportdir/nameofbackup\"") +
             "\nImport using the json rpc call\n"
-            + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\"")
+            + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\"")+
+            "\nImport the wallet without rescan\n"
+            + HelpExampleCli("z_importwallet", "\"path/to/exportdir/nameofbackup\" no ")+
+            "\nImport without Rescan using the json rpc call\n"
+            + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\" no")
         );
 
 	return importwallet_impl(params, fHelp, true);
@@ -346,19 +351,24 @@ UniValue importwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
             "importwallet \"filename\"\n"
             "\nImports taddr keys from a wallet dump file (see dumpwallet).\n"
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The wallet file\n"
+            "2. rescan     (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "\nExamples:\n"
             "\nDump the wallet\n"
             + HelpExampleCli("dumpwallet", "\"nameofbackup\"") +
             "\nImport the wallet\n"
             + HelpExampleCli("importwallet", "\"path/to/exportdir/nameofbackup\"") +
             "\nImport using the json rpc call\n"
-            + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\"")
+            + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\"")+
+            "\nImport the wallet without rescan\n"
+            + HelpExampleCli("importwallet", "\"path/to/exportdir/nameofbackup\" no ")+
+            "\nImport without Rescan using the json rpc call\n"
+            + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\" no ")
         );
 
 	return importwallet_impl(params, fHelp, false);
@@ -456,22 +466,42 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
     file.close();
     pwalletMain->ShowProgress("", 100); // hide progress dialog in GUI
 
-    CBlockIndex *pindex = chainActive.LastTip();
-    while (pindex && pindex->pprev && pindex->GetBlockTime() > nTimeBegin - 7200)
-        pindex = pindex->pprev;
+    bool fRescan = true;
+    if (params.size() > 1){
+    auto rescan = params[1].get_str();
+    if (rescan.compare("yes") == 0) {
+                fRescan = true;
+            } else if (rescan.compare("no") == 0) {
+                fRescan = false;
+            } else { // Handle older API
+                UniValue jVal;
+                if (!jVal.read(std::string("[")+rescan+std::string("]")) ||
+                    !jVal.isArray() || jVal.size()!=1 || !jVal[0].isBool()) {
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "rescan must be \"yes\", \"no\"");
+                }
+                fRescan = jVal[0].getBool();
+            }
+        }
 
-    if (!pwalletMain->nTimeFirstKey || nTimeBegin < pwalletMain->nTimeFirstKey)
-        pwalletMain->nTimeFirstKey = nTimeBegin;
+     if (fRescan) {
+             CBlockIndex *pindex = chainActive.LastTip();
+         while (pindex && pindex->pprev && pindex->GetBlockTime() > nTimeBegin - 7200)
+             pindex = pindex->pprev;
 
-    LogPrintf("Rescanning last %i blocks\n", chainActive.Height() - pindex->GetHeight() + 1);
-    pwalletMain->ScanForWalletTransactions(pindex);
-    pwalletMain->MarkDirty();
+             LogPrintf("Rescanning last %i blocks\n", chainActive.Height() - pindex->GetHeight() + 1);
+         if (!pwalletMain->nTimeFirstKey || nTimeBegin < pwalletMain->nTimeFirstKey)
+                  pwalletMain->nTimeFirstKey = nTimeBegin;
+             pwalletMain->ScanForWalletTransactions(pindex);
+             pwalletMain->MarkDirty();
+        return NullUniValue; }
 
-    if (!fGood)
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error adding some keys to wallet");
-
-    return NullUniValue;
+        else{
+             LogPrintf("Importwallet without Rescan successfull\n");
+        return NullUniValue;}
 }
+
 
 UniValue dumpprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {

@@ -32,7 +32,6 @@ bool EnsureWalletIsAvailable(bool avoidException);
 extern bool fRequestShutdown;
 extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
 
-int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew);
 uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht);
 uint32_t komodo_heightstamp(int32_t height);
 
@@ -711,8 +710,6 @@ bool hush_hardfork_active(uint32_t time)
     fprintf(stderr, "%s: active=%d at height=%d and forkheigt=%d\n", __FUNCTION__, (int)isactive, chainActive.Height(), nHardForkHeight);
     return isactive;
 }
-
-bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx);
 
 int32_t komodo_isPoS(CBlock *pblock,int32_t height,bool fJustCheck)
 {

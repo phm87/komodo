@@ -1,8 +1,7 @@
 #!/usr/bin/env python2
 # Copyright (c) 2018 The Zcash developers
-# Copyright (c) 2019 The Hush developers
-# Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Copyright (c) 2019-2020 The Hush developers
+# Released under the GPLv3
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException

@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
+# Copyright (c) 2019-2020 The Hush developers
+# Released under the GPLv3
 #
-# Execute all of the automated tests related to Zcash.
+# Execute all of the automated tests related to Hush
 #
 
 import argparse

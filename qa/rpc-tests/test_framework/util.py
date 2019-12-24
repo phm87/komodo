@@ -1,6 +1,6 @@
 # Copyright (c) 2014 The Bitcoin Core developers
 # Copyright (c) 2018-2019 The SuperNET developers
-# Copyright (c) 2018-2019 The Hush developers
+# Copyright (c) 2018-2020 The Hush developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
@@ -27,6 +27,12 @@ def p2p_port(n):
     return 11000 + n + os.getpid()%999
 def rpc_port(n):
     return 12000 + n + os.getpid()%999
+
+def rpc_username():
+    return "hush"
+
+def rpc_password():
+    return "puppy"
 
 def check_json_precision():
     """Make sure json library being used does not lose precision converting BTC values"""
@@ -81,25 +87,24 @@ bitcoind_processes = {}
 
 def initialize_datadir(dirname, n):
     datadir = os.path.join(dirname, "node"+str(n))
+    datadir = os.path.join(datadir,"HUSH3")
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
-    # kmd AC's don't use this, they use the conf auto-created when the AC is created
-    # plus CLI arguments. This is for hushd tests
-    #TODO: need to create HUSH3.conf
-    print("Writing to " + os.path.join(datadir,"hush.conf"))
-    with open(os.path.join(datadir, "hush.conf"), 'w') as f:
+
+    print("Writing to " + os.path.join(datadir,"HUSH3.conf"))
+    with open(os.path.join(datadir, "HUSH3.conf"), 'w') as f:
         f.write("regtest=1\n");
         f.write("txindex=1\n");
         f.write("server=1\n");
         f.write("showmetrics=0\n");
-        f.write("rpcuser=rt\n");
-        f.write("rpcpassword=rt\n");
+        f.write("rpcuser=hush\n");
+        f.write("rpcpassword=puppy\n");
         #f.write("port="+str(p2p_port(n))+"\n");
         #rpcport = str(rpc_port(n))
         #f.write("rpcport="+rpcport+"\n");
         #print "RPC port=" + rpcport
         f.write("listenonion=0\n");
-        # TODO: maybe make these optional, defaulted to on for now
+        # TODO: maybe make these optional, via arg to initialize_datadir, defaulted to on for now
         f.write("addressindex=1\n");
         f.write("spentindex=1\n");
         f.write("timestampindex=1\n");
@@ -114,7 +119,7 @@ def initialize_chain(test_dir):
     """
 
     print("initialize_chain")
-    if not os.path.isdir(os.path.join("cache", "node0")):
+    if not os.path.isdir(os.path.join("cache", "node0", "HUSH3")):
         devnull = open("/dev/null", "w+")
         # Create cache directories, run hushds:
         for i in range(4):
@@ -249,8 +254,10 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if os.getenv("PYTHON_DEBUG", ""):
         print "start_node: calling hush-cli -rpcwait getblockcount returned"
     devnull.close()
-    port = extra_args[3]
-    url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', int(port[9:]))
+    port     = extra_args[3]
+    username = rpc_username()
+    password = rpc_password()
+    url      = "http://%s:%s@%s:%d" % (username, password, rpchost or '127.0.0.1', int(port[9:]))
     print("connecting to " + url)
     if timewait is not None:
         proxy = AuthServiceProxy(url, timeout=timewait)

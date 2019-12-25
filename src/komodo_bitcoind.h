@@ -707,7 +707,7 @@ bool hush_hardfork_active(uint32_t time)
     //This allows simulating a different height via CLI option, with hardcoded height as default
     uint32_t nHardForkHeight = GetArg("-hardfork-height", nHushHardforkHeight);
     bool isactive = chainActive.Height() > nHardForkHeight;
-    fprintf(stderr, "%s: active=%d at height=%d and forkheigt=%d\n", __FUNCTION__, (int)isactive, chainActive.Height(), nHardForkHeight);
+    fprintf(stderr, "%s: active=%d at height=%d and forkheight=%d\n", __FUNCTION__, (int)isactive, chainActive.Height(), nHardForkHeight);
     return isactive;
 }
 

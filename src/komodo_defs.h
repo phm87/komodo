@@ -57,7 +57,7 @@
 const uint32_t nHushHardforkHeight = 166250;
 
 // No coins/code are currently using timestamp activated fork
-const uint32_t nHushHardforkTimestamp = 1579680124; // Jan 22nd 8am UTC
+const uint32_t nHushHardforkTimestamp = 1580303652; // Jan 29nd 1pm GMT
 
 static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, nHushHardforkTimestamp, 1751328000};
 static const int32_t  KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS]    = {1,2,nHushHardforkHeight, 5*nHushHardforkHeight};

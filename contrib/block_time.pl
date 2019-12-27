@@ -17,7 +17,9 @@ if ($block <= $blockcount) {
 	my $seconds = $minutes*60;
 	my $now     = time;
 	my $then    = $now + $seconds;
-	my $date    = localtime($then);
+	my $ldate   = localtime($then);
+	my $gmdate  = gmtime($then);
 	print "Hush Block $block will happen at roughly:\n";
-	print "$date # $then\n";
+	print "$ldate Eastern # $then\n";
+	print "$gmdate GMT     # $then\n";
 }

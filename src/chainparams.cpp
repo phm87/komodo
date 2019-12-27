@@ -584,7 +584,6 @@ void *chainparams_commandline()
         fprintf(stderr,">>>>>>>>>> %s: p2p.%u rpc.%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
 
         pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = ASSETCHAINS_SAPLING;
-        pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = ASSETCHAINS_SAPLING;
         pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = ASSETCHAINS_OVERWINTER;
 		// Generated at 1575831755 via hush3 contrib/checkpoints.pl by Duke Leto
         if (strcmp(ASSETCHAINS_SYMBOL,"HUSH3") == 0) {
@@ -729,8 +728,8 @@ void *chainparams_commandline()
                                 (135000,    uint256S("0x000000025f9502fc7474d62a0a23417cc5b77f3a049260e65b5b810d71074743"))
                                 (136000,    uint256S("0x00000000af2a19997fde28b70235070f627f3b5900a9ee13c927529a11110bc6")),
                                 (int64_t)  1575741799, // time of last checkpointed block
-                                (int64_t) 274689,      // total txs
-                                (double)  1065         // txs in the last day before block 136590
+                                (int64_t)  274689,     // total txs
+                                (double)   1065        // txs in the last day before block 136590
                 };
         } else {
             checkpointData = //(Checkpoints::CCheckpointData)

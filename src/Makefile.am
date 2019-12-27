@@ -297,7 +297,6 @@ libbitcoin_server_a_SOURCES = \
   cc/oracles.cpp \
   cc/prices.cpp \
   cc/pegs.cpp \
-  cc/marmara.cpp \
   cc/payments.cpp \
   cc/gateways.cpp \
   cc/channels.cpp \
@@ -307,8 +306,6 @@ libbitcoin_server_a_SOURCES = \
   checkpoints.cpp \
   crosschain.cpp \
   crosschain_authority.cpp \
-  crypto/haraka.h \
-  crypto/haraka_portable.h \
   deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \
@@ -413,6 +410,11 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha512.cpp \
   crypto/sha512.h
 
+if EXPERIMENTAL_ASM
+  crypto_libbitcoin_crypto_a_SOURCES += crypto/sha256_sse4.cpp
+endif
+
+
 if ENABLE_MINING
 EQUIHASH_TROMP_SOURCES = \
 	pow/tromp/equi_miner.h \
@@ -439,8 +441,6 @@ libbitcoin_common_a_SOURCES = \
   consensus/upgrades.cpp \
   core_read.cpp \
   core_write.cpp \
-  crypto/haraka.h \
-  crypto/haraka_portable.h \
   hash.cpp \
   importcoin.cpp \
   key.cpp \

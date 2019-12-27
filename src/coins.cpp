@@ -618,13 +618,13 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
 {
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
         if (GetNullifier(spendDescription.nullifier, SAPLING)) { // Prevent double spends
-            fprintf(stderr,"%s: sapling nullifier %s exists, preventing double spend\n", __FUNCTION__, spendDescription.nullifier);
+            LogPrintf("%s: sapling nullifier %s exists, preventing double spend\n", __FUNCTION__, spendDescription.nullifier.GetHex().c_str());
             return false;
         }
 
         SaplingMerkleTree tree;
         if (!GetSaplingAnchorAt(spendDescription.anchor, tree)) {
-            fprintf(stderr,"%s: missing sapling anchor: %s \n", __FUNCTION__, spendDescription.anchor);
+            LogPrintf("%s: missing sapling anchor: %s \n", __FUNCTION__, spendDescription.anchor.GetHex().c_str());
             return false;
         }
     }

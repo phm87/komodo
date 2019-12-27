@@ -39,20 +39,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
                 continue;
             //printf("Authorised notarisation data for %s \n",data.symbol);
         } else if (authority == CROSSCHAIN_STAKED) {
-            // We need to create auth_STAKED dynamically here based on timestamp
-            int32_t staked_era = STAKED_era(timestamp);
-            if (staked_era == 0) {
-              // this is an ERA GAP, so we will ignore this notarization
-              continue;
-             if ( is_STAKED(data.symbol) == 255 )
-              // this chain is banned... we will discard its notarisation. 
-              continue;
-            } else {
-              // pass era slection off to notaries_staked.cpp file
-              auth_STAKED = Choose_auth_STAKED(staked_era);
-            }
-            if (!CheckTxAuthority(tx, auth_STAKED))
-                continue;
+		    continue;
         }
 
         if (parsed) {

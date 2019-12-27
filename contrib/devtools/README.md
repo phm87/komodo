@@ -1,5 +1,5 @@
-Contents
-===========
+# Contrib Devtools
+
 This directory contains tools for developers working on this repository.
 
 github-merge.sh

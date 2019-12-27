@@ -46,7 +46,7 @@ Write clear, clean and consistent code. Follow well-known and established style 
 
 ## Setting up your environment
 
-The Hush Core (hushd) is mainly written in C++ with specific modules written in C. Follow the [Install](https://github.com/MyHush/hush3/blob/master/INSTALL.md) instructions to build hushd from sources. For more informations about the Hush Platform and a full API documentation please visit the official [Komodo developer documentation](https://docs.komodoplatform.com/). 
+The Hush Core (hushd) is mainly written in C++ with specific modules written in C. Follow the [Install](https://github.com/MyHush/hush3/blob/master/INSTALL.md) instructions to build hushd from sources. For more informations about the Hush Platform and a full API documentation please visit the official [Hush Developer documentation](https://gilardh.github.io/dev-website/developers/)
 
 ## Contribution review process
 

@@ -1,4 +1,5 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -89,7 +90,7 @@ std::string DecodeDumpString(const std::string &str) {
     return ret.str();
 }
 
-UniValue convertpassphrase(const UniValue& params, bool fHelp)
+UniValue convertpassphrase(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() < 1 || params.size() > 1)
         throw runtime_error(
@@ -148,17 +149,17 @@ UniValue convertpassphrase(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue importprivkey(const UniValue& params, bool fHelp)
+UniValue importprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
     if (fHelp || params.size() < 1 || params.size() > 5)
         throw runtime_error(
-            "importprivkey \"komodoprivkey\" ( \"label\" rescan height secret_key)\n"
+            "importprivkey \"hushprivkey\" ( \"label\" rescan height secret_key)\n"
             "\nAdds a private key (as returned by dumpprivkey) to your wallet.\n"
             "\nArguments:\n"
-            "1. \"komodoprivkey\"   (string, required) The private key (see dumpprivkey)\n"
+            "1. \"hushprivkey\"   (string, required) The private key (see dumpprivkey)\n"
             "2. \"label\"            (string, optional, default=\"\") An optional label\n"
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "4. height               (integer, optional, default=0) start at block height?\n"
@@ -244,7 +245,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     return EncodeDestination(vchAddress);
 }
 
-UniValue importaddress(const UniValue& params, bool fHelp)
+UniValue importaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -278,7 +279,7 @@ UniValue importaddress(const UniValue& params, bool fHelp)
         std::vector<unsigned char> data(ParseHex(params[0].get_str()));
         script = CScript(data.begin(), data.end());
     } else {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Komodo address or script");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Hush address or script");
     }
 
     string strLabel = "";
@@ -317,47 +318,57 @@ UniValue importaddress(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
-UniValue z_importwallet(const UniValue& params, bool fHelp)
+UniValue z_importwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
             "z_importwallet \"filename\"\n"
             "\nImports taddr and zaddr keys from a wallet export file (see z_exportwallet).\n"
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The wallet file\n"
+            "2. rescan      (boolean, optional, default=yes) Rescan the wallet for transactions\n"
             "\nExamples:\n"
             "\nDump the wallet\n"
             + HelpExampleCli("z_exportwallet", "\"nameofbackup\"") +
             "\nImport the wallet\n"
             + HelpExampleCli("z_importwallet", "\"path/to/exportdir/nameofbackup\"") +
             "\nImport using the json rpc call\n"
-            + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\"")
+            + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\"")+
+            "\nImport the wallet without rescan\n"
+            + HelpExampleCli("z_importwallet", "\"path/to/exportdir/nameofbackup\" no ")+
+            "\nImport without Rescan using the json rpc call\n"
+            + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\" no")
         );
 
 	return importwallet_impl(params, fHelp, true);
 }
 
-UniValue importwallet(const UniValue& params, bool fHelp)
+UniValue importwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
             "importwallet \"filename\"\n"
             "\nImports taddr keys from a wallet dump file (see dumpwallet).\n"
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The wallet file\n"
+            "2. rescan     (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "\nExamples:\n"
             "\nDump the wallet\n"
             + HelpExampleCli("dumpwallet", "\"nameofbackup\"") +
             "\nImport the wallet\n"
             + HelpExampleCli("importwallet", "\"path/to/exportdir/nameofbackup\"") +
             "\nImport using the json rpc call\n"
-            + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\"")
+            + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\"")+
+            "\nImport the wallet without rescan\n"
+            + HelpExampleCli("importwallet", "\"path/to/exportdir/nameofbackup\" no ")+
+            "\nImport without Rescan using the json rpc call\n"
+            + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\" no ")
         );
 
 	return importwallet_impl(params, fHelp, false);
@@ -394,7 +405,7 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
         if (vstr.size() < 2)
             continue;
 
-        // Let's see if the address is a valid Zcash spending key
+        // Let's see if the address is a valid Hush spending key
         if (fImportZKeys) {
             auto spendingkey = DecodeSpendingKey(vstr[0]);
             int64_t nTime = DecodeDumpTime(vstr[1]);
@@ -413,7 +424,7 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
                 continue;
             } else {
                 LogPrint("zrpc", "Importing detected an error: invalid spending key. Trying as a transparent key...\n");
-                // Not a valid spending key, so carry on and see if it's a Zcash style t-address.
+                // Not a valid spending key, so carry on and see if it's a Hush transparent address
             }
         }
 
@@ -455,24 +466,48 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
     file.close();
     pwalletMain->ShowProgress("", 100); // hide progress dialog in GUI
 
-    CBlockIndex *pindex = chainActive.LastTip();
-    while (pindex && pindex->pprev && pindex->GetBlockTime() > nTimeBegin - 7200)
-        pindex = pindex->pprev;
+    bool fRescan = true;
+    if (params.size() > 1){
+    auto rescan = params[1].get_str();
+    if (rescan.compare("yes") == 0) {
+                fRescan = true;
+            } else if (rescan.compare("no") == 0) {
+                fRescan = false;
+            } else { // Handle older API
+                UniValue jVal;
+                if (!jVal.read(std::string("[")+rescan+std::string("]")) ||
+                    !jVal.isArray() || jVal.size()!=1 || !jVal[0].isBool()) {
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "rescan must be \"yes\", \"no\"");
+                }
+                fRescan = jVal[0].getBool();
+            }
+        }
 
-    if (!pwalletMain->nTimeFirstKey || nTimeBegin < pwalletMain->nTimeFirstKey)
-        pwalletMain->nTimeFirstKey = nTimeBegin;
+     if (fRescan) {
+             CBlockIndex *pindex = chainActive.LastTip();
+         while (pindex && pindex->pprev && pindex->GetBlockTime() > nTimeBegin - 7200)
+             pindex = pindex->pprev;
 
-    LogPrintf("Rescanning last %i blocks\n", chainActive.Height() - pindex->GetHeight() + 1);
-    pwalletMain->ScanForWalletTransactions(pindex);
-    pwalletMain->MarkDirty();
+             LogPrintf("Rescanning last %i blocks\n", chainActive.Height() - pindex->GetHeight() + 1);
+         if (!pwalletMain->nTimeFirstKey || nTimeBegin < pwalletMain->nTimeFirstKey)
+                  pwalletMain->nTimeFirstKey = nTimeBegin;
+             pwalletMain->ScanForWalletTransactions(pindex);
+             pwalletMain->MarkDirty();
 
-    if (!fGood)
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error adding some keys to wallet");
+     if (!fGood)
+         throw JSONRPCError(RPC_WALLET_ERROR, "Error adding some keys to wallet");
 
-    return NullUniValue;
+         return NullUniValue; }
+
+         else{
+             LogPrintf("Importwallet without Rescan successfull\n");
+         return NullUniValue;}
 }
 
-UniValue dumpprivkey(const UniValue& params, bool fHelp)
+
+UniValue dumpprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -514,7 +549,7 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
 
 
 
-UniValue z_exportwallet(const UniValue& params, bool fHelp)
+UniValue z_exportwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -524,7 +559,7 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
             "z_exportwallet \"filename\"\n"
             "\nExports all wallet keys, for taddr and zaddr, in a human-readable format.  Overwriting an existing file is not permitted.\n"
             "\nArguments:\n"
-            "1. \"filename\"    (string, required) The filename, saved in folder set by komodod -exportdir option\n"
+            "1. \"filename\"    (string, required) The filename, saved in folder set by hushd -exportdir option\n"
             "\nResult:\n"
             "\"path\"           (string) The full path of the destination file\n"
             "\nExamples:\n"
@@ -535,7 +570,7 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
 	return dumpwallet_impl(params, fHelp, true);
 }
 
-UniValue dumpwallet(const UniValue& params, bool fHelp)
+UniValue dumpwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -545,7 +580,7 @@ UniValue dumpwallet(const UniValue& params, bool fHelp)
             "dumpwallet \"filename\"\n"
             "\nDumps taddr wallet keys in a human-readable format.  Overwriting an existing file is not permitted.\n"
             "\nArguments:\n"
-            "1. \"filename\"    (string, required) The filename, saved in folder set by komodod -exportdir option\n"
+            "1. \"filename\"    (string, required) The filename, saved in folder set by hushd -exportdir option\n"
             "\nResult:\n"
             "\"path\"           (string) The full path of the destination file\n"
             "\nExamples:\n"
@@ -569,7 +604,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
         throw JSONRPCError(RPC_INTERNAL_ERROR, e.what());
     }
     if (exportdir.empty()) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Cannot export wallet until the komodod -exportdir option has been set");
+        throw JSONRPCError(RPC_WALLET_ERROR, "Cannot export wallet until the hushd -exportdir option has been set");
     }
     std::string unclean = params[0].get_str();
     std::string clean = SanitizeFilename(unclean);
@@ -601,7 +636,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     std::sort(vKeyBirth.begin(), vKeyBirth.end());
 
     // produce output
-    file << strprintf("# Wallet dump created by Komodo %s (%s)\n", CLIENT_BUILD, CLIENT_DATE);
+    file << strprintf("# Wallet dump created by Hush %s (%s)\n", CLIENT_BUILD, CLIENT_DATE);
     file << strprintf("# * Created on %s\n", EncodeDumpTime(GetTime()));
     file << strprintf("# * Best block at time of backup was %i (%s),\n", chainActive.Height(), chainActive.Tip()->GetBlockHash().ToString());
     file << strprintf("#   mined on %s\n", EncodeDumpTime(chainActive.Tip()->GetBlockTime()));
@@ -672,7 +707,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
 }
 
 
-UniValue z_importkey(const UniValue& params, bool fHelp)
+UniValue z_importkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -763,7 +798,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
-UniValue z_importviewingkey(const UniValue& params, bool fHelp)
+UniValue z_importviewingkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -881,7 +916,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
-UniValue z_exportkey(const UniValue& params, bool fHelp)
+UniValue z_exportkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -920,7 +955,7 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
     return EncodeSpendingKey(sk.get());
 }
 
-UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
+UniValue z_exportviewingkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -992,10 +1027,12 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
 UniValue NSPV_notarizations(int32_t height);
 UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight);
 UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height);
+UniValue NSPV_ccmoduleutxos(char *coinaddr, int64_t amount, uint8_t evalcode, std::string funcids, uint256 filtertxid);
+
 uint256 Parseuint256(const char *hexstr);
 extern std::string NSPV_address;
 
-UniValue nspv_getinfo(const UniValue& params, bool fHelp)
+UniValue nspv_getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t reqht = 0;
     if ( fHelp || params.size() > 1 )
@@ -1007,7 +1044,7 @@ UniValue nspv_getinfo(const UniValue& params, bool fHelp)
     return(NSPV_getinfo_req(reqht));
 }
 
-UniValue nspv_logout(const UniValue& params, bool fHelp)
+UniValue nspv_logout(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if ( fHelp || params.size() != 0 )
         throw runtime_error("nspv_logout\n");
@@ -1016,7 +1053,7 @@ UniValue nspv_logout(const UniValue& params, bool fHelp)
     return(NSPV_logout());
 }
 
-UniValue nspv_login(const UniValue& params, bool fHelp)
+UniValue nspv_login(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if ( fHelp || params.size() != 1 )
         throw runtime_error("nspv_login wif\n");
@@ -1025,7 +1062,7 @@ UniValue nspv_login(const UniValue& params, bool fHelp)
     return(NSPV_login((char *)params[0].get_str().c_str()));
 }
 
-UniValue nspv_listunspent(const UniValue& params, bool fHelp)
+UniValue nspv_listunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t skipcount = 0,CCflag = 0;
     if ( fHelp || params.size() > 3 )
@@ -1049,7 +1086,7 @@ UniValue nspv_listunspent(const UniValue& params, bool fHelp)
     else throw runtime_error("nspv_listunspent [address [isCC [skipcount]]]\n");
 }
 
-UniValue nspv_mempool(const UniValue& params, bool fHelp)
+UniValue nspv_mempool(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t vout = 0,CCflag = 0; uint256 txid; uint8_t funcid; char *coinaddr;
     memset(&txid,0,sizeof(txid));
@@ -1070,7 +1107,7 @@ UniValue nspv_mempool(const UniValue& params, bool fHelp)
     return(NSPV_mempooltxids(coinaddr,CCflag,funcid,txid,vout));
 }
 
-UniValue nspv_listtransactions(const UniValue& params, bool fHelp)
+UniValue nspv_listtransactions(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t skipcount = 0,CCflag = 0;
     if ( fHelp || params.size() > 3 )
@@ -1095,7 +1132,7 @@ UniValue nspv_listtransactions(const UniValue& params, bool fHelp)
     else throw runtime_error("nspv_listtransactions [address [isCC [skipcount]]]\n");
 }
 
-UniValue nspv_spentinfo(const UniValue& params, bool fHelp)
+UniValue nspv_spentinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 txid; int32_t vout;
     if ( fHelp || params.size() != 2 )
@@ -1107,7 +1144,7 @@ UniValue nspv_spentinfo(const UniValue& params, bool fHelp)
     return(NSPV_spentinfo(txid,vout));
 }
 
-UniValue nspv_notarizations(const UniValue& params, bool fHelp)
+UniValue nspv_notarizations(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t height;
     if ( fHelp || params.size() != 1 )
@@ -1118,7 +1155,7 @@ UniValue nspv_notarizations(const UniValue& params, bool fHelp)
     return(NSPV_notarizations(height));
 }
 
-UniValue nspv_hdrsproof(const UniValue& params, bool fHelp)
+UniValue nspv_hdrsproof(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t prevheight,nextheight;
     if ( fHelp || params.size() != 2 )
@@ -1130,7 +1167,7 @@ UniValue nspv_hdrsproof(const UniValue& params, bool fHelp)
     return(NSPV_hdrsproof(prevheight,nextheight));
 }
 
-UniValue nspv_txproof(const UniValue& params, bool fHelp)
+UniValue nspv_txproof(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 txid; int32_t height;
     if ( fHelp || params.size() != 2 )
@@ -1142,7 +1179,7 @@ UniValue nspv_txproof(const UniValue& params, bool fHelp)
     return(NSPV_txproof(0,txid,height));
 }
 
-UniValue nspv_spend(const UniValue& params, bool fHelp)
+UniValue nspv_spend(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint64_t satoshis;
     if ( fHelp || params.size() != 2 )
@@ -1158,11 +1195,31 @@ UniValue nspv_spend(const UniValue& params, bool fHelp)
     return(NSPV_spend((char *)NSPV_address.c_str(),(char *)params[0].get_str().c_str(),satoshis));
 }
 
-UniValue nspv_broadcast(const UniValue& params, bool fHelp)
+UniValue nspv_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if ( fHelp || params.size() != 1 )
         throw runtime_error("nspv_broadcast hex\n");
     if ( KOMODO_NSPV_FULLNODE )
         throw runtime_error("-nSPV=1 must be set to use nspv\n");
     return(NSPV_broadcast((char *)params[0].get_str().c_str()));
+}
+
+UniValue nspv_listccmoduleunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    int32_t skipcount = 0, CCflag = 0;
+    if (fHelp || params.size() != 5)
+        throw runtime_error("nspv_listccmoduleunspent address amount evalcode funcids txid\n\n" 
+        "returns utxos from the address, filtered by evalcode funcids and txid in opret.\n"
+        "if amount is 0 just returns no utxos and available total.\n"
+        "funcids is a string of funcid symbols. The first symbol is considered as the creation funcid, so the txid param will be compared to the creation tx id.\n"
+        "For the second+ funcids the txid param will be compared to txid in opreturn\n\n" );
+    if (KOMODO_NSPV_FULLNODE)
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+
+    std::string address = params[0].get_str().c_str();
+    int64_t amount = atof(params[1].get_str().c_str());
+    uint8_t evalcode = atoi(params[2].get_str().c_str());
+    std::string funcids = params[3].get_str().c_str();
+    uint256 txid = Parseuint256( params[4].get_str().c_str() );
+    return(NSPV_ccmoduleutxos((char*)address.c_str(), amount, evalcode, funcids, txid));
 }

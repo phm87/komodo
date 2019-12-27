@@ -9,8 +9,6 @@ echo
 for tool in "${tools[@]}"
 do
     echo "$tool location: `which $tool`"
-    echo "$tool version: `$tool --version`"
-    echo
+    echo "$tool version: `$tool --version|grep -i version`"
     echo "-------"
-    echo
 done

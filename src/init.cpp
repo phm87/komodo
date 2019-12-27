@@ -541,7 +541,6 @@ std::string HelpMessage(HelpMessageMode mode)
 
 #ifdef ENABLE_MINING
     strUsage += HelpMessageGroup(_("Mining options:"));
-    strUsage += HelpMessageOpt("-mint", strprintf(_("Mint/stake coins automatically (default: %u)"), 0));
     strUsage += HelpMessageOpt("-gen", strprintf(_("Mine/generate coins (default: %u)"), 0));
     strUsage += HelpMessageOpt("-genproclimit=<n>", strprintf(_("Set the number of threads for coin mining if enabled (-1 = all cores, default: %d)"), 0));
     strUsage += HelpMessageOpt("-equihashsolver=<name>", _("Specify the Equihash solver to be used if enabled (default: \"default\")"));
@@ -602,11 +601,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-ac_reward", _("Block reward in satoshis, default is 0"));
     strUsage += HelpMessageOpt("-ac_sapling", _("Sapling activation block height"));
     strUsage += HelpMessageOpt("-ac_script", _("P2SH/multisig address to receive founders rewards"));
-    strUsage += HelpMessageOpt("-ac_staked", _("Percentage of blocks that are Proof-Of-Stake, default 0"));
     strUsage += HelpMessageOpt("-ac_supply", _("Starting supply, default is 0"));
-    strUsage += HelpMessageOpt("-ac_timelockfrom", _("Timelocked coinbase start height"));
-    strUsage += HelpMessageOpt("-ac_timelockgte",  _("Timelocked coinbase minimum amount to be locked"));
-    strUsage += HelpMessageOpt("-ac_timelockto",   _("Timelocked coinbase stop height"));
     strUsage += HelpMessageOpt("-ac_txpow", _("Enforce transaction-rate limit, default 0"));
 
     return strUsage;
@@ -810,7 +805,7 @@ static void ZC_LoadParams(
     float elapsed;
     bool found = false;
     char cwd[1024];
-    getcwd(cwd, sizeof(cwd));
+    bool ret = getcwd(cwd, sizeof(cwd));
 
     LogPrintf("Looking for sapling params, PWD=%s\n", cwd);
 
@@ -822,7 +817,7 @@ static void ZC_LoadParams(
     boost::filesystem::path sapling_spend  = "sapling-spend.params";
     boost::filesystem::path sapling_output = "sapling-output.params";
     if (files_exist(sapling_spend, sapling_output)) {
-        fprintf(stderr,"Found sapling params in .\n");
+        LogPrintf("Found sapling params in .\n");
         found = true;
     }
 
@@ -831,7 +826,7 @@ static void ZC_LoadParams(
        sapling_spend  = fs::path("/usr/share/hush") / "sapling-spend.params";
        sapling_output = fs::path("/usr/share/hush") / "sapling-output.params";
        if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in /usr/share/hush\n");
+            LogPrintf("Found sapling params in /usr/share/hush\n");
             found=true;
        }
     }
@@ -841,7 +836,7 @@ static void ZC_LoadParams(
         sapling_spend  = boost::filesystem::path("..") / "sapling-spend.params";
         sapling_output = boost::filesystem::path("..") / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in ..\n");
+            LogPrintf("Found sapling params in ..\n");
             found = true;
         }
     }
@@ -851,7 +846,7 @@ static void ZC_LoadParams(
         sapling_spend  = boost::filesystem::path("..") / "hush3" / "sapling-spend.params";
         sapling_output = boost::filesystem::path("..") / "hush3" / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in ../hush3\n");
+            LogPrintf("Found sapling params in ../hush3\n");
             found = true;
         }
     }
@@ -861,7 +856,7 @@ static void ZC_LoadParams(
         sapling_spend  = boost::filesystem::path("/Applications/silentdragon.app/Contents/MacOS") / "sapling-spend.params";
         sapling_output = boost::filesystem::path("/Applications/silentdragon.app/Contents/MacOS") / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in /Applications/Contents/MacOS\n");
+            LogPrintf("Found sapling params in /Applications/Contents/MacOS\n");
             found = true;
         }
     }
@@ -871,7 +866,7 @@ static void ZC_LoadParams(
         sapling_spend  = boost::filesystem::path("./silentdragon.app/Contents/MacOS") / "sapling-spend.params";
         sapling_output = boost::filesystem::path("./silentdragon.app/Contents/MacOS") / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in /Applications/Contents/MacOS\n");
+            LogPrintf("Found sapling params in /Applications/Contents/MacOS\n");
             found = true;
         }
     }
@@ -882,13 +877,14 @@ static void ZC_LoadParams(
         sapling_spend  = ZC_GetParamsDir() / "sapling-spend.params";
         sapling_output = ZC_GetParamsDir() / "sapling-output.params";
         if (files_exist(sapling_spend, sapling_output)) {
-            fprintf(stderr,"Found sapling params in ~/.zcash\n");
+            LogPrintf("Found sapling params in ~/.zcash\n");
             found = true;
         }
     }
 
     if (!found) {
         // No Sapling params, at least we tried
+	    LogPrintf("No Sapling params found! :(\n");
         NoParamsShutdown();
         return;
     }
@@ -896,7 +892,7 @@ static void ZC_LoadParams(
     boost::system::error_code ec1, ec2;
     boost::uintmax_t spend_size  = file_size(sapling_spend, ec1);
     boost::uintmax_t output_size = file_size(sapling_output, ec2);
-    fprintf(stderr,"Sapling spend: %d bytes, output: %d bytes\n", spend_size, output_size);
+    fprintf(stderr,"Sapling spend: %d bytes, output: %d bytes\n", (int)spend_size, (int)output_size);
 
     // We could check sha hashes, but we mostly want to detect on-disk file corruption
     // or people having a full harddrive. Full validation happens in librustzcash_init_zksnark_params
@@ -905,13 +901,13 @@ static void ZC_LoadParams(
     boost::uintmax_t output_valid = 3592860;
     //TODO: passing the exact reason for corruption to GUI
     if (spend_size != spend_valid) {
-        fprintf(stderr,"Sapling spend %d bytes != %d is invalid!\n", spend_size, spend_valid);
+        LogPrintf("Sapling spend %d bytes != %d is invalid!\n", (int)spend_size, (int)spend_valid);
         CorruptParamsShutdown();
         return;
     }
 
     if (output_size != output_valid) {
-        fprintf(stderr,"Sapling ouput %d bytes != %d is invalid!\n", output_size, output_valid);
+        LogPrintf("Sapling ouput %d bytes != %d is invalid!\n", (int)output_size, (int)output_valid);
         CorruptParamsShutdown();
         return;
     }
@@ -1378,6 +1374,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     ECC_Start();
     globalVerifyHandle.reset(new ECCVerifyHandle());
 
+    std::string sha256_algo = SHA256AutoDetect();
+    LogPrintf("Using the '%s' SHA256 implementation\n", sha256_algo);
+
 	//fprintf(stderr,"%s tik10\n", __FUNCTION__);
     // Sanity check
     if (!InitSanityCheck())
@@ -1756,11 +1755,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     boost::filesystem::remove(GetDataDir() / "komodostate");
                     boost::filesystem::remove(GetDataDir() / "signedmasks");
                     pblocktree->WriteReindexing(true);
+					fprintf(stderr, "%s: Deleted komodostate and signedmasks...\n", __FUNCTION__);
+
                     //If we're reindexing in prune mode, wipe away unusable block files and all undo data files
                     if (fPruneMode)
                         CleanupBlockRevFiles();
                 }
 
+				fprintf(stderr, "%s: Loading block index...\n", __FUNCTION__);
                 if (!LoadBlockIndex()) {
                     strLoadError = _("Error loading block database");
                     break;
@@ -1820,14 +1822,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 }
                 if ( KOMODO_REWIND == 0 )
                 {
-                    if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 3),
-                                              GetArg("-checkblocks", 288))) {
+                    LogPrintf("Verifying block DB...");
+                    if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 3), GetArg("-checkblocks", 288))) {
                         strLoadError = _("Corrupted block database detected");
                         break;
                     }
                 }
             } catch (const std::exception& e) {
-                if (fDebug) LogPrintf("%s\n", e.what());
+                LogPrintf("%s: Error opening block database: %s\n", __FUNCTION__, e.what());
                 strLoadError = _("Error opening block database");
                 break;
             }
@@ -1838,7 +1840,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (!fLoaded) {
             // first suggest a reindex
             if (!fReset) {
-			    fprintf(stderr,"%s error in hd data\n", __FUNCTION__);
+			    fprintf(stderr,"%s: error in hd data\n", __FUNCTION__);
                 bool fRet = uiInterface.ThreadSafeMessageBox(
                     strLoadError + ".\n\n" + _("error in HDD data, might just need to update to latest, if that doesnt work, then you need to resync"),
                     "", CClientUIInterface::MSG_ERROR | CClientUIInterface::BTN_ABORT);

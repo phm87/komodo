@@ -28,17 +28,6 @@
 #include "uint256.h"
 #include "arith_uint256.h"
 
-extern int32_t ASSETCHAINS_LWMAPOS;
-
-class CPOSNonce : public uint256
-{
-public:
-    CPOSNonce() : uint256() { }
-    CPOSNonce(const base_blob<256> &b) : uint256(b) { }
-    CPOSNonce(const std::vector<unsigned char> &vch) : uint256(vch) { }
-};
-
-
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
  * requirements.  When they solve the proof-of-work, they broadcast the block
@@ -61,8 +50,7 @@ public:
     uint256 hashFinalSaplingRoot;
     uint32_t nTime;
     uint32_t nBits;
-    CPOSNonce nNonce;
-	//uint256 nNonce;
+    uint256 nNonce;
 
     std::vector<unsigned char> nSolution;
 

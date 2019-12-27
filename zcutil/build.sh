@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2019 The Hush developers
+# Released under the GPLv3
 
 set -eu -o pipefail
 
@@ -9,6 +11,16 @@ function cmd_pref() {
         eval "$1=$3"
     fi
 }
+cat <<'EOF'
+ ________________
+< Building Hush! >
+ ----------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+EOF
 
 # If a g-prefixed version of the command exists, use it preferentially.
 function gprefix() {
@@ -40,20 +52,18 @@ fi
 
 if [ "x$*" = 'x--help' ]
 then
+    cat ./zcutil/dragon.txt
     cat <<EOF
+Welcome To The Hush Build System, Here Be Dragons!
 Usage:
 $0 --help
   Show this help message and exit.
 $0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --enable-proton ] [ --disable-libs ] [ MAKEARGS... ]
-  Build Zcash and most of its transitive dependencies from
-  source. MAKEARGS are applied to both dependencies and Zcash itself.
-  If --enable-lcov is passed, Zcash is configured to add coverage
-  instrumentation, thus enabling "make cov" to work.
-  If --disable-tests is passed instead, the Zcash tests are not built.
-  If --disable-mining is passed, Zcash is configured to not build any mining
-  code. It must be passed after the test arguments, if present.
-  If --enable-proton is passed, Zcash is configured to build the Apache Qpid Proton
-  library required for AMQP support. This library is not built by default.
+  Build Hush and most of its transitive dependencies from source. MAKEARGS are applied to both dependencies and Hush itself.
+  If --enable-lcov is passed, Hush is configured to add coverage instrumentation, thus enabling "make cov" to work.
+  If --disable-tests is passed instead, the Hush tests are not built.
+  If --disable-mining is passed, Hush is configured to not build any mining code. It must be passed after the test arguments, if present.
+  If --enable-proton is passed, Hush is configured to build the Apache Qpid Proton library required for AMQP support. This library is not built by default.
   It must be passed after the test/mining arguments, if present.
 EOF
     exit 0
@@ -92,11 +102,14 @@ then
     shift
 fi
 
-eval "$MAKE" --version
-as --version
+# Just show the useful info
+eval "$MAKE" --version | head -n2
+as --version | head -n1
+as --version | tail -n1
 ld -v
 
 HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
+
 ./autogen.sh
 
 CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" $CONFIGURE_FLAGS CXXFLAGS='-g'

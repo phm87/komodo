@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # Copyright (c) 2018 The Zcash developers
-# Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Copyright (c) 2019-2020 The Hush developers
+# Released under the GPLv3
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
@@ -31,42 +31,6 @@ class WalletSaplingTest(BitcoinTestFramework):
         self.nodes[2].generate(1)
         self.sync_all()
 
-        # Verify RPCs disallow Sapling value transfer if Sapling is not active
-        tmp_taddr = self.nodes[3].getnewaddress()
-        tmp_zaddr = self.nodes[3].z_getnewaddress('sapling')
-        try:
-            recipients = []
-            recipients.append({"address": tmp_zaddr, "amount": Decimal('20')})
-            self.nodes[3].z_sendmany(tmp_taddr, recipients, 1, 0)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
-        try:
-            recipients = []
-            recipients.append({"address": tmp_taddr, "amount": Decimal('20')})
-            self.nodes[3].z_sendmany(tmp_zaddr, recipients, 1, 0)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
-        try:
-            self.nodes[3].z_shieldcoinbase(tmp_taddr, tmp_zaddr)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
-
-        # Verify z_mergetoaddress RPC does not support Sapling yet
-        try:
-            self.nodes[3].z_mergetoaddress([tmp_taddr], tmp_zaddr)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling is not supported yet by z_mergetoadress", e.error['message'])
-        try:
-            self.nodes[3].z_mergetoaddress([tmp_zaddr], tmp_taddr)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling is not supported yet by z_mergetoadress", e.error['message'])
-
-        # Activate Sapling
         self.nodes[2].generate(2)
         self.sync_all()
 
@@ -184,19 +148,6 @@ class WalletSaplingTest(BitcoinTestFramework):
         sk1 = self.nodes[1].z_exportkey(saplingAddr1)
         self.nodes[2].z_importkey(sk1, "yes")
         assert_equal(self.nodes[2].z_getbalance(saplingAddr1), Decimal('5'))
-
-        # Make sure we get a useful error when trying to send to both sprout and sapling
-        node4_sproutaddr = self.nodes[3].z_getnewaddress('sprout')
-        node4_saplingaddr = self.nodes[3].z_getnewaddress('sapling')
-        try:
-            self.nodes[1].z_sendmany(
-                taddr1,
-                [{'address': node4_sproutaddr, 'amount': 2.5}, {'address': node4_saplingaddr, 'amount': 2.4999}],
-                1, 0.0001
-            )
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Cannot send to both Sprout and Sapling addresses using z_sendmany", e.error['message'])
 
 if __name__ == '__main__':
     WalletSaplingTest().main()

@@ -6,6 +6,10 @@ Do not expect all scripts to work!
 
 Please fix bugs and report things you find.
 
+## Hush Tools
+
+checkpoints.pl - generate checkpoint data for main.cpp
+block\_time.pl - estimate when a Hush block will happen
 
 ## Wallet Tools
 

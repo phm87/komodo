@@ -50,8 +50,11 @@
 #define NUM_KMD_SEASONS 4
 #define NUM_KMD_NOTARIES 64
 
-// Approximately mid-day Jan 21 EST
-const uint32_t nHushHardforkHeight = 162000;
+// $ ./contrib/block_time.pl 166250
+// Hush Block 166250 will happen at roughly:
+// Wed Jan 29 08:14:12 2020 Eastern # 1580303652
+// Wed Jan 29 13:14:12 2020 GMT     # 1580303652
+const uint32_t nHushHardforkHeight = 166250;
 
 // No coins/code are currently using timestamp activated fork
 const uint32_t nHushHardforkTimestamp = 1579680124; // Jan 22nd 8am UTC

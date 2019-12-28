@@ -964,10 +964,6 @@ void CWallet::ClearNoteWitnessCache()
 {
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-        for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
-            item.second.witnesses.clear();
-            item.second.witnessHeight = -1;
-        }
         for (mapSaplingNoteData_t::value_type& item : wtxItem.second.mapSaplingNoteData) {
             item.second.witnesses.clear();
             item.second.witnessHeight = -1;

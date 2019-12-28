@@ -37,6 +37,7 @@
 #include "script/script_error.h"
 #include "script/sign.h"
 #include "script/standard.h"
+#include "wallet/wallet.h"
 
 #include <stdint.h>
 
@@ -1994,6 +1995,11 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
         ret.pushKV("fully_shielded_payments", (int64_t)pindex->nChainFullyShieldedPayments);
         ret.pushKV("deshielding_payments", (int64_t)pindex->nChainDeshieldingPayments);
         ret.pushKV("shielding_payments", (int64_t)pindex->nChainShieldingPayments);
+
+        int64_t nullifierCount = pwalletMain->NullifierCount();
+        //TODO: we actually need to have zindex keep track of total number of zouts, including change
+        // Currently zpayments does not include change and will underestimate actual zpool size
+        ret.pushKV("shielded_pool_size", (int64_t)pindex->nChainShieldedPayments - nullifierCount);
     }
 
     if (blockcount > 0) {

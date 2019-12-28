@@ -796,6 +796,8 @@ public:
 
     void ClearNoteWitnessCache();
 
+    int64_t NullifierCount();
+
 protected:
     /**
      * pindex is the new tip being connected.

@@ -960,6 +960,12 @@ void CWallet::AddToSpends(const uint256& wtxid)
     }
 }
 
+int64_t CWallet::NullifierCount()
+{
+    LOCK(cs_wallet);
+    return mapTxSaplingNullifiers.size();
+}
+
 void CWallet::ClearNoteWitnessCache()
 {
     LOCK(cs_wallet);

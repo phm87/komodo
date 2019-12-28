@@ -4428,6 +4428,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // This logic will need to be updated if we add a new shielded pool
     bool fromSprout = !(fromTaddr || fromSapling);
 
+    if (fromSprout)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot send from a Sprout zaddr, only Sapling zaddrs supported.");
+
     UniValue outputs = params[1].get_array();
 
     if (outputs.size()==0)
@@ -4533,17 +4536,39 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
         nTotalOut += nAmount;
     }
-	// Byrsa: Add some magic privacy zdust
-	unsigned int MIN_ZOUTS=7;
+   // SIETCH: Sprinkle our cave with some magic privacy zdust
+   // End goal is to have this be as large as possible without slowing xtns down too much
+   // A value of 7 will provide much stronger linkability privacy versus pre-Sietch operations
+   // We should also give RPC interface a way to specify MIN_ZOUTS
+	unsigned int MIN_ZOUTS=2;
 	while (zaddrRecipients.size() < MIN_ZOUTS) {
+        // OK, we identify this xtn as needing privacy zdust, we must decide how much, non-deterministically
 		int nAmount = 0;
+        int decider = 1 + GetRandInt(100); // random int between 1 and 100
 		string memo = "f600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
 		// TODO: options for address: hardcoded or randomized, unspendable or valid
 		// We will send various amount=0 to this wallet if our amount of zdust
 		// is below threshold, otherwise to unspendable or fixed out-of-wallet zaddrs
-		string address = "zs1aq4xnrkjlnxx0zesqye7jz3dfrf3rjh7q5z6u8l6mwyqqaam3gx3j2fkqakp33v93yavq46j83q"; // duke donation zaddr
+        string address;
+
+        // Which zaddr we send to is randomly chosen...
+        if (decider % 2) {
+		    address = "zs1jwme0lrt2egh2z9vqtnm69kd7spklmuqjae4nass0ew68l0nn7rqduy7ajq0dhl48n2e6hq8gsx";
+        } else {
+            address = "zs15nd94xku908yeml6q6hfsfdv0fjcv82p5d5r0yga4k0l2z4mw2dgadlg9cgsqjvcv94us4vpezp";
+        }
+
 	    zaddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
+        fprintf(stderr,"%s: adding %s as zdust receiver\n");
+
+        // 25% chance of adding another zout
+        if (decider % 4 == 3) {
+            address = "zs1uchnxajsmn70gsptkthxcytqsr89rsle6rq66sp3gnn2cqdt8lpq97dv98plhv3vjmrp2zkr8da";
+            zaddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
+            fprintf(stderr,"%s: adding %s as zdust receiver\n");
+        }
+
 	}
 
     int nextBlockHeight = chainActive.Height() + 1;

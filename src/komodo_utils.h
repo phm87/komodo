@@ -1,3 +1,4 @@
+// Copyright (c) 2019 The Hush developers
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
@@ -29,8 +30,6 @@
 #define portable_mutex_init(ptr) pthread_mutex_init(ptr,NULL)
 #define portable_mutex_lock pthread_mutex_lock
 #define portable_mutex_unlock pthread_mutex_unlock
-
-extern void verus_hash(void *result, const void *data, size_t len);
 
 struct allocitem { uint32_t allocsize,type; };
 struct queueitem { struct queueitem *next,*prev; uint32_t allocsize,type;  };
@@ -1026,45 +1025,24 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 // from all other blocks. the sequence is extremely likely, but not guaranteed to be unique for each block chain
 uint64_t komodo_block_prg(uint32_t nHeight)
 {
-    if (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || nHeight >= 12800)
+    int i;
+    uint8_t hashSrc[8];
+    uint64_t result=0, hashSrc64 = (uint64_t)ASSETCHAINS_MAGIC << 32 + nHeight;
+    bits256 hashResult;
+
+    for ( i = 0; i < sizeof(hashSrc); i++ )
     {
-        uint64_t i, result = 0, hashSrc64 = ((uint64_t)ASSETCHAINS_MAGIC << 32) | (uint64_t)nHeight;
-        uint8_t hashSrc[8];
-        bits256 hashResult;
-
-        for ( i = 0; i < sizeof(hashSrc); i++ )
-        {
-            uint64_t x = hashSrc64 >> (i * 8);
-            hashSrc[i] = (uint8_t)(x & 0xff);
-        }
-        verus_hash(hashResult.bytes, hashSrc, sizeof(hashSrc));
-        for ( i = 0; i < 8; i++ )
-        {
-            result = (result << 8) | hashResult.bytes[i];
-        }
-        return result;
+        hashSrc[i] = hashSrc64 & 0xff;
+        hashSrc64 >>= 8;
+        int8_t b = hashSrc[i];
     }
-    else
+
+    vcalc_sha256(0, hashResult.bytes, hashSrc, sizeof(hashSrc));
+    for ( i = 0; i < 8; i++ )
     {
-        int i;
-        uint8_t hashSrc[8];
-        uint64_t result=0, hashSrc64 = (uint64_t)ASSETCHAINS_MAGIC << 32 + nHeight;
-        bits256 hashResult;
-
-        for ( i = 0; i < sizeof(hashSrc); i++ )
-        {
-            hashSrc[i] = hashSrc64 & 0xff;
-            hashSrc64 >>= 8;
-            int8_t b = hashSrc[i];
-        }
-
-        vcalc_sha256(0, hashResult.bytes, hashSrc, sizeof(hashSrc));
-        for ( i = 0; i < 8; i++ )
-        {
-            result = (result << 8) + hashResult.bytes[i];
-        }
-        return result;
+        result = (result << 8) + hashResult.bytes[i];
     }
+    return result;
 }
 
 // given a block height, this returns the unlock time for that block height, derived from
@@ -1078,19 +1056,11 @@ int64_t komodo_block_unlocktime(uint32_t nHeight)
         unlocktime = ASSETCHAINS_TIMEUNLOCKTO;
     else
     {
-        if (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || nHeight >= 12800)
-        {
-            unlocktime = komodo_block_prg(nHeight) % (ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM);
-            unlocktime += ASSETCHAINS_TIMEUNLOCKFROM;
-        }
-        else
-        {
-            unlocktime = komodo_block_prg(nHeight) / (0xffffffffffffffff / ((ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM) + 1));
-            // boundary and power of 2 can make it exceed to time by 1
-            unlocktime = unlocktime + ASSETCHAINS_TIMEUNLOCKFROM;
-            if (unlocktime > ASSETCHAINS_TIMEUNLOCKTO)
-                unlocktime--;
-        }
+        unlocktime = komodo_block_prg(nHeight) / (0xffffffffffffffff / ((ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM) + 1));
+        // boundary and power of 2 can make it exceed to time by 1
+        unlocktime = unlocktime + ASSETCHAINS_TIMEUNLOCKFROM;
+        if (unlocktime > ASSETCHAINS_TIMEUNLOCKTO)
+            unlocktime--;
     }
     return ((int64_t)unlocktime);
 }
@@ -1876,7 +1846,6 @@ void komodo_args(char *argv0)
         ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
         ASSETCHAINS_BEAMPORT = GetArg("-ac_beam",0);
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
-        ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
         ASSETCHAINS_CBOPRET = GetArg("-ac_cbopret",0);
         ASSETCHAINS_CBMATURITY = GetArg("-ac_cbmaturity",0);
         ASSETCHAINS_ADAPTIVEPOW = GetArg("-ac_adaptivepow",0);
@@ -1995,15 +1964,6 @@ void komodo_args(char *argv0)
         }
         
 
-        if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
-            ASSETCHAINS_STAKED = 100;
-
-        // for now, we only support 50% PoS due to other parts of the algorithm needing adjustment for
-        // other values
-        if ( (ASSETCHAINS_LWMAPOS = GetArg("-ac_veruspos",0)) != 0 )
-        {
-            ASSETCHAINS_LWMAPOS = 50;
-        }
         ASSETCHAINS_SAPLING = GetArg("-ac_sapling", -1);
         if (ASSETCHAINS_SAPLING == -1)
         {
@@ -2061,11 +2021,7 @@ void komodo_args(char *argv0)
                 printf("ASSETCHAINS_FOUNDERS needs an ASSETCHAINS_OVERRIDE_PUBKEY or ASSETCHAINS_SCRIPTPUB\n");
             }
         }
-        if ( ASSETCHAINS_SCRIPTPUB.size() > 1 && ASSETCHAINS_MARMARA != 0 )
-        {
-            fprintf(stderr,"-ac_script and -ac_marmara are mutually exclusive\n");
-            StartShutdown();
-        }
+
         if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 || ASSETCHAINS_MARMARA != 0 || nonz > 0 || ASSETCHAINS_CCLIB.size() > 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 || ASSETCHAINS_NOTARY_PAY[0] != 0 || ASSETCHAINS_BLOCKTIME != 60 || ASSETCHAINS_CBOPRET != 0 || Mineropret.size() != 0 || (ASSETCHAINS_NK[0] != 0 && ASSETCHAINS_NK[1] != 0) || KOMODO_SNAPSHOT_INTERVAL != 0 || ASSETCHAINS_EARLYTXIDCONTRACT != 0 || ASSETCHAINS_CBMATURITY != 0 || ASSETCHAINS_ADAPTIVEPOW != 0 )
         {
             fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...] acsize.%d\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2],(int32_t)ASSETCHAINS_SCRIPTPUB.size());
@@ -2357,18 +2313,7 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
     {
         BITCOIND_RPCPORT = GetArg("-rpcport", ASSETCHAINS_RPCPORT);
         //fprintf(stderr,"(%s) port.%u chain params initialized\n",ASSETCHAINS_SYMBOL,BITCOIND_RPCPORT);
-        if ( strcmp("PIRATE",ASSETCHAINS_SYMBOL) == 0 && ASSETCHAINS_HALVING[0] == 77777 )
-        {
-            ASSETCHAINS_HALVING[0] *= 5;
-            fprintf(stderr,"PIRATE halving changed to %d %.1f days ASSETCHAINS_LASTERA.%llu\n",(int32_t)ASSETCHAINS_HALVING[0],(double)ASSETCHAINS_HALVING[0]/1440,(long long)ASSETCHAINS_LASTERA);
-        }
-        else if ( strcmp("VRSC",ASSETCHAINS_SYMBOL) == 0 )
-            dpowconfs = 0;
-        else if ( ASSETCHAINS_PRIVATE != 0 )
-        {
-            fprintf(stderr,"-ac_private for a non-PIRATE chain is not supported. The only reason to have an -ac_private chain is for total privacy and that is best achieved with the largest anon set. PIRATE has that and it is recommended to just use PIRATE\n");
-            StartShutdown();
-        }
+
         // Set cc enables for all existing ac_cc chains here. 
         if ( strcmp("AXO",ASSETCHAINS_SYMBOL) == 0 )
         {

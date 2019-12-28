@@ -1,3 +1,5 @@
+// Copyright 2019 The Hush Developers
+
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
@@ -17,8 +19,8 @@
 
 #include <curl/curl.h>
 #include <curl/easy.h>
-#include "primitives/nonce.h"
 #include "consensus/params.h"
+#include "primitives/nonce.h"
 #include "komodo_defs.h"
 #include "script/standard.h"
 #include "cc/CCinclude.h"
@@ -26,13 +28,12 @@
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
 int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp);
-unsigned int lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 bool EnsureWalletIsAvailable(bool avoidException);
 extern bool fRequestShutdown;
 extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
 
-int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew);
 uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht);
+uint32_t komodo_heightstamp(int32_t height);
 
 //#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7776",0,0,(char *)(cmdstr))
 
@@ -261,7 +262,7 @@ try_again:
         }
         else if ( numretries >= 1 )
         {
-            fprintf(stderr,"Maximum number of retries exceeded!\n");
+            fprintf(stderr,"%s: Maximum number of retries exceeded!\n", __FUNCTION__);
             free(s.ptr);
             return(0);
         }
@@ -543,6 +544,18 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     return(retval);
 }
 
+CScript komodo_makeopret(CBlock *pblock, bool fNew)
+{
+    std::vector<uint256> vLeaves;
+    vLeaves.push_back(pblock->hashPrevBlock); 
+    for (int32_t i = 0; i < pblock->vtx.size()-(fNew ? 0 : 1); i++)
+        vLeaves.push_back(pblock->vtx[i].GetHash());
+    uint256 merkleroot = GetMerkleRoot(vLeaves);
+    CScript opret;
+    opret << OP_RETURN << E_MARSHAL(ss << merkleroot);
+    return(opret);
+}
+
 /*uint256 komodo_getblockhash(int32_t height)
  {
  uint256 hash; char params[128],*hexstr,*jsonstr; cJSON *result; int32_t i; uint8_t revbuf[32];
@@ -680,66 +693,28 @@ int32_t komodo_WhoStaked(CBlock *pblock, CTxDestination &addressout)
     return(0);
 }
 
-bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx);
-
-int32_t komodo_isPoS2(CBlock *pblock)
+bool komodo_checkopret(CBlock *pblock, CScript &merkleroot)
 {
-    CBlockIndex *pindex = komodo_blockindex(pblock->GetHash());
-    if ( pindex != 0 && pindex->segid >= -1 )
-    {
-        //fprintf(stderr,"isPoSblock segid.%d\n",pindex->segid);
-        if ( pindex->segid == -1 )
-            return(0);
-        else return(1);
+    merkleroot = pblock->vtx.back().vout.back().scriptPubKey;
+    return(merkleroot.IsOpReturn() && merkleroot == komodo_makeopret(pblock, false));
+}
+
+
+extern const uint32_t nHushHardforkHeight;
+
+bool hush_hardfork_active(uint32_t time)
+{
+    //This allows simulating a different height via CLI option, with hardcoded height as default
+    uint32_t nHardForkHeight = GetArg("-hardfork-height", nHushHardforkHeight);
+    bool isactive = chainActive.Height() > nHardForkHeight;
+    if(fDebug) {
+        fprintf(stderr, "%s: active=%d at height=%d and forkheight=%d\n", __FUNCTION__, (int)isactive, chainActive.Height(), nHardForkHeight);
     }
-    return (-1);
+    return isactive;
 }
 
 int32_t komodo_isPoS(CBlock *pblock,int32_t height,bool fJustCheck)
 {
-    int32_t n,vout,numvouts,ret; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid; CScript opret;
-    if ( ASSETCHAINS_STAKED != 0 )
-    {
-        if ( fJustCheck )
-        {
-            // check pindex first, if that does not work, continue with slow check.
-            if ( (ret= komodo_isPoS2(pblock)) == 1 )
-                return (1);
-            else if ( ret == 0 )
-                return (0);
-        }
-        n = pblock->vtx.size();
-        //fprintf(stderr,"ht.%d check for PoS numtx.%d numvins.%d numvouts.%d\n",height,n,(int32_t)pblock->vtx[n-1].vin.size(),(int32_t)pblock->vtx[n-1].vout.size());
-        if ( n > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1+(ASSETCHAINS_MARMARA!=0) )
-        {
-            txid = pblock->vtx[n-1].vin[0].prevout.hash;
-            vout = pblock->vtx[n-1].vin[0].prevout.n;
-            txtime = komodo_txtime(opret,&value,txid,vout,destaddr);
-            if ( ExtractDestination(pblock->vtx[n-1].vout[0].scriptPubKey,voutaddress) )
-            {
-                strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
-                //fprintf(stderr,"voutaddr.%s vs destaddr.%s\n",voutaddr,destaddr);
-                if ( pblock->vtx[n-1].vout[0].nValue == value && strcmp(destaddr,voutaddr) == 0 )
-                {
-                    if ( ASSETCHAINS_MARMARA == 0 )
-                        return(1);
-                    else
-                    {
-                        if ( pblock->vtx[n-1].vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 && (numvouts= pblock->vtx[n-1].vout.size()) == 2 )
-                        {
-//fprintf(stderr,"validate proper %s %s signature and unlockht preservation\n",voutaddr,destaddr);
-                            return(MarmaraPoScheck(destaddr,opret,pblock->vtx[n-1]));
-                        }
-                        else
-                        {
-                            fprintf(stderr,"reject ht.%d PoS block\n",height);
-                            return(strcmp(ASSETCHAINS_SYMBOL,"MTST2") == 0); // allow until MTST3
-                        }
-                    }
-                }
-            }
-        }
-    }
     return(0);
 }
 
@@ -966,6 +941,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,uint32_t blocktimes[66],int32_t *nonzpkeysp,int32_t height)
 {
+    // after the season HF block ALL new notaries instantly become elegible. 
     int32_t i,j,n,duplicate; CBlock block; CBlockIndex *pindex; uint8_t notarypubs33[64][33];
     memset(mids,-1,sizeof(*mids)*66);
     n = komodo_notaries(notarypubs33,height,0);
@@ -1222,6 +1198,7 @@ int32_t komodo_isrealtime(int32_t *kmdheightp)
 
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t cmptime,int32_t dispflag)
 {
+    dispflag = 1;
     if ( KOMODO_REWIND == 0 && ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD ) //1473793441 )
     {
         if ( txheight > 246748 )
@@ -1481,11 +1458,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     }
     if ( m+n < 100 )
     {
-        // We do actual PoS % at the start. Requires coin distribution in first 10 blocks! 
-        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
-            percPoS = (percPoS*100) / (m+n); 
-        else
-            percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;            
+		percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;            
     } 
     if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
         fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
@@ -1583,24 +1556,6 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( blocktime+iter+segid*2 < txtime+minage )
             continue;
         diff = (iter + blocktime - txtime - minage);
-        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
-        {
-            /*if ( PoSperc < ASSETCHAINS_STAKED )
-            {
-                // Under PoS % target and we need to increase diff.
-                //fprintf(stderr, "PoS too low diff.%i changed to.",diff);
-                diff = diff * ( (ASSETCHAINS_STAKED - PoSperc + 1) * (ASSETCHAINS_STAKED - PoSperc + 1) * ( nHeight < 50 ? 1000 : 1));
-                //fprintf(stderr, "%i \n",diff);
-            }
-            else */ 
-            if ( PoSperc > ASSETCHAINS_STAKED )
-            {
-                // Over PoS target need to lower diff.
-                //fprintf(stderr, "PoS too high diff.%i changed to.",diff);
-                diff = diff / ( (PoSperc - ASSETCHAINS_STAKED + 1) * (PoSperc - ASSETCHAINS_STAKED + 1) );
-                //fprintf(stderr, "%i \n",diff);
-            }
-        }
         if ( diff < 0 )
             diff = 60;
         else if ( diff > 3600*24*30 )
@@ -1611,17 +1566,6 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( iter > 0 )
             diff += segid*2;
         coinage = (value * diff);
-        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
-        {
-            if ( PoSperc < ASSETCHAINS_STAKED )
-            {
-                // Under PoS % target and we need to increase diff.
-                //fprintf(stderr, "PoS too low diff.%i changed to.",diff);
-                if ( blocktime+iter+segid*2 > prevtime+128 )
-                    coinage *= ((blocktime+iter+segid*2) - (prevtime+102));
-                //fprintf(stderr, "%i \n",diff);
-            }   
-        }
         if ( blocktime+iter+segid*2 > prevtime+480 )
             coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
         coinage256 = arith_uint256(coinage+1);
@@ -1752,181 +1696,6 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
 bool GetStakeParams(const CTransaction &stakeTx, CStakeParams &stakeParams);
 bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTransaction &stakeTx, bool &cheating);
 
-// for now, we will ignore slowFlag in the interest of keeping success/fail simpler for security purposes
-bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
-{
-    CBlockIndex *pastBlockIndex;
-    uint256 txid, blkHash;
-    int32_t txn_count;
-    uint32_t voutNum;
-    CAmount value;
-    bool isPOS = false;
-    CTxDestination voutaddress, destaddress, cbaddress;
-    arith_uint256 target, hash;
-    CTransaction tx;
-
-    if (!pblock->IsVerusPOSBlock())
-    {
-        printf("%s, height %d not POS block\n", pblock->nNonce.GetHex().c_str(), height);
-        //pblock->nNonce.SetPOSTarget(pblock->nNonce.GetPOSTarget());
-        //printf("%s after setting POS target\n", pblock->nNonce.GetHex().c_str());
-        return false;
-    }
-
-    char voutaddr[64], destaddr[64], cbaddr[64];
-
-    txn_count = pblock->vtx.size();
-
-    if ( txn_count > 1 )
-    {
-        target.SetCompact(pblock->GetVerusPOSTarget());
-        txid = pblock->vtx[txn_count-1].vin[0].prevout.hash;
-        voutNum = pblock->vtx[txn_count-1].vin[0].prevout.n;
-        value = pblock->vtx[txn_count-1].vout[0].nValue;
-
-        {
-            bool validHash = (value != 0);
-            bool enablePOSNonce = CPOSNonce::NewPOSActive(height);
-            uint256 rawHash;
-            arith_uint256 posHash;
-
-            if (validHash && enablePOSNonce)
-            {
-                validHash = pblock->GetRawVerusPOSHash(rawHash, height);
-                posHash = UintToArith256(rawHash) / value;
-                if (!validHash || posHash > target)
-                {
-                    validHash = false;
-                    printf("ERROR: invalid nonce value for PoS block\nnNonce: %s\nrawHash: %s\nposHash: %s\nvalue: %lu\n",
-                            pblock->nNonce.GetHex().c_str(), rawHash.GetHex().c_str(), posHash.GetHex().c_str(), value);
-                }
-            }
-            if (validHash)
-            {
-                if (slowflag == 0)
-                {
-                    isPOS = true;
-                }
-                else if (!(pastBlockIndex = komodo_chainactive(height - 100)))
-                {
-                    fprintf(stderr,"ERROR: chain not fully loaded or invalid PoS block %s - no past block found\n",blkHash.ToString().c_str());
-                }
-                else
-#ifndef KOMODO_ZCASH
-                if (!GetTransaction(txid, tx, Params().GetConsensus(), blkHash, true))
-#else
-                if (!GetTransaction(txid, tx, blkHash, true))
-#endif
-                {
-                    fprintf(stderr,"ERROR: invalid PoS block %s - no source transaction\n",blkHash.ToString().c_str());
-                }
-                else
-                {
-                    CBlockHeader bh = pastBlockIndex->GetBlockHeader();
-                    uint256 pastHash = bh.GetVerusEntropyHash(height - 100);
-
-                    // if height is over when Nonce is required to be the new format, we check that the new format is correct
-                    // if over when we have the new POS hash function, we validate that as well
-                    // they are 100 blocks apart
-                    CPOSNonce nonce = pblock->nNonce;
-
-                    //printf("before nNonce: %s, height: %d\n", pblock->nNonce.GetHex().c_str(), height);
-                    //validHash = pblock->GetRawVerusPOSHash(rawHash, height);
-                    //hash = UintToArith256(rawHash) / tx.vout[voutNum].nValue;
-                    //printf("Raw POShash:   %s\n", hash.GetHex().c_str());
-
-                    hash = UintToArith256(tx.GetVerusPOSHash(&nonce, voutNum, height, pastHash));
-
-                    //printf("after nNonce:  %s, height: %d\n", nonce.GetHex().c_str(), height);
-                    //printf("POShash:       %s\n\n", hash.GetHex().c_str());
-
-                    if (posHash == hash && hash <= target)
-                    {
-                        BlockMap::const_iterator it = mapBlockIndex.find(blkHash);
-                        if ((it == mapBlockIndex.end()) ||
-                            !(pastBlockIndex = it->second) ||
-                            (height - pastBlockIndex->GetHeight()) < VERUS_MIN_STAKEAGE)
-                        {
-                            fprintf(stderr,"ERROR: invalid PoS block %s - stake source too new or not found\n",blkHash.ToString().c_str());
-                        }
-                        else
-                        {
-                            // make sure we have the right target
-                            CBlockIndex *previndex;
-                            it = mapBlockIndex.find(pblock->hashPrevBlock);
-                            if (it == mapBlockIndex.end() || !(previndex = it->second))
-                            {
-                                fprintf(stderr,"ERROR: invalid PoS block %s - no prev block found\n",blkHash.ToString().c_str());
-                            }
-                            else
-                            {
-                                arith_uint256 cTarget;
-                                uint32_t nBits = lwmaGetNextPOSRequired(previndex, Params().GetConsensus());
-                                cTarget.SetCompact(nBits);
-                                bool nonceOK = true;
-
-                                // check to see how many fail
-                                //if (nonce != pblock->nNonce)
-                                //    printf("Mismatched nNonce: %s\nblkHash: %s, height: %d\n", nonce.GetHex().c_str(), pblock->GetHash().GetHex().c_str(), height);
-
-                                if (CPOSNonce::NewNonceActive(height) && !nonce.CheckPOSEntropy(pastHash, txid, voutNum))
-                                {
-                                    fprintf(stderr,"ERROR: invalid PoS block %s - nonce entropy corrupted or forged\n",blkHash.ToString().c_str());
-                                    nonceOK = false;
-                                }
-                                else
-                                {
-                                    if (cTarget != target)
-                                    {
-                                        fprintf(stderr,"ERROR: invalid PoS block %s - invalid diff target\n",blkHash.ToString().c_str());
-                                        nonceOK = false;
-                                    }
-                                }
-                                if ( nonceOK && ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey, voutaddress) &&
-                                        ExtractDestination(tx.vout[voutNum].scriptPubKey, destaddress) )
-                                {
-                                    strcpy(voutaddr, CBitcoinAddress(voutaddress).ToString().c_str());
-                                    strcpy(destaddr, CBitcoinAddress(destaddress).ToString().c_str());
-                                    if ( !strcmp(destaddr,voutaddr) )
-                                    {
-                                        isPOS = true;
-                                        CTransaction &cbtx = pblock->vtx[0];
-                                        for (int i = 0; i < cbtx.vout.size(); i++)
-                                        {
-                                            if (CScriptExt::ExtractVoutDestination(cbtx, i, cbaddress))
-                                            {
-                                                strcpy(cbaddr, CBitcoinAddress(cbaddress).ToString().c_str());
-                                                if (!strcmp(destaddr,cbaddr))
-                                                    continue;
-                                            }
-                                            else
-                                            {
-                                                if (cbtx.vout[i].scriptPubKey.IsOpReturn())
-                                                    continue;
-                                                isPOS = false;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        fprintf(stderr,"ERROR: invalid PoS block %s - invalid stake or coinbase destination\n",blkHash.ToString().c_str());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        printf("ERROR: malformed nonce value for PoS block\nnNonce: %s\nrawHash: %s\nposHash: %s\nvalue: %lu\n",
-                            pblock->nNonce.GetHex().c_str(), rawHash.GetHex().c_str(), posHash.GetHex().c_str(), value);
-                    }
-                }
-            }
-        }
-    }
-    return(isPOS);
-}
 
 uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
 {
@@ -2261,7 +2030,7 @@ bool KOMODO_TEST_ASSETCHAIN_SKIP_POW = 0;
 
 int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 {
-    uint256 hash; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,scriptlen,possible,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value; CBlockIndex *pprev;
+    uint256 hash,merkleroot; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,scriptlen,possible,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value; CBlockIndex *pprev;
     if ( KOMODO_TEST_ASSETCHAIN_SKIP_POW == 0 && Params().NetworkIDString() == "regtest" )
         KOMODO_TEST_ASSETCHAIN_SKIP_POW = 1;
     if ( !CheckEquihashSolution(pblock, Params()) )
@@ -2290,11 +2059,6 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     //    bnTarget = komodo_adaptivepow_target(height,bnTarget,pblock->nTime);
     if ( ASSETCHAINS_LWMAPOS != 0 && bhash > bnTarget )
     {
-        // if proof of stake is active, check if this is a valid PoS block before we fail
-        if (verusCheckPOSBlock(slowflag, pblock, height))
-        {
-            return(0);
-        }
     }
     if ( (ASSETCHAINS_SYMBOL[0] != 0 || height > 792000) && bhash > bnTarget )
     {
@@ -2396,10 +2160,10 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     // the default daemon miner, checks the actual vins so the only way this will fail, is if someone changes the miner, 
     // and then creates txs to the crypto address meeting min sigs and puts it in tx position 1.
     // If they go through this effort, the block will still fail at connect block, and will be auto purged by the temp file fix.   
-    if ( failed == 0 && ASSETCHAINS_NOTARY_PAY[0] != 0 && pblock->vtx[0].vout.size() > 1 )
+    if ( failed == 0 && ASSETCHAINS_NOTARY_PAY[0] != 0 && pblock->vtx.size() > 1 )
     {
         // We check the full validation in ConnectBlock directly to get the amount for coinbase. So just approx here.
-        if ( slowflag == 0 )
+        if ( slowflag == 0 && pblock->vtx[0].vout.size() > 1 )
         {
             // Check the notarisation tx is to the crypto address.
             if ( !komodo_is_notarytx(pblock->vtx[1]) == 1 )
@@ -2559,194 +2323,4 @@ struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numk
     kp->nValue = nValue;
     kp->scriptPubKey = pk;
     return(array);
-}
-
-int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
-{
-    static struct komodo_staking *array; static int32_t numkp,maxkp; static uint32_t lasttime;
-    int32_t PoSperc;
-    set<CBitcoinAddress> setAddress; struct komodo_staking *kp; int32_t winners,segid,minage,nHeight,counter=0,i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t block_from_future_rejecttime,besttime,eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 mindiff,ratio,bnTarget,tmpTarget; CBlockIndex *tipindex,*pindex; CTxDestination address; bool fNegative,fOverflow; uint8_t hashbuf[256]; CTransaction tx; uint256 hashBlock;
-    if (!EnsureWalletIsAvailable(0))
-        return 0;
-    
-    bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
-    assert(pwalletMain != NULL);
-    *utxovaluep = 0;
-    memset(utxotxidp,0,sizeof(*utxotxidp));
-    memset(utxovoutp,0,sizeof(*utxovoutp));
-    memset(utxosig,0,72);
-    if ( (tipindex= chainActive.Tip()) == 0 )
-        return(0);
-    nHeight = tipindex->GetHeight() + 1;
-    // Get the PoS% so we can pass it to komodo_stake, this is to adjust PoS dofficulty when it is under the target %!
-    tmpTarget = komodo_PoWtarget(&PoSperc,bnTarget,nHeight,ASSETCHAINS_STAKED);
-    if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
-        minage = 6000;
-    komodo_segids(hashbuf,nHeight-101,100);
-    if ( *blocktimep < tipindex->nTime+60)
-        *blocktimep = tipindex->nTime+60;
-
-    bool resetstaker = false;
-    if ( array != 0 )
-    {
-        CBlockIndex* pblockindex = chainActive[tipindex->GetHeight()];
-        CBlock block; CTxDestination addressout;
-        if ( ASSETCHAINS_MARMARA != 0 )
-            resetstaker = true;
-        else if( ReadBlockFromDisk(block, pblockindex, 1) && komodo_WhoStaked(&block, addressout) != 0 && IsMine(*pwalletMain,addressout) != 0 )
-        {
-              resetstaker = true;
-              fprintf(stderr, "Reset ram staker after mining a block!\n");
-        }
-    }
-
-    if ( resetstaker || array == 0 || time(NULL) > lasttime+600 )
-    {
-        LOCK2(cs_main, pwalletMain->cs_wallet);
-        pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-        if ( array != 0 )
-        {
-            free(array);
-            array = 0;
-            maxkp = numkp = 0;
-            lasttime = 0;
-        }
-        if ( ASSETCHAINS_MARMARA == 0 )
-        {
-            BOOST_FOREACH(const COutput& out, vecOutputs)
-            {
-                if ( (tipindex= chainActive.Tip()) == 0 || tipindex->GetHeight()+1 > nHeight )
-                {
-                    fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
-                    return(0);
-                }
-                counter++;
-                if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
-                {
-                    //fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
-                    continue;
-                }
-                CAmount nValue = out.tx->vout[out.i].nValue;
-                if ( nValue < COIN  || !out.fSpendable )
-                    continue;
-                const CScript& pk = out.tx->vout[out.i].scriptPubKey;
-                if ( ExtractDestination(pk,address) != 0 )
-                {
-                    if ( IsMine(*pwalletMain,address) == 0 )
-                        continue;
-                    if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 )
-                    {
-                        array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,out.tx->GetHash(),out.i,(char *)CBitcoinAddress(address).ToString().c_str(),hashbuf,(CScript)pk);
-                        //fprintf(stderr,"addutxo numkp.%d vs max.%d\n",numkp,maxkp);
-                    }
-                }
-            }
-        }
-        else
-        {
-            struct CCcontract_info *cp,C; uint256 txid; int32_t vout,ht,unlockht; CAmount nValue; char coinaddr[64]; CPubKey mypk,Marmarapk,pk;
-            std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-            cp = CCinit(&C,EVAL_MARMARA);
-            mypk = pubkey2pk(Mypubkey());
-            Marmarapk = GetUnspendable(cp,0);
-            GetCCaddress1of2(cp,coinaddr,Marmarapk,mypk);
-            SetCCunspents(unspentOutputs,coinaddr,true);
-            for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
-            {
-                txid = it->first.txhash;
-                vout = (int32_t)it->first.index;
-                if ( (nValue= it->second.satoshis) < COIN )
-                    continue;
-                if ( GetTransaction(txid,tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
-                {
-                    const CScript &scriptPubKey = tx.vout[vout].scriptPubKey;
-                    if ( DecodeMaramaraCoinbaseOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,pk,ht,unlockht) != 0 && pk == mypk )
-                    {
-                        array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,txid,vout,coinaddr,hashbuf,(CScript)scriptPubKey);
-                    }
-                    // else fprintf(stderr,"SKIP addutxo %.8f numkp.%d vs max.%d\n",(double)nValue/COIN,numkp,maxkp);
-                }
-            }
-        }
-        lasttime = (uint32_t)time(NULL);
-        //fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
-    }
-    block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;    
-    for (i=winners=0; i<numkp; i++)
-    {
-        if ( fRequestShutdown || !GetBoolArg("-gen",false) )
-            return(0);
-        if ( (tipindex= chainActive.Tip()) == 0 || tipindex->GetHeight()+1 > nHeight )
-        {
-            fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
-            return(0);
-        }
-        kp = &array[i];
-        eligible = komodo_stake(0,bnTarget,nHeight,kp->txid,kp->vout,0,(uint32_t)tipindex->nTime+27,kp->address,PoSperc);
-        if ( eligible > 0 )
-        {
-            besttime = 0;
-            if ( eligible == komodo_stake(1,bnTarget,nHeight,kp->txid,kp->vout,eligible,(uint32_t)tipindex->nTime+27,kp->address,PoSperc) )
-            {
-                // have elegible utxo to stake with. 
-                if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || kp->nValue < *utxovaluep)) )
-                {
-                    // is better than the previous best, so use it instead.
-                    earliest = eligible;
-                    best_scriptPubKey = kp->scriptPubKey;
-                    *utxovaluep = (uint64_t)kp->nValue;
-                    decode_hex((uint8_t *)utxotxidp,32,(char *)kp->txid.GetHex().c_str());
-                    *utxovoutp = kp->vout;
-                    *txtimep = kp->txtime;
-                }
-                if ( eligible < block_from_future_rejecttime ) // nothing gained by going earlier
-                    break;
-            } else continue;
-        }
-    }
-    if ( numkp < 500 && array != 0 )
-    {
-        free(array);
-        array = 0;
-        maxkp = numkp = 0;
-        lasttime = 0;
-    }
-    if ( earliest != 0 )
-    {
-        bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
-        auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-        const CKeyStore& keystore = *pwalletMain;
-        txNew.vin.resize(1);
-        txNew.vout.resize(1);
-        txfee = 0;
-        for (i=0; i<32; i++)
-            ((uint8_t *)&revtxid)[i] = ((uint8_t *)utxotxidp)[31 - i];
-        txNew.vin[0].prevout.hash = revtxid;
-        txNew.vin[0].prevout.n = *utxovoutp;
-        txNew.vout[0].scriptPubKey = best_scriptPubKey;
-        txNew.vout[0].nValue = *utxovaluep - txfee;
-        txNew.nLockTime = earliest;
-        CTransaction txNewConst(txNew);
-        if ( ASSETCHAINS_MARMARA == 0 )
-        {
-            signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, *utxovaluep, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
-            UpdateTransaction(txNew,0,sigdata);
-            ptr = (uint8_t *)&sigdata.scriptSig[0];
-            siglen = sigdata.scriptSig.size();
-            for (i=0; i<siglen; i++)
-                utxosig[i] = ptr[i];
-        }
-        else
-        {
-            siglen = MarmaraSignature(utxosig,txNew);
-            if ( siglen > 0 )
-                signSuccess = true;
-            else signSuccess = false;
-        }
-        if (!signSuccess)
-            fprintf(stderr,"failed to create signature\n");
-        else
-            *blocktimep = earliest;
-    }
-    return(siglen);
 }

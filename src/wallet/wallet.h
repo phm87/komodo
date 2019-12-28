@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -795,6 +796,8 @@ public:
 
     void ClearNoteWitnessCache();
 
+    int64_t NullifierCount();
+
 protected:
     /**
      * pindex is the new tip being connected.
@@ -1330,9 +1333,6 @@ public:
                           bool requireSpendingKey=true,
                           bool ignoreLocked=true);
 
-    // staking functions
-    bool VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, uint32_t &bnTarget) const;
-    int32_t VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey pk) const;
 };
 
 /** A key allocated from the key pool. */

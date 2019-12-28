@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -98,7 +99,7 @@ int64_t GetNetworkHashPS(int lookup, int height)
     return (int64_t)(workDiff.getdouble() / timeDiff);
 }
 
-UniValue getlocalsolps(const UniValue& params, bool fHelp)
+UniValue getlocalsolps(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp)
         throw runtime_error(
@@ -116,7 +117,7 @@ UniValue getlocalsolps(const UniValue& params, bool fHelp)
     return GetLocalSolPS();
 }
 
-UniValue getnetworksolps(const UniValue& params, bool fHelp)
+UniValue getnetworksolps(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 2)
         throw runtime_error(
@@ -138,7 +139,7 @@ UniValue getnetworksolps(const UniValue& params, bool fHelp)
     return GetNetworkHashPS(params.size() > 0 ? params[0].get_int() : 120, params.size() > 1 ? params[1].get_int() : -1);
 }
 
-UniValue getnetworkhashps(const UniValue& params, bool fHelp)
+UniValue getnetworkhashps(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 2)
         throw runtime_error(
@@ -163,17 +164,16 @@ UniValue getnetworkhashps(const UniValue& params, bool fHelp)
 
 #ifdef ENABLE_MINING
 extern bool VERUS_MINTBLOCKS;
-UniValue getgenerate(const UniValue& params, bool fHelp)
+UniValue getgenerate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getgenerate\n"
-            "\nReturn if the server is set to mine and/or mint coins or not. The default is false.\n"
-            "It is set with the command line argument -gen (or komodo.conf setting gen) and -mint\n"
+            "\nReturn if the server is set to mine coins or not. The default is false.\n"
+            "It is set with the command line argument -gen (or HUSH3.conf setting gen).\n"
             "It can also be set with the setgenerate call.\n"
             "\nResult\n"
             "{\n"
-            "  \"staking\": true|false      (boolean) If staking is on or off (see setgenerate)\n"
             "  \"generate\": true|false     (boolean) If mining is on or off (see setgenerate)\n"
             "  \"numthreads\": n            (numeric) The processor limit for mining. (see setgenerate)\n"
             "}\n"
@@ -184,10 +184,6 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
     UniValue obj(UniValue::VOBJ);
-    bool staking = VERUS_MINTBLOCKS;
-    if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
-        staking = true;
-    obj.push_back(Pair("staking",          staking));
     obj.push_back(Pair("generate",         GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) != 0 ));
     obj.push_back(Pair("numthreads",       (int64_t)KOMODO_MININGTHREADS));
     return obj;
@@ -196,7 +192,7 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
 extern uint8_t NOTARY_PUBKEY33[33];
 
 //Value generate(const Array& params, bool fHelp)
-UniValue generate(const UniValue& params, bool fHelp)
+UniValue generate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() < 1 || params.size() > 1)
         throw runtime_error(
@@ -323,26 +319,22 @@ endloop:
 }
 
 
-UniValue setgenerate(const UniValue& params, bool fHelp)
+UniValue setgenerate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
             "setgenerate generate ( genproclimit )\n"
-            "\nSet 'generate' true to turn either mining/generation or minting/staking on and false to turn both off.\n"
-            "Mining is limited to 'genproclimit' processors, -1 is unlimited, setgenerate true with 0 genproclimit turns on staking\n"
+            "\nSet 'generate' true to turn mining/generation on or false turn both off.\n"
+            "Mining is limited to 'genproclimit' processors, -1 is unlimited\n"
             "See the getgenerate call for the current setting.\n"
             "\nArguments:\n"
             "1. generate         (boolean, required) Set to true to turn on generation, off to turn off.\n"
-            "2. genproclimit     (numeric, optional) Set processor limit when generation is on. Can be -1 for unlimited, 0 to turn on staking.\n"
+            "2. genproclimit     (numeric, optional) Set processor limit when generation is on. Can be -1 for unlimited.\n"
             "\nExamples:\n"
             "\nSet the generation on with a limit of one processor\n"
             + HelpExampleCli("setgenerate", "true 1") +
-            "\nTurn minting/staking on\n"
-            + HelpExampleCli("setgenerate", "true 0") +
             "\nCheck the setting\n"
             + HelpExampleCli("getgenerate", "") +
-            "\nTurn off generation and minting\n"
-            + HelpExampleCli("setgenerate", "false") +
             "\nUsing json rpc\n"
             + HelpExampleRpc("setgenerate", "true, 1")
         );
@@ -370,27 +362,11 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
         //if (nGenProcLimit == 0)
         //    fGenerate = false;
     }
-    if ( ASSETCHAINS_LWMAPOS != 0 )
-    {
-        if (fGenerate && !nGenProcLimit)
-        {
-            VERUS_MINTBLOCKS = 1;
-            fGenerate = GetBoolArg("-gen", false);
-            KOMODO_MININGTHREADS = nGenProcLimit;
-        }
-        else if (!fGenerate)
-        {
-            VERUS_MINTBLOCKS = 0;
-            KOMODO_MININGTHREADS = 0;
-        }
-        else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
-    }
-    else
-    {
-        KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
-    }
 
-    mapArgs["-gen"] = (fGenerate ? "1" : "0");
+    KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
+	fprintf(stderr,"%s:KOMODO_MININGTHREADS=%d\n", __FUNCTION__, KOMODO_MININGTHREADS);
+
+    mapArgs["-gen"]           = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
 
 #ifdef ENABLE_WALLET
@@ -406,7 +382,7 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
 CBlockIndex *komodo_chainactive(int32_t height);
 arith_uint256 zawy_ctB(arith_uint256 bnTarget,uint32_t solvetime);
 
-UniValue genminingCSV(const UniValue& params, bool fHelp)
+UniValue genminingCSV(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t i,z,height; uint32_t solvetime,prevtime=0; FILE *fp; char str[65],str2[65],fname[256]; uint256 hash; arith_uint256 bnTarget; CBlockIndex *pindex; bool fNegative,fOverflow; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() != 0 )
@@ -449,7 +425,7 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
     return(result);
 }
                             
-UniValue getmininginfo(const UniValue& params, bool fHelp)
+UniValue getmininginfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -487,22 +463,18 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("genproclimit",     (int)GetArg("-genproclimit", -1)));
     if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH)
     {
-        obj.push_back(Pair("localsolps"  , getlocalsolps(params, false)));
-        obj.push_back(Pair("networksolps", getnetworksolps(params, false)));
+        obj.push_back(Pair("localsolps"  , getlocalsolps(params, false, mypk)));
+        obj.push_back(Pair("networksolps", getnetworksolps(params, false, mypk)));
     }
     else
     {
-        obj.push_back(Pair("localhashps"  , GetBoolArg("-gen", false) ? getlocalsolps(params, false) : (double)0.0));
+        obj.push_back(Pair("localhashps"  , GetBoolArg("-gen", false) ? getlocalsolps(params, false, mypk) : (double)0.0));
     }
-    obj.push_back(Pair("networkhashps",    getnetworksolps(params, false)));
+    obj.push_back(Pair("networkhashps",    getnetworksolps(params, false, mypk)));
     obj.push_back(Pair("pooledtx",         (uint64_t)mempool.size()));
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
 #ifdef ENABLE_MINING
-    bool staking = VERUS_MINTBLOCKS;
-    if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
-        staking = true;
-    obj.push_back(Pair("staking",          staking));
     obj.push_back(Pair("generate",         GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) != 0 ));
     obj.push_back(Pair("numthreads",       (int64_t)KOMODO_MININGTHREADS));
 #endif
@@ -511,7 +483,7 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
 
 
 // NOTE: Unlike wallet RPC (which use BTC values), mining RPCs follow GBT (BIP 22) in using satoshi amounts
-UniValue prioritisetransaction(const UniValue& params, bool fHelp)
+UniValue prioritisetransaction(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error(
@@ -561,7 +533,7 @@ static UniValue BIP22ValidationResult(const CValidationState& state)
     return "valid?";
 }
 
-UniValue getblocktemplate(const UniValue& params, bool fHelp)
+UniValue getblocktemplate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -874,19 +846,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
       //  result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
     //}
     result.push_back(Pair("longpollid", chainActive.LastTip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast)));
-    if ( ASSETCHAINS_STAKED != 0 )
-    {
-        arith_uint256 POWtarget; int32_t PoSperc;
-        POWtarget = komodo_PoWtarget(&PoSperc,hashTarget,(int32_t)(pindexPrev->GetHeight()+1),ASSETCHAINS_STAKED);
-        result.push_back(Pair("target", POWtarget.GetHex()));
-        result.push_back(Pair("PoSperc", (int64_t)PoSperc));
-        result.push_back(Pair("ac_staked", (int64_t)ASSETCHAINS_STAKED));
-        result.push_back(Pair("origtarget", hashTarget.GetHex()));
-    }
-    /*else if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
-        result.push_back(Pair("target",komodo_adaptivepow_target((int32_t)(pindexPrev->GetHeight()+1),hashTarget,pblock->nTime).GetHex()));*/
-    else
-        result.push_back(Pair("target", hashTarget.GetHex()));
+    result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
     result.push_back(Pair("mutable", aMutable));
     result.push_back(Pair("noncerange", "00000000ffffffff"));
@@ -919,7 +879,7 @@ protected:
     };
 };
 
-UniValue submitblock(const UniValue& params, bool fHelp)
+UniValue submitblock(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
@@ -991,7 +951,7 @@ UniValue submitblock(const UniValue& params, bool fHelp)
     return BIP22ValidationResult(state);
 }
 
-UniValue estimatefee(const UniValue& params, bool fHelp)
+UniValue estimatefee(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -1023,7 +983,7 @@ UniValue estimatefee(const UniValue& params, bool fHelp)
     return ValueFromAmount(feeRate.GetFeePerK());
 }
 
-UniValue estimatepriority(const UniValue& params, bool fHelp)
+UniValue estimatepriority(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -1051,7 +1011,7 @@ UniValue estimatepriority(const UniValue& params, bool fHelp)
     return mempool.estimatePriority(nBlocks);
 }
 
-UniValue getblocksubsidy(const UniValue& params, bool fHelp)
+UniValue getblocksubsidy(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 1)
         throw runtime_error(

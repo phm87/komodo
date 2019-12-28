@@ -1,5 +1,8 @@
 #!/usr/bin/env python2
+# Copyright (c) 2018-2020 The Hush developers
 # Copyright (c) 2018 SuperNET developers
+# Released under the GPLv3
+
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -28,13 +31,13 @@ def generate_random_string(length):
 class AssetChainPrivateTest (BitcoinTestFramework):
 
     def setup_chain(self):
-        print("Initializing VerusHash test directory "+self.options.tmpdir)
+        print("Initializing ac_private test directory "+self.options.tmpdir)
         self.num_nodes = 1
         initialize_chain_clean(self.options.tmpdir, self.num_nodes)
 
     def setup_network(self, split = False):
         print("Setting up network...")
-        # These nodes simulate the ARRR asset chain parameters
+        # These nodes simulate z2z asset chain parameters
         self.nodes   = start_nodes(self.num_nodes, self.options.tmpdir,
                     extra_args=[[
                     # always give -ac_name as first extra_arg and port as third

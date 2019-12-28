@@ -1,5 +1,15 @@
 # Installing Hush
 
+## Installing Binaries
+
+To install a Debian package:
+
+	dpkg -i hush-3.2.0-amd4.deb
+
+To uninstall:
+
+	apt-get remove hush
+
 ## Build HUSH dependencies
 
 The following build process generally applies to Ubuntu (and similar) Linux
@@ -24,17 +34,12 @@ sudo swapon /swapfile
 # install build depedencies
 sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib \
       autoconf libtool ncurses-dev unzip git python zlib1g-dev wget \
-      bsdmainutils automake curl unzip nano
+      bsdmainutils automake curl unzip nano libsodium-dev
 # pull
 git clone https://github.com/MyHush/hush3.git
 cd hush3
 # Build
 ./zcutil/build.sh -j$(nproc)
-```
-
-## Download proving key:
-```sh
-./zcutil/fetch-params.sh
 ```
 
 ## Run a HUSH Node
@@ -49,7 +54,7 @@ Get dependencies:
 sudo apt-get install \
       build-essential pkg-config libc6-dev m4 g++-multilib \
       autoconf libtool ncurses-dev unzip git python \
-      zlib1g-dev wget bsdmainutils automake mingw-w64 cmake
+      zlib1g-dev wget bsdmainutils automake mingw-w64 cmake libsodium-dev
 ```
 
 Downloading Git source repo, building and running Hush:

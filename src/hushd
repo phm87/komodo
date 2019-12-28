@@ -24,10 +24,13 @@ HALVING=129,340000,840000
 # NOTE: keep in sync with komodo_bitcoind.h
 END=128,340000,5422111
 CLIENTNAME=GoldenSandtrout
-SEEDNODE1=188.165.212.101
-SEEDNODE2=136.243.227.142
-SEEDNODE3=5.9.224.250
+NODE1=188.165.212.101 # EU
+NODE2=64.120.113.130  # AR
+NODE3=209.58.144.205  # NA
+NODE4=94.130.35.94    # EU
 CCLIB=hush3
+# First Pure Sapling Zcash Protocol chain!
+SAPLING=1
 
 # CryptoConditions/Custom Consensus params
 FAUCET=228
@@ -37,22 +40,36 @@ ORACLE=236
 GATEWAY=241
 CCENABLE=$FAUCET,$HEIR,$CHANNEL,$ORACLE,$GATEWAY
 
-#NOTE: This is not compatible with upstream KMD komodod,
-# but you can reuse one hush3 komodod binary in various
-# directories/repos on one server, to save disk space
 KMD=${KOMODOD:-./komodod}
-$KMD -ac_name=$NAME -ac_sapling=1                \
-     -ac_reward=$REWARD                          \
-     -ac_halving=$HALVING                        \
-     -ac_end=$END                                \
-     -ac_eras=$ERAS                              \
-     -ac_blocktime=$BLOCKTIME                    \
-     -ac_cc=2 -ac_ccenable=$CCENABLE             \
-     -ac_founders=$FOUNDERS -ac_supply=$SUPPLY   \
-     -ac_perc=$PERC                              \
-     -clientname=$CLIENTNAME                     \
-     -addnode=$SEEDNODE1                         \
-     -addnode=$SEEDNODE2                         \
-     -addnode=$SEEDNODE3                         \
-     -ac_cclib=$CCLIB                            \
+if [ -f $KMD ]; then
+	echo "Found binary: $KMD"
+else
+	KMD=hush-komodod
+    if [ -f $KMD ]; then
+		echo "Found binary: $KMD"
+    else
+		echo "ERROR: Could not find Komodo binary!!!"
+		exit 1
+    fi
+fi
+
+
+$KMD -ac_name=$NAME           \
+     -ac_sapling=$SAPLING     \
+     -ac_reward=$REWARD       \
+     -ac_halving=$HALVING     \
+     -ac_end=$END             \
+     -ac_eras=$ERAS           \
+     -ac_blocktime=$BLOCKTIME \
+     -ac_cc=2                 \
+     -ac_ccenable=$CCENABLE   \
+     -ac_founders=$FOUNDERS   \
+     -ac_supply=$SUPPLY       \
+     -ac_perc=$PERC           \
+     -clientname=$CLIENTNAME  \
+     -addnode=$NODE1          \
+     -addnode=$NODE2          \
+     -addnode=$NODE3          \
+     -addnode=$NODE4          \
+     -ac_cclib=$CCLIB         \
      -ac_script=$SCRIPT  "$@"

@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -29,6 +30,7 @@ class CChainPower;
 #include "tinyformat.h"
 #include "uint256.h"
 extern int8_t is_STAKED(const char *chain_name);
+extern bool fZindex;
 
 #include <vector>
 
@@ -136,6 +138,7 @@ class CBlockIndex;
 // that involves mining in secret completely ineffective, even before dPOW, unless a large part 
 // of the staking supply is also controlled. It also enables a faster deterministic convergence, 
 // aided by both POS and POW.
+// TODO: delete this junk
 class CChainPower
 {
     public:
@@ -258,10 +261,100 @@ public:
     //! Note: in a potential headers-first mode, this number cannot be relied upon
     unsigned int nTx;
 
+    //! Number of notarization transactions in this block.
+    int64_t nNotarizations;
+
+    //! (memory only) Number of payments (shielded or transparent) in the block
+    //! up to and including this block.  One transaction can contain one or more
+    //! payments. This stat allows us to calculate ratios of shielded/transparent
+    //! when combined with shielded payment stats
+    int64_t nPayments;
+
+    //! (memory only) Number of shielded transactions (of any kind) in the block up to and including this block.
+    //! A shielded transaction is defined as a transaction that contains at least 1 JoinSplit, which includes
+    //! shielding/de-shielding and other complex transaction possibilties including multiple taddrs/zaddrs as
+    //! inputs and outputs.
+    int64_t nShieldedTx;
+
+    //! (memory only) Number of fully shielded transactions. A fully shielded transaction is defined
+    //! as a transaction containing JoinSplits and only shielded inputs and outputs, i.e. no transparent
+    // inputs or outputs: z->z or z->(z,z) or z->(z,z,z,) etc...
+    int64_t nFullyShieldedTx;
+
+    //! (memory only) Number of shielding payments. A shielding payment is defined
+    //! as having a shielded output but transparent input: t->z
+    int64_t nShieldingPayments;
+
+    //! (memory only) Number of shielded payments. A shielded payment is defined
+    //! as having a shielded input or output: t->z or z->t
+    int64_t nShieldedPayments;
+
+    //! (memory only) Number of fully shielded payments. A fully shielded payment is defined
+    //! as having a shielded input and shielded output: z->z
+    int64_t nFullyShieldedPayments;
+
+    //! (memory only) Number of deshielding transactions. A deshielding transaction is defined
+    //! as a transaction containing JoinSplits and at least one transparent output.
+    int64_t nDeshieldingTx;
+
+    //! (memory only) Number of deshielding payments. A deshielding payment is defined
+    //! as one transparent input and one shielded output: z->t
+    int64_t nDeshieldingPayments;
+
+    //! (memory only) Number of shielding transactions. A shielding transaction is defined
+    //! as a transaction containing JoinSplits and at least one transparent input
+    // i.e. t->z or t->(z,t) or z->(z,z,t)
+    int64_t nShieldingTx;
+
     //! (memory only) Number of transactions in the chain up to and including this block.
     //! This value will be non-zero only if and only if transactions for this block and all its parents are available.
     //! Change to 64-bit type when necessary; won't happen before 2030
     unsigned int nChainTx;
+
+    //! Number of notarization transactions in this chain
+    int64_t nChainNotarizations;
+
+    //! (memory only) Number of payments (shielded or transparent) in the chain
+    //! up to and including this block.  One transaction can contain one or more
+    //! payments. This stat allows us to calculate ratios of shielded/transparent
+    //! when combined with shielded payment stats
+    int64_t nChainPayments;
+
+    //! (memory only) Number of shielded transactions (of any kind) in the chain up to and including this block.
+    //! A shielded transaction is defined as a transaction that contains at least 1 JoinSplit, which includes
+    //! shielding/de-shielding and other complex transaction possibilties including multiple taddrs/zaddrs as
+    //! inputs and outputs.
+    int64_t nChainShieldedTx;
+
+    //! (memory only) Number of fully shielded transactions. A fully shielded transaction is defined
+    //! as a transaction containing JoinSplits and only shielded inputs and outputs, i.e. no transparent
+    // inputs or outputs: z->z or z->(z,z) or z->(z,z,z,) etc...
+    int64_t nChainFullyShieldedTx;
+
+    //! (memory only) Number of shielding payments. A shielding payment is defined
+    //! as having a shielded output but transparent input: t->z
+    int64_t nChainShieldingPayments;
+
+    //! (memory only) Number of shielded payments. A shielded payment is defined
+    //! as having a shielded input or output: t->z or z->t
+    int64_t nChainShieldedPayments;
+
+    //! (memory only) Number of fully shielded payments. A fully shielded payment is defined
+    //! as having a shielded input and shielded output: z->z
+    int64_t nChainFullyShieldedPayments;
+
+    //! (memory only) Number of deshielding transactions. A deshielding transaction is defined
+    //! as a transaction containing JoinSplits and at least one transparent output.
+    int64_t nChainDeshieldingTx;
+
+    //! (memory only) Number of deshielding payments. A deshielding payment is defined
+    //! as one transparent input and one shielded output: z->t
+    int64_t nChainDeshieldingPayments;
+
+    //! (memory only) Number of shielding transactions. A shielding transaction is defined
+    //! as a transaction containing JoinSplits and at least one transparent input
+    // i.e. t->z or t->(z,t) or z->(z,z,t)
+    int64_t nChainShieldingTx;
 
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
@@ -321,6 +414,29 @@ public:
         chainPower = CChainPower();
         nTx = 0;
         nChainTx = 0;
+
+        nChainPayments = 0;
+        nChainShieldedTx = 0;
+        nChainShieldingTx = 0;
+        nChainDeshieldingTx = 0;
+        nChainNotarizations = 0;
+        nChainFullyShieldedTx = 0;
+        nChainShieldedPayments = 0;
+        nChainShieldingPayments = 0;
+        nChainDeshieldingPayments = 0;
+        nChainFullyShieldedPayments = 0;
+
+        nPayments = 0;
+        nShieldedTx = 0;
+        nShieldingTx = 0;
+        nNotarizations = 0;
+        nDeshieldingTx = 0;
+        nFullyShieldedTx = 0;
+        nShieldedPayments = 0;
+        nShieldingPayments = 0;
+        nDeshieldingPayments = 0;
+        nFullyShieldedPayments = 0;
+
         nStatus = 0;
         nCachedBranchId = boost::none;
         hashSproutAnchor = uint256();
@@ -465,17 +581,6 @@ public:
     CBlockIndex* GetAncestor(int height);
     const CBlockIndex* GetAncestor(int height) const;
 
-    int32_t GetVerusPOSTarget() const
-    {
-        return GetBlockHeader().GetVerusPOSTarget();
-    }
-
-    bool IsVerusPOSBlock() const
-    {
-        if ( ASSETCHAINS_LWMAPOS != 0 )
-            return GetBlockHeader().IsVerusPOSBlock();
-        else return(0);
-    }
 };
 
 /** Used to marshal pointers into hashes for db storage. */
@@ -506,6 +611,8 @@ public:
         READWRITE(VARINT(chainPower.nHeight));
         READWRITE(VARINT(nStatus));
         READWRITE(VARINT(nTx));
+
+
         if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))
             READWRITE(VARINT(nFile));
         if (nStatus & BLOCK_HAVE_DATA)
@@ -547,10 +654,27 @@ public:
         if ((s.GetType() & SER_DISK) && (nVersion >= SAPLING_VALUE_VERSION)) {
             READWRITE(nSaplingValue);
         }
+		/*
         if ( (s.GetType() & SER_DISK) && (is_STAKED(ASSETCHAINS_SYMBOL) != 0) && ASSETCHAINS_NOTARY_PAY[0] != 0 )
         {
             READWRITE(nNotaryPay);
             READWRITE(segid);
+        }
+		*/
+
+        // These values only serialized when -zindex enabled
+        if((s.GetType() & SER_DISK) && fZindex) {
+            READWRITE(nShieldedTx);
+            READWRITE(nShieldingTx);
+            READWRITE(nDeshieldingTx);
+            READWRITE(nFullyShieldedTx);
+
+            READWRITE(nPayments);
+            READWRITE(nNotarizations);
+            READWRITE(nShieldedPayments);
+            READWRITE(nShieldingPayments);
+            READWRITE(nDeshieldingPayments);
+            READWRITE(nFullyShieldedPayments);
         }
     }
 

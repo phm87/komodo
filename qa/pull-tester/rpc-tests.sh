@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2019-2020 The Hush developers
+# Released under the GPLv3
+
 set -e -o pipefail
 
 CURDIR=$(cd $(dirname "$0"); pwd)
@@ -14,7 +17,6 @@ testScripts=(
     'dpow.py'
     'dpowconfs.py'
     'ac_private.py'
-    'verushash.py'
     'paymentdisclosure.py'
     'prioritisetransaction.py'
     'wallet_treestate.py'
@@ -67,7 +69,6 @@ testScripts=(
     'zcjoinsplitdoublespend.py'
     'ivk_import_export.py'
     'zkey_import_export.py'
-    'reorg_limit.py'
     'getblocktemplate.py'
     'bip65-cltv-p2p.py'
     'bipdersig-p2p.py'

@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019      The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -538,10 +539,10 @@ boost::filesystem::path GetDefaultDataDir()
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         strcpy(symbol,ASSETCHAINS_SYMBOL);
     else symbol[0] = 0;
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
-    // Mac: ~/Library/Application Support/Zcash
-    // Unix: ~/.zcash
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Komodo
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Komodo
+    // Mac: ~/Library/Application Support/Komodo
+    // Unix: ~/.komodo
 #ifdef _WIN32
     // Windows
     if ( symbol[0] == 0 )
@@ -582,13 +583,13 @@ static CCriticalSection csPathCached;
 
 static boost::filesystem::path ZC_GetBaseParamsDir()
 {
-    // Copied from GetDefaultDataDir and adapter for zcash params.
-
+    // Copied from GetDefaultDataDir and adapted for zcash params.
     namespace fs = boost::filesystem;
     // Windows < Vista: C:\Documents and Settings\Username\Application Data\ZcashParams
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashParams
     // Mac: ~/Library/Application Support/ZcashParams
     // Unix: ~/.zcash-params
+	// Debian packages: /usr/share/hush
     fs::path pathRet;
 #ifdef _WIN32
     return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashParams";
@@ -604,8 +605,13 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     TryCreateDirectory(pathRet);
     return pathRet / "ZcashParams";
 #else
-    // Unix
-    return pathRet / ".zcash-params";
+    // Unixy systems. Debian packages install params system-wide
+	if (fs::exists("/usr/share/hush")) {
+		pathRet = fs::path("/usr/share/hush");
+		return pathRet;
+	} else {
+	    return pathRet / ".zcash-params";
+	}
 #endif
 #endif
 }
@@ -886,7 +892,8 @@ void ShrinkDebugFile()
     // Scroll debug.log if it's getting too big
     boost::filesystem::path pathLog = GetDataDir() / "debug.log";
     FILE* file = fopen(pathLog.string().c_str(), "r");
-    if (file && boost::filesystem::file_size(pathLog) > 10 * 1000000)
+    unsigned int MAX_DEBUG_LOG_SIZE = 100*(1024*1024); // 100MB
+    if (file && boost::filesystem::file_size(pathLog) > MAX_DEBUG_LOG_SIZE )
     {
         // Restart the file with some of the end
         std::vector <char> vch(200000,0);
@@ -1025,9 +1032,8 @@ std::string LicenseInfo()
            FormatParagraph(strprintf(_("Copyright (C) 2015-%i The Zcash Developers"), COPYRIGHT_YEAR)) + "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2015-%i jl777 and SuperNET developers"), COPYRIGHT_YEAR)) + "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2018-%i The Hush developers"), COPYRIGHT_YEAR)) + "\n" +
-           FormatParagraph(strprintf(_("Copyright (C) 2018-%i The Verus developers"), COPYRIGHT_YEAR)) + "\n" +
            "\n" +
-           FormatParagraph(_("This is experimental software.")) + "\n" +
+           FormatParagraph(_("This is experimental software!!!")) + "\n" +
            "\n" +
            FormatParagraph(_("Distributed under the MIT software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.")) + "\n" +
            "\n" +

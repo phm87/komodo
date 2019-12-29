@@ -4545,13 +4545,13 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
         }
 
 	    zaddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
-        fprintf(stderr,"%s: adding %s as zdust receiver\n");
+        fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, address.c_str());
 
         // 25% chance of adding another zout
         if (decider % 4 == 3) {
             address = "zs1uchnxajsmn70gsptkthxcytqsr89rsle6rq66sp3gnn2cqdt8lpq97dv98plhv3vjmrp2zkr8da";
             zaddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
-            fprintf(stderr,"%s: adding %s as zdust receiver\n");
+            fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, address.c_str());
         }
 
 	}
@@ -4588,6 +4588,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     // As a sanity check, estimate and verify that the size of the transaction will be valid.
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
+    LogPrintf("%s: Verifying xtn size is valid\n", __FUNCTION__);
     size_t txsize = 0;
     for (int i = 0; i < zaddrRecipients.size(); i++) {
         auto address = std::get<0>(zaddrRecipients[i]);

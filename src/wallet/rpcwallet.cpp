@@ -4596,11 +4596,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
         if (toSapling) {
             mtx.vShieldedOutput.push_back(OutputDescription());
         } else {
-            JSDescription jsdesc;
-            if (mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION)) {
-                jsdesc.proof = GrothProof();
-            }
-            mtx.vjoinsplit.push_back(jsdesc);
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, sprout zaddr not valid");
         }
     }
     CTransaction tx(mtx);

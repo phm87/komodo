@@ -4620,7 +4620,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
     }
 
-    // Fee in Zatoshis, not currency format)
+    // Fee in Puposhis, not currency format
     CAmount nFee        = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE;
     CAmount nDefaultFee = nFee;
 
@@ -4653,6 +4653,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
     o.push_back(Pair("minconf", nMinDepth));
     o.push_back(Pair("fee", std::stod(FormatMoney(nFee))));
     UniValue contextInfo = o;
+    LogPrintf("%s: Building the transaction\n", __FUNCTION__);
 
     // Builder (used if Sapling addresses are involved)
     boost::optional<TransactionBuilder> builder;
@@ -4672,6 +4673,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(builder, contextualTx, fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo) );
     q->addOperation(operation);
+    LogPrintf("%s: Submitted to queue\n", __FUNCTION__);
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;
 }

@@ -1,4 +1,5 @@
 // Copyright (c) 2016 The Zcash developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -463,6 +464,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         }
 
         // Select Sapling notes
+        LogPrintf("%s: Selecting Sapling notes\n", __FUNCTION__);
         std::vector<SaplingOutPoint> ops;
         std::vector<SaplingNote> notes;
         CAmount sum = 0;
@@ -476,6 +478,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         }
 
         // Fetch Sapling anchor and witnesses
+        LogPrintf("%s: Gathering anchors and witnesses\n", __FUNCTION__);
         uint256 anchor;
         std::vector<boost::optional<SaplingWitness>> witnesses;
         {
@@ -492,6 +495,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         }
 
         // Add Sapling outputs
+        LogPrintf("%s: Adding Sapling outputs\n", __FUNCTION__);
         for (auto r : z_outputs_) {
             auto address = std::get<0>(r);
             auto value = std::get<1>(r);
@@ -523,6 +527,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction.");
         }
         tx_ = maybe_tx.get();
+        LogPrintf("%s: Raw transaction created\n", __FUNCTION__);
 
         // Send the transaction
         // TODO: Use CWallet::CommitTransaction instead of sendrawtransaction
@@ -530,6 +535,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         if (!testmode) {
             UniValue params = UniValue(UniValue::VARR);
             params.push_back(signedtxn);
+            LogPrintf("%s: Sending raw xtn\n", __FUNCTION__);
             UniValue sendResultValue = sendrawtransaction(params, false, CPubKey());
             if (sendResultValue.isNull()) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "sendrawtransaction did not return an error or a txid.");
@@ -644,7 +650,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
      * taddr -> taddrs
      *       -> zaddrs
      *
-     * Note: Consensus rule states that coinbase utxos can only be sent to a zaddr.
+     * Note: Consensus rule states that coinbase utxos can only be sent to a zaddr. TODO: Do they?
      *       Local wallet rule does not allow any change when sending coinbase utxos
      *       since there is currently no way to specify a change address and we don't
      *       want users accidentally sending excess funds to a recipient.

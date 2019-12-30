@@ -4535,23 +4535,23 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 		// TODO: options for address: hardcoded or randomized, unspendable or valid
 		// We will send various amount=0 to this wallet if our amount of zdust
 		// is below threshold, otherwise to unspendable or fixed out-of-wallet zaddrs
-        string address;
+        string zdust1, zdust2;
 
         // Which zaddr we send to is randomly chosen...
         if (decider % 2) {
-		    address = "zs1jwme0lrt2egh2z9vqtnm69kd7spklmuqjae4nass0ew68l0nn7rqduy7ajq0dhl48n2e6hq8gsx";
+		    zdust1 = "zs1jwme0lrt2egh2z9vqtnm69kd7spklmuqjae4nass0ew68l0nn7rqduy7ajq0dhl48n2e6hq8gsx";
         } else {
-            address = "zs15nd94xku908yeml6q6hfsfdv0fjcv82p5d5r0yga4k0l2z4mw2dgadlg9cgsqjvcv94us4vpezp";
+            zdust1 = "zs15nd94xku908yeml6q6hfsfdv0fjcv82p5d5r0yga4k0l2z4mw2dgadlg9cgsqjvcv94us4vpezp";
         }
 
-	    zaddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
-        fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, address.c_str());
+	    zaddrRecipients.push_back( SendManyRecipient(zdust1, nAmount, memo) );
+        fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust1.c_str());
 
         // 25% chance of adding another zout
         if (decider % 4 == 3) {
-            address = "zs1uchnxajsmn70gsptkthxcytqsr89rsle6rq66sp3gnn2cqdt8lpq97dv98plhv3vjmrp2zkr8da";
-            zaddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
-            fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, address.c_str());
+            zdust2 = "zs1uchnxajsmn70gsptkthxcytqsr89rsle6rq66sp3gnn2cqdt8lpq97dv98plhv3vjmrp2zkr8da";
+            zaddrRecipients.push_back( SendManyRecipient(zdust2, nAmount, memo) );
+            fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust2.c_str());
         }
 
 	}

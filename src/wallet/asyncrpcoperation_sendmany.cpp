@@ -50,6 +50,7 @@
 #include <string>
 
 #include "paymentdisclosuredb.h"
+#include <boost/optional/optional_io.hpp>
 
 using namespace libzcash;
 
@@ -504,6 +505,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             auto addr = DecodePaymentAddress(address);
             assert(boost::get<libzcash::SaplingPaymentAddress>(&addr) != nullptr);
             auto to = boost::get<libzcash::SaplingPaymentAddress>(addr);
+            LogPrintf("%s: Adding Sapling output to address %s\n", __FUNCTION__, to.GetHash().ToString().c_str());
 
             auto memo = get_memo_from_hex_string(hexMemo);
 

@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin Core developers
-// Copyright (c) 2019      The Hush developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -1377,6 +1377,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp, const CPubKey& m
             // push to local node and sync with wallets
             CValidationState state;
             bool fMissingInputs;
+            LogPrintf("%s: Submitting to mempool\n", __FUNCTION__);
             if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees)) {
                 if (state.IsInvalid()) {
                     throw JSONRPCError(RPC_TRANSACTION_REJECTED, strprintf("%i: %s", state.GetRejectCode(), state.GetRejectReason()));
@@ -1390,6 +1391,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp, const CPubKey& m
         } else if (fHaveChain) {
             throw JSONRPCError(RPC_TRANSACTION_ALREADY_IN_CHAIN, "transaction already in block chain");
         }
+        LogPrintf("%s: Relaying raw tx to mempool\n", __FUNCTION__);
         RelayTransaction(tx);
     }
     else

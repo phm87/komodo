@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019 The Hush developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -62,6 +62,7 @@
 
 #include "komodo_defs.h"
 #include <string.h>
+#include "sietch.h"
 
 using namespace std;
 
@@ -4524,8 +4525,16 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
    // SIETCH: Sprinkle our cave with some magic privacy zdust
    // End goal is to have this be as large as possible without slowing xtns down too much
    // A value of 7 will provide much stronger linkability privacy versus pre-Sietch operations
-   // We should also give RPC interface a way to specify MIN_ZOUTS
-	unsigned int MIN_ZOUTS=2;
+
+	unsigned int DEFAULT_MIN_ZOUTS=7;
+	unsigned int MAX_ZOUTS=25;
+	unsigned int MIN_ZOUTS=GetArg("--sietch-min-zouts", DEFAULT_MIN_ZOUTS);
+
+    if((MIN_ZOUTS<2) || (MIN_ZOUTS>MAX_ZOUTS)) {
+        fprintf(stderr,"%s: Sietch min zouts must be >=2 and <= 25, setting to default value of %d\n", __FUNCTION__, DEFAULT_MIN_ZOUTS );
+        MIN_ZOUTS=DEFAULT_MIN_ZOUTS;
+    }
+
 	while (zaddrRecipients.size() < MIN_ZOUTS) {
         // OK, we identify this xtn as needing privacy zdust, we must decide how much, non-deterministically
 		int nAmount = 0;
@@ -4547,8 +4556,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 	    zaddrRecipients.push_back( SendManyRecipient(zdust1, nAmount, memo) );
         fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust1.c_str());
 
-        // 25% chance of adding another zout
-        if (decider % 4 == 3) {
+        //50% chance of adding another zout
+        if (decider % 2) {
             zdust2 = "zs1uchnxajsmn70gsptkthxcytqsr89rsle6rq66sp3gnn2cqdt8lpq97dv98plhv3vjmrp2zkr8da";
             zaddrRecipients.push_back( SendManyRecipient(zdust2, nAmount, memo) );
             fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust2.c_str());

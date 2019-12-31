@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019 The Hush developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -62,6 +62,7 @@
 
 #include "komodo_defs.h"
 #include <string.h>
+#include "sietch.h"
 
 using namespace std;
 
@@ -4413,6 +4414,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
     // This logic will need to be updated if we add a new shielded pool
     bool fromSprout = !(fromTaddr || fromSapling);
 
+    if (fromSprout)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot send from a Sprout zaddr, only Sapling zaddrs supported.");
+
     UniValue outputs = params[1].get_array();
 
     if (outputs.size()==0)
@@ -4518,6 +4522,43 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
         nTotalOut += nAmount;
     }
+   // SIETCH: Sprinkle our cave with some magic privacy zdust
+   // End goal is to have this be as large as possible without slowing xtns down too much
+   // A value of 7 will provide much stronger linkability privacy versus pre-Sietch operations
+
+	unsigned int DEFAULT_MIN_ZOUTS=7;
+	unsigned int MAX_ZOUTS=25;
+	unsigned int MIN_ZOUTS=GetArg("--sietch-min-zouts", DEFAULT_MIN_ZOUTS);
+
+    if((MIN_ZOUTS<2) || (MIN_ZOUTS>MAX_ZOUTS)) {
+        fprintf(stderr,"%s: Sietch min zouts must be >=2 and <= 25, setting to default value of %d\n", __FUNCTION__, DEFAULT_MIN_ZOUTS );
+        MIN_ZOUTS=DEFAULT_MIN_ZOUTS;
+    }
+
+	while (zaddrRecipients.size() < MIN_ZOUTS) {
+        // OK, we identify this xtn as needing privacy zdust, we must decide how much, non-deterministically
+		int nAmount = 0;
+        int decider = 1 + GetRandInt(100); // random int between 1 and 100
+		string memo = "f600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+
+        string zdust1, zdust2;
+
+        // Which zaddr we send to is non-deterministically chosen...
+        zdust1 = randomSietchZaddr();
+
+	    zaddrRecipients.push_back( SendManyRecipient(zdust1, nAmount, memo) );
+        if(fZdebug)
+            fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust1.c_str());
+
+        //50% chance of adding another zout
+        if (decider % 2) {
+            zdust2 = randomSietchZaddr();
+            zaddrRecipients.push_back( SendManyRecipient(zdust2, nAmount, memo) );
+            if(fZdebug)
+                fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust2.c_str());
+        }
+
+	}
 
     int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction mtx;
@@ -4551,6 +4592,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     // As a sanity check, estimate and verify that the size of the transaction will be valid.
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
+    if(fZdebug)
+        LogPrintf("%s: Verifying xtn size is valid\n", __FUNCTION__);
     size_t txsize = 0;
     for (int i = 0; i < zaddrRecipients.size(); i++) {
         auto address = std::get<0>(zaddrRecipients[i]);
@@ -4559,11 +4602,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
         if (toSapling) {
             mtx.vShieldedOutput.push_back(OutputDescription());
         } else {
-            JSDescription jsdesc;
-            if (mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION)) {
-                jsdesc.proof = GrothProof();
-            }
-            mtx.vjoinsplit.push_back(jsdesc);
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, sprout zaddr not valid");
         }
     }
     CTransaction tx(mtx);
@@ -4586,7 +4625,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
     }
 
-    // Fee in Zatoshis, not currency format)
+    // Fee in Puposhis, not currency format
     CAmount nFee        = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE;
     CAmount nDefaultFee = nFee;
 
@@ -4619,6 +4658,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
     o.push_back(Pair("minconf", nMinDepth));
     o.push_back(Pair("fee", std::stod(FormatMoney(nFee))));
     UniValue contextInfo = o;
+    if(fZdebug)
+        LogPrintf("%s: Building the raw ztransaction\n", __FUNCTION__);
 
     // Builder (used if Sapling addresses are involved)
     boost::optional<TransactionBuilder> builder;
@@ -4638,6 +4679,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(builder, contextualTx, fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo) );
     q->addOperation(operation);
+    if(fZdebug)
+        LogPrintf("%s: Submitted to async queue\n", __FUNCTION__);
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;
 }

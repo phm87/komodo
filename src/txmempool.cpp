@@ -865,6 +865,7 @@ void CTxMemPool::NotifyRecentlyAdded()
         try {
             SyncWithWallets(tx, NULL);
         } catch (const boost::thread_interrupted&) {
+			fprintf(stderr,"%s: thread interrupted\n", __FUNCTION__);
             throw;
         } catch (const std::exception& e) {
             PrintExceptionContinue(&e, "CTxMemPool::NotifyRecentlyAdded()");

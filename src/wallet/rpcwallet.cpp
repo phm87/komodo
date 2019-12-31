@@ -4592,7 +4592,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     // As a sanity check, estimate and verify that the size of the transaction will be valid.
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
-    LogPrintf("%s: Verifying xtn size is valid\n", __FUNCTION__);
+    if(fZdebug)
+        LogPrintf("%s: Verifying xtn size is valid\n", __FUNCTION__);
     size_t txsize = 0;
     for (int i = 0; i < zaddrRecipients.size(); i++) {
         auto address = std::get<0>(zaddrRecipients[i]);
@@ -4657,7 +4658,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
     o.push_back(Pair("minconf", nMinDepth));
     o.push_back(Pair("fee", std::stod(FormatMoney(nFee))));
     UniValue contextInfo = o;
-    LogPrintf("%s: Building the transaction\n", __FUNCTION__);
+    if(fZdebug)
+        LogPrintf("%s: Building the raw ztransaction\n", __FUNCTION__);
 
     // Builder (used if Sapling addresses are involved)
     boost::optional<TransactionBuilder> builder;
@@ -4677,7 +4679,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(builder, contextualTx, fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo) );
     q->addOperation(operation);
-    LogPrintf("%s: Submitted to queue\n", __FUNCTION__);
+    if(fZdebug)
+        LogPrintf("%s: Submitted to async queue\n", __FUNCTION__);
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;
 }

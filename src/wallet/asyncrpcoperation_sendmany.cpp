@@ -465,7 +465,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         }
 
         // Select Sapling notes
-        LogPrintf("%s: Selecting Sapling notes\n", __FUNCTION__);
+        if(fZdebug)
+            LogPrintf("%s: Selecting Sapling notes\n", __FUNCTION__);
         std::vector<SaplingOutPoint> ops;
         std::vector<SaplingNote> notes;
         CAmount sum = 0;
@@ -504,7 +505,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             auto addr = DecodePaymentAddress(address);
             assert(boost::get<libzcash::SaplingPaymentAddress>(&addr) != nullptr);
             auto to = boost::get<libzcash::SaplingPaymentAddress>(addr);
-            LogPrintf("%s: Adding Sapling output to address %s\n", __FUNCTION__, to.GetHash().ToString().c_str());
+            if(fZdebug)
+                LogPrintf("%s: Adding Sapling output to address %s\n", __FUNCTION__, to.GetHash().ToString().c_str());
 
             auto memo = get_memo_from_hex_string(hexMemo);
 
@@ -528,7 +530,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction.");
         }
         tx_ = maybe_tx.get();
-        LogPrintf("%s: Raw transaction created\n", __FUNCTION__);
+        if(fZdebug)
+            LogPrintf("%s: Raw transaction created\n", __FUNCTION__);
 
         // Send the transaction
         // TODO: Use CWallet::CommitTransaction instead of sendrawtransaction
@@ -536,7 +539,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         if (!testmode) {
             UniValue params = UniValue(UniValue::VARR);
             params.push_back(signedtxn);
-            LogPrintf("%s: Sending raw xtn\n", __FUNCTION__);
+            if(fZdebug)
+                LogPrintf("%s: Sending raw xtn with txid=\n", __FUNCTION__, tx_.GetHash().ToString().c_str());
             UniValue sendResultValue = sendrawtransaction(params, false, CPubKey());
             if (sendResultValue.isNull()) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "sendrawtransaction did not return an error or a txid.");

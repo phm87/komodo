@@ -4541,26 +4541,21 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
         int decider = 1 + GetRandInt(100); // random int between 1 and 100
 		string memo = "f600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
-		// TODO: options for address: hardcoded or randomized, unspendable or valid
-		// We will send various amount=0 to this wallet if our amount of zdust
-		// is below threshold, otherwise to unspendable or fixed out-of-wallet zaddrs
         string zdust1, zdust2;
 
-        // Which zaddr we send to is randomly chosen...
-        if (decider % 2) {
-		    zdust1 = "zs1jwme0lrt2egh2z9vqtnm69kd7spklmuqjae4nass0ew68l0nn7rqduy7ajq0dhl48n2e6hq8gsx";
-        } else {
-            zdust1 = "zs15nd94xku908yeml6q6hfsfdv0fjcv82p5d5r0yga4k0l2z4mw2dgadlg9cgsqjvcv94us4vpezp";
-        }
+        // Which zaddr we send to is non-deterministically chosen...
+        zdust1 = randomSietchZaddr();
 
 	    zaddrRecipients.push_back( SendManyRecipient(zdust1, nAmount, memo) );
-        fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust1.c_str());
+        if(fZdebug)
+            fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust1.c_str());
 
         //50% chance of adding another zout
         if (decider % 2) {
-            zdust2 = "zs1uchnxajsmn70gsptkthxcytqsr89rsle6rq66sp3gnn2cqdt8lpq97dv98plhv3vjmrp2zkr8da";
+            zdust2 = randomSietchZaddr();
             zaddrRecipients.push_back( SendManyRecipient(zdust2, nAmount, memo) );
-            fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust2.c_str());
+            if(fZdebug)
+                fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust2.c_str());
         }
 
 	}

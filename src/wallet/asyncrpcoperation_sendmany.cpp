@@ -540,7 +540,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             UniValue params = UniValue(UniValue::VARR);
             params.push_back(signedtxn);
             if(fZdebug)
-                LogPrintf("%s: Sending raw xtn with txid=\n", __FUNCTION__, tx_.GetHash().ToString().c_str());
+                LogPrintf("%s: Sending raw xtn with txid=%s\n", __FUNCTION__, tx_.GetHash().ToString().c_str());
             UniValue sendResultValue = sendrawtransaction(params, false, CPubKey());
             if (sendResultValue.isNull()) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "sendrawtransaction did not return an error or a txid.");

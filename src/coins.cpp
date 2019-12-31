@@ -334,12 +334,13 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt, ShieldedType type) {
 }
 
 void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
-    LogPrintf("%s: spent=%d\n", __FUNCTION__, spent);
+
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
         std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(spendDescription.nullifier, CNullifiersCacheEntry()));
         ret.first->second.entered = spent;
         ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
-        LogPrintf("%s: Inserted nullifier=%s into Sapling nullifier cache\n", __FUNCTION__, spendDescription.nullifier.GetHex().c_str());
+        if (fZdebug)
+           LogPrintf("%s: Inserted spent=%d nullifier=%s into Sapling nullifier cache\n", __FUNCTION__, spent, spendDescription.nullifier.GetHex().c_str());
     }
 }
 

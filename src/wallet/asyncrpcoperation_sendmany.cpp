@@ -479,7 +479,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         }
 
         // Fetch Sapling anchor and witnesses
-        LogPrintf("%s: Gathering anchors and witnesses\n", __FUNCTION__);
+        //LogPrintf("%s: Gathering anchors and witnesses\n", __FUNCTION__);
         uint256 anchor;
         std::vector<boost::optional<SaplingWitness>> witnesses;
         {
@@ -496,7 +496,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         }
 
         // Add Sapling outputs
-        LogPrintf("%s: Adding Sapling outputs\n", __FUNCTION__);
         for (auto r : z_outputs_) {
             auto address = std::get<0>(r);
             auto value = std::get<1>(r);

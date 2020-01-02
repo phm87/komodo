@@ -4805,9 +4805,9 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             // No shielded payments, add transparent payments minus a change address
             nPayments +=  tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
         }
+        // To calculate the anonset we must track the sum of zouts in every tx, in every block. -- Duke
+        nShieldedOutputsInBlock += nShieldedOutputs;
     }
-    // To calculate the anonset we must track the sum of zouts in every tx, in every block. -- Duke
-    nShieldedOutputsInBlock += nShieldedOutputs;
 
     pindexNew->nSproutValue = sproutValue;
     pindexNew->nChainSproutValue = boost::none;
@@ -4847,7 +4847,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
 
             if (fZindex) {
                 if (fZdebug)
-                    fprintf(stderr,"%s: setting chain zstats with zouts=%d\n", __FUNCTION__, nShieldedOutputs);
+                    fprintf(stderr,"%s: setting blockchain zstats with zouts=%d\n", __FUNCTION__, nShieldedOutputsInBlock );
                 pindex->nChainNotarizations         = (pindex->pprev ? pindex->pprev->nChainNotarizations         : 0) + pindex->nNotarizations;
                 pindex->nChainShieldedTx            = (pindex->pprev ? pindex->pprev->nChainShieldedTx            : 0) + pindex->nShieldedTx;
                 pindex->nChainShieldedOutputs       = (pindex->pprev ? pindex->pprev->nChainShieldedOutputs       : 0) + pindex->nShieldedOutputs;

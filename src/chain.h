@@ -276,6 +276,9 @@ public:
     //! inputs and outputs.
     int64_t nShieldedTx;
 
+    //! (memory only) Number of shielded outputs in the block up to and including this block.
+    int64_t nShieldedOutputs;
+
     //! (memory only) Number of fully shielded transactions. A fully shielded transaction is defined
     //! as a transaction containing JoinSplits and only shielded inputs and outputs, i.e. no transparent
     // inputs or outputs: z->z or z->(z,z) or z->(z,z,z,) etc...
@@ -325,6 +328,9 @@ public:
     //! shielding/de-shielding and other complex transaction possibilties including multiple taddrs/zaddrs as
     //! inputs and outputs.
     int64_t nChainShieldedTx;
+
+    //! (memory only) Number of shielded outputs in the chain up to and including this block.
+    int64_t nChainShieldedOutputs;
 
     //! (memory only) Number of fully shielded transactions. A fully shielded transaction is defined
     //! as a transaction containing JoinSplits and only shielded inputs and outputs, i.e. no transparent
@@ -415,22 +421,26 @@ public:
         nTx = 0;
         nChainTx = 0;
 
+        // Shieldex Index chain stats
         nChainPayments = 0;
         nChainShieldedTx = 0;
         nChainShieldingTx = 0;
         nChainDeshieldingTx = 0;
         nChainNotarizations = 0;
         nChainFullyShieldedTx = 0;
+        nChainShieldedOutputs = 0;
         nChainShieldedPayments = 0;
         nChainShieldingPayments = 0;
         nChainDeshieldingPayments = 0;
         nChainFullyShieldedPayments = 0;
 
+        // Shieldex Index stats
         nPayments = 0;
         nShieldedTx = 0;
         nShieldingTx = 0;
         nNotarizations = 0;
         nDeshieldingTx = 0;
+        nShieldedOutputs = 0;
         nFullyShieldedTx = 0;
         nShieldedPayments = 0;
         nShieldingPayments = 0;
@@ -654,27 +664,21 @@ public:
         if ((s.GetType() & SER_DISK) && (nVersion >= SAPLING_VALUE_VERSION)) {
             READWRITE(nSaplingValue);
         }
-		/*
-        if ( (s.GetType() & SER_DISK) && (is_STAKED(ASSETCHAINS_SYMBOL) != 0) && ASSETCHAINS_NOTARY_PAY[0] != 0 )
-        {
-            READWRITE(nNotaryPay);
-            READWRITE(segid);
-        }
-		*/
 
         // These values only serialized when -zindex enabled
+        // Order is important!
         if((s.GetType() & SER_DISK) && fZindex) {
             READWRITE(nShieldedTx);
             READWRITE(nShieldingTx);
             READWRITE(nDeshieldingTx);
             READWRITE(nFullyShieldedTx);
-
             READWRITE(nPayments);
             READWRITE(nNotarizations);
             READWRITE(nShieldedPayments);
             READWRITE(nShieldingPayments);
             READWRITE(nDeshieldingPayments);
             READWRITE(nFullyShieldedPayments);
+            READWRITE(nShieldedOutputs);
         }
     }
 

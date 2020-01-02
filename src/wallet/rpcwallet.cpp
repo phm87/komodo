@@ -3743,6 +3743,32 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
     }
 }
 
+UniValue z_listnullifiers(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 0)
+        throw runtime_error(
+            "z_listnullifiers\n"
+            "\nReturns the list of Sapling nullifiers.\n"
+            "\nResult:\n"
+            "[                     (json array of string)\n"
+            "  \"nullifier\"       (string) a Sapling nullifer\n"
+            "  ,...\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_listnullifiers", "")
+            + HelpExampleRpc("z_listnullifiers", "")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    UniValue ret(UniValue::VARR);
+    for (auto nullifier: mempool.getNullifiers()) {
+        ret.push_back(nullifier.first.GetHex());
+    }
+    return ret;
+}
 
 UniValue z_listaddresses(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
@@ -3752,7 +3778,7 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp, const CPubKey& mypk
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "z_listaddresses ( includeWatchonly )\n"
-            "\nReturns the list of Sprout and Sapling shielded addresses belonging to the wallet.\n"
+            "\nReturns the list of Sapling shielded addresses belonging to the wallet.\n"
             "\nArguments:\n"
             "1. includeWatchonly (bool, optional, default=false) Also include watchonly addresses (see 'z_importviewingkey')\n"
             "\nResult:\n"
@@ -3773,15 +3799,6 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp, const CPubKey& mypk
     }
 
     UniValue ret(UniValue::VARR);
-    {
-        std::set<libzcash::SproutPaymentAddress> addresses;
-        pwalletMain->GetSproutPaymentAddresses(addresses);
-        for (auto addr : addresses) {
-            if (fIncludeWatchonly || pwalletMain->HaveSproutSpendingKey(addr)) {
-                ret.push_back(EncodePaymentAddress(addr));
-            }
-        }
-    }
     {
         std::set<libzcash::SaplingPaymentAddress> addresses;
         pwalletMain->GetSaplingPaymentAddresses(addresses);

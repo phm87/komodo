@@ -1898,7 +1898,10 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
             "{\n"
             "  \"time\": xxxxx,                           (numeric) The timestamp for the final block in the window in UNIX format.\n"
             "  \"txcount\": xxxxx,                        (numeric) The total number of transactions in the chain up to that point.\n"
+            "  \"nullifiers\": xxxxx,                     (numeric) The total number of shielded nullifiers in the chain up to that point.\n"
             "  \"shielded_txcount\": xxxxx,               (numeric) The total number of shielded (containing a zaddr) transactions in the chain up to that point.\n"
+            "  \"shielded_outputs\": xxxxx,               (numeric) The total number of shielded outputs in the chain up to that point.\n"
+            "  \"shielded_pool_size\": xxxxx,             (numeric) The total number of unspent shielded outputs, i.e. the Shielded Pool or Anonymity Set (anonset).\n"
             "  \"shielding_txcount\": xxxxx,              (numeric) The total number of shielding (containing a zaddr output) transactions in the chain up to that point.\n"
             "  \"deshielding_txcount\": xxxxx,            (numeric) The total number of deshielding (containing a zaddr input) transactions in the chain up to that point.\n"
             "  \"fully_shielded_txcount\": xxxxx,         (numeric) The total number of z2z, AKA fully-shielded (containing only zaddr inputs+outputs) transactions in the chain up to that point.\n"
@@ -1997,9 +2000,9 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
         ret.pushKV("shielding_payments", (int64_t)pindex->nChainShieldingPayments);
 
         int64_t nullifierCount = pwalletMain->NullifierCount();
-        //TODO: we actually need to have zindex keep track of total number of zouts, including change
-        // Currently zpayments does not include change and will underestimate actual zpool size
-        ret.pushKV("shielded_pool_size", (int64_t)pindex->nChainShieldedPayments - nullifierCount);
+        ret.pushKV("nullifiers", (int64_t)nullifierCount);
+        ret.pushKV("shielded_pool_size", (int64_t)pindex->nChainShieldedOutputs - nullifierCount);
+        ret.pushKV("shielded_outputs", (int64_t)pindex->nChainShieldedOutputs);
     }
 
     if (blockcount > 0) {

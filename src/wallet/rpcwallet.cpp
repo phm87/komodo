@@ -3748,27 +3748,25 @@ UniValue z_listnullifiers(const UniValue& params, bool fHelp, const CPubKey& myp
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 1)
+    if (fHelp || params.size() > 0)
         throw runtime_error(
-            "z_listaddresses ( includeWatchonly )\n"
-            "\nReturns the list of Sprout and Sapling shielded addresses belonging to the wallet.\n"
-            "\nArguments:\n"
-            "1. includeWatchonly (bool, optional, default=false) Also include watchonly addresses (see 'z_importviewingkey')\n"
+            "z_listnullifiers\n"
+            "\nReturns the list of Sapling nullifiers.\n"
             "\nResult:\n"
             "[                     (json array of string)\n"
-            "  \"zaddr\"           (string) a zaddr belonging to the wallet\n"
+            "  \"nullifier\"       (string) a Sapling nullifer\n"
             "  ,...\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("z_listaddresses", "")
-            + HelpExampleRpc("z_listaddresses", "")
+            + HelpExampleCli("z_listnullifiers", "")
+            + HelpExampleRpc("z_listnullifiers", "")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
     UniValue ret(UniValue::VARR);
-    for (auto nullifier: Nullifiers){
-        ret.push_back(EncodePaymentAddress(addr));
-    }
+    //for (auto nullifier: mempool.getNullifiers()) {
+    //   ret.push_back(nullifier.GetHex());
+    //}
     return ret;
 }
 

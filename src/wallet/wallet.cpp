@@ -613,15 +613,6 @@ std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersFor
         }
     }
     for (const auto & txPair : mapWallet) {
-        // Sprout
-        for (const auto & noteDataPair : txPair.second.mapSproutNoteData) {
-            auto & noteData = noteDataPair.second;
-            auto & nullifier = noteData.nullifier;
-            auto & address = noteData.address;
-            if (nullifier && addresses.count(address)) {
-                nullifierSet.insert(std::make_pair(address, nullifier.get()));
-            }
-        }
         // Sapling
         for (const auto & noteDataPair : txPair.second.mapSaplingNoteData) {
             auto & noteData = noteDataPair.second;
@@ -960,11 +951,28 @@ void CWallet::AddToSpends(const uint256& wtxid)
     }
 }
 
+std::set<uint256> CWallet::GetNullifiers()
+{
+    std::set<uint256> nullifierSet;
+    for (const auto & txPair : mapWallet) {
+        // Sapling
+        for (const auto & noteDataPair : txPair.second.mapSaplingNoteData) {
+            auto & noteData = noteDataPair.second;
+            auto & nullifier = noteData.nullifier;
+            if (nullifier) {
+                nullifierSet.insert(nullifier.get());
+            }
+        }
+    }
+    return nullifierSet;
+}
+
 int64_t CWallet::NullifierCount()
 {
     LOCK(cs_wallet);
-    return mapTxSaplingNullifiers.size();
+    return mempool.getNullifiers().size();
 }
+
 
 void CWallet::ClearNoteWitnessCache()
 {

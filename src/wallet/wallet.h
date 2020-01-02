@@ -797,6 +797,7 @@ public:
     void ClearNoteWitnessCache();
 
     int64_t NullifierCount();
+    std::set<uint256> GetNullifiers();
 
 protected:
     /**

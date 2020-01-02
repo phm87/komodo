@@ -1,4 +1,4 @@
-// Copyright © 2019 The Hush developers
+// Copyright (c) 2019      The Hush developers
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
@@ -17,7 +17,7 @@
 #ifndef KOMODO_DEFS_H
 #define KOMODO_DEFS_H
 #include "arith_uint256.h"
-
+#include "chain.h"
 #include "komodo_nk.h"
 
 #define KOMODO_EARLYTXID_HEIGHT 100
@@ -34,6 +34,9 @@
 #define KOMODO_FIRSTFUNGIBLEID 100
 #define KOMODO_SAPLING_ACTIVATION 1544832000 // Dec 15th, 2018
 #define KOMODO_SAPLING_DEADLINE 1550188800 // Feb 15th, 2019
+#define ASSETCHAINS_STAKED_BLOCK_FUTURE_MAX 57
+#define ASSETCHAINS_STAKED_BLOCK_FUTURE_HALF 27
+#define ASSETCHAINS_STAKED_MIN_POW_DIFF 536900000 // 537000000 537300000
 #define _COINBASE_MATURITY 100
 
 // KMD Notary Seasons 
@@ -43,10 +46,21 @@
     // 1751328000 = dummy timestamp, 1 July 2025!
     // 7113400 = 5x current KMD blockheight. 
 // to add 4th season, change NUM_KMD_SEASONS to 4, and add timestamp and height of activation to these arrays. 
-#define NUM_KMD_SEASONS 3
+
+#define NUM_KMD_SEASONS 4
 #define NUM_KMD_NOTARIES 64
-static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, 1751328000};
-static const int32_t KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS] = {814000, 1444000, 7113400};
+
+// $ ./contrib/block_time.pl 166250
+// Hush Block 166250 will happen at roughly:
+// Wed Jan 29 08:14:12 2020 Eastern # 1580303652
+// Wed Jan 29 13:14:12 2020 GMT     # 1580303652
+const uint32_t nHushHardforkHeight = 166250;
+
+// No coins/code are currently using timestamp activated fork
+const uint32_t nHushHardforkTimestamp = 1580303652; // Jan 29nd 1pm GMT
+
+static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, nHushHardforkTimestamp, 1751328000};
+static const int32_t  KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS]    = {1,2,nHushHardforkHeight, 5*nHushHardforkHeight};
 
 // Era array of pubkeys. Add extra seasons to bottom as requried, after adding appropriate info above. 
 static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
@@ -248,6 +262,73 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
         {"gt_AR", "0348430538a4944d3162bb4749d8c5ed51299c2434f3ee69c11a1f7815b3f46135" },
         {"patchkez_SH", "03f45e9beb5c4cd46525db8195eb05c1db84ae7ef3603566b3d775770eba3b96ee" },
         {"decker_AR", "03ffdf1a116300a78729608d9930742cd349f11a9d64fcc336b8f18592dd9c91bc" }, // 63
+    },
+    {
+        // Season 3.5 third party NN pubkeys from https://github.com/KomodoPlatform/dPoW/blob/master/iguana/3rd_party
+        {"madmax_NA", "02ef81a360411adf71184ff04d0c5793fc41fd1d7155a28dd909f21f35f4883ac1" },
+        {"alright_AR", "036a6bca1c2a8166f79fa8a979662892742346cc972b432f8e61950a358d705517" },
+        {"strob_NA", "02049202f3872877e81035549f6f3a0f868d0ad1c9b0e0d2b48b1f30324255d26d" },
+        {"hunter_EU", "0378224b4e9d8a0083ce36f2963ec0a4e231ec06b0c780de108e37f41181a89f6a" },
+        {"phm87_SH", "03889a10f9df2caef57220628515693cf25316fe1b0693b0241419e75d0d0e66ed" },
+        {"chainmakers_NA", "030e4822bddba10eb50d52d7da13106486651e4436962078ee8d681bc13f4993e9" },
+        {"indenodes_EU", "03a416533cace0814455a1bb1cd7861ce825a543c6f6284a432c4c8d8875b7ace9" },
+        {"blackjok3r_SH", "03d23bb5aad3c20414078472220cc5c26bc5aeb41e43d72c99158d450f714d743a" },
+        {"chainmakers_EU", "034f8c0a504856fb3d80a94c3aa78828c1152daf8ccc45a17c450f32a1e242bb0c" },
+        {"titomane_AR", "0358cd6d7460654a0ddd5125dd6fa0402d0719999444c6cc3888689a0b4446136a" },
+        {"fullmoon_SH", "0275031fa79846c5d667b1f7c4219c487d439cd367dd294f73b5ecd55b4e673254" },
+        {"indenodes_NA", "02b3908eda4078f0e9b6704451cdc24d418e899c0f515fab338d7494da6f0a647b" },
+        {"chmex_EU", "03e5b7ab96b7271ecd585d6f22807fa87da374210a843ec3a90134cbf4a62c3db1" },
+        {"metaphilibert_SH", "03b21ff042bf1730b28bde43f44c064578b41996117ac7634b567c3773089e3be3" },
+        {"ca333_DEV", "029c0342ce2a4f9146c7d1ee012b26f5c2df78b507fb4461bf48df71b4e3031b56" },
+        {"cipi_NA", "034406ac4cf94e84561c5d3f25384dd59145e92fefc5972a037dc6a44bfa286688" },
+        {"pungocloud_SH", "0203064e291045187927cc35ed350e046bba604e324bb0e3b214ea83c74c4713b1" },
+        {"voskcoin_EU", "037bfd946f1dd3736ddd2cb1a0731f8b83de51be5d1be417496fbc419e203bc1fe" },
+        {"decker_DEV", "02fca8ee50e49f480de275745618db7b0b3680b0bdcce7dcae7d2e0fd5c3345744" },
+        {"cryptoeconomy_EU", "037d04b7d16de61a44a3fc766bea4b7791023a36675d6cee862fe53defd04dd8f2" },
+        {"etszombi_EU", "02f65da26061d1b9f1756a274918a37e83086dbfe9a43d2f0b35b9d2f593b31907" },
+        {"karasugoi_NA", "024ba10f7f5325fd6ec6cab50c5242d142d00fab3537c0002097c0e98f72014177" },
+        {"pirate_AR", "0353e2747f89968741c24f254caec24f9f49a894a0039ee9ba09234fcbad75c77d" },
+        {"metaphilibert_AR", "0239e34ad22957bbf4c8df824401f237b2afe8d40f7a645ecd43e8f27dde1ab0da" },
+        {"zatjum_SH", "03643c3b0a07a34f6ae7b048832e0216b935408dfc48b0c7d3d4faceb38841f3f3" },
+        {"madmax_AR", "038735b4f6881925e5a9b14275af80fa2b712c8bd57eef26b97e5b153218890e38" },
+        {"lukechilds_NA", "024607d85ea648511fa50b13f29d16beb2c3a248c586b449707d7be50a6060cf50" },
+        {"cipi_AR", "025b7655826f5fd3a807cbb4918ef9f02fe64661153ca170db981e9b0861f8c5ad" },
+        {"tonyl_AR", "03a8db38075c80348889871b4318b0a79a1fd7e9e21daefb4ca6e4f05e5963569c" },
+        {"infotech_DEV", "0399ff59b0244103486a94acf1e4a928235cb002b20e26a6f3163b4a0d5e62db91" },
+        {"fullmoon_NA", "02adf6e3cb8a3c94d769102aec9faf2cb073b7f2979ce64efb1161a596a8d16312" },
+        {"etszombi_AR", "03c786702b81e0122157739c8e2377cf945998d36c0d187ec5c5ff95855848dfdd" },
+        {"node-9_EU", "024f2402daddee0c8169ccd643e5536c2cf95b9690391c370a65c9dd0169fc3dc6" },
+        {"phba2061_EU", "02dc98f064e3bf26a251a269893b280323c83f1a4d4e6ccd5e84986cc3244cb7c9" },
+        {"indenodes_AR", "0242778789986d614f75bcf629081651b851a12ab1cc10c73995b27b90febb75a2" },
+        {"and1-89_EU", "029f5a4c6046de880cc95eb448d20c80918339daff7d71b73dd3921895559d7ca3" },
+        {"komodopioneers_SH", "02ae196a1e93444b9fcac2b0ccee428a4d9232a00b3a508484b5bccaedc9bac55e" },
+        {"komodopioneers_EU", "03c7fef345ca6b5326de9d5a38498638801eee81bfea4ca8ffc3dacac43c27b14d" },
+        {"d0ct0r_NA", "0235b211469d7c1881d30ab647e0d6ddb4daf9466f60e85e6a33a92e39dedde3a7" },
+        {"kolo_DEV", "03dc7c71a5ef7104f81e62928446c4216d6e9f68d944c893a21d7a0eba74b1cb7c" },
+        {"peer2cloud_AR", "0351c784d966dbb79e1bab4fad7c096c1637c98304854dcdb7d5b5aeceb94919b4" },
+        {"webworker01_SH", "0221365d89a6f6373b15daa4a50d56d34ad1b4b8a48a7fd090163b6b5a5ecd7a0a" },
+        {"webworker01_NA", "03bfc36a60194b495c075b89995f307bec68c1bcbe381b6b29db47af23494430f9" },
+        {"pbca26_NA", "038319dcf74916486dbd506ac866d184c17c3202105df68c8335a1a1079ef0dfcc" },
+        {"indenodes_SH", "031d1584cf0eb4a2d314465e49e2677226b1615c3718013b8d6b4854c15676a58c" },
+        {"pirate_NA", "034899e6e884b3cb1f491d296673ab22a6590d9f62020bea83d721f5c68b9d7aa7" },
+        {"lukechilds_AR", "031ee242e67a8166e489c0c4ed1e5f7fa32dff19b4c1749de35f8da18befa20811" },
+        {"dragonhound_NA", "022405dbc2ea320131e9f0c4115442c797bf0f2677860d46679ac4522300ce8c0a" },
+        {"fullmoon_AR", "03cd152ae20adcc389e77acad25953fc2371961631b35dc92cf5c96c7729c2e8d9" },
+        {"chainzilla_SH", "03fe36ff13cb224217898682ce8b87ba6e3cdd4a98941bb7060c04508b57a6b014" },
+        {"titomane_EU", "03d691cd0914a711f651082e2b7b27bee778c1309a38840e40a6cf650682d17bb5" },
+        {"jeezy_EU", "022bca828b572cb2b3daff713ed2eb0bbc7378df20f799191eebecf3ef319509cd" },
+        {"titomane_SH", "038c2a64f7647633c0e74eec93f9a668d4bf80214a43ed7cd08e4e30d3f2f7acfb" },
+        {"alien_AR", "024f20c096b085308e21893383f44b4faf1cdedea9ad53cc7d7e7fbfa0c30c1e71" },
+        {"pirate_EU", "0371f348b4ac848cdfb732758f59b9fdd64285e7adf769198771e8e203638db7e6" },
+        {"thegaltmines_NA", "03e1d4cec2be4c11e368ff0c11e80cd1b09da8026db971b643daee100056b110fa" },
+        {"computergenie_NA", "02f945d87b7cd6e9f2173a110399d36b369edb1f10bdf5a4ba6fd4923e2986e137" },
+        {"nutellalicka_SH", "035ec5b9e88734e5bd0f3bd6533e52f917d51a0e31f83b2297aabb75f9798d01ef" },
+        {"chainstrike_SH", "0221f9dee04b7da1f3833c6ea7f7325652c951b1c239052b0dadb57209084ca6a8" },
+        {"hunter_SH", "02407db70ad30ce4dfaee8b4ae35fae88390cad2b0ba0373fdd6231967537ccfdf" },
+        {"alien_EU", "022b85908191788f409506ebcf96a892f3274f352864c3ed566c5a16de63953236" },
+        {"gt_AR", "0307c1cf89bd8ed4db1b09a0a98cf5f746fc77df3803ecc8611cf9455ec0ce6960" },
+        {"patchkez_SH", "03d7c187689bf829ca076a30bbf36d2e67bb74e16a3290d8a55df21d6cb15c80c1" },
+        {"decker_AR", "02a85540db8d41c7e60bf0d33d1364b4151cad883dd032878ea4c037f67b769635" }
     }
 };
 
@@ -271,11 +352,14 @@ int32_t MAX_BLOCK_SIZE(int32_t height);
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAIN_INIT, ASSETCHAINS_MAGIC;
-extern int32_t  ASSETCHAINS_LWMAPOS, ASSETCHAINS_SAPLING, ASSETCHAINS_OVERWINTER,ASSETCHAINS_BLOCKTIME;
+extern int32_t ASSETCHAINS_LWMAPOS, ASSETCHAINS_SAPLING, ASSETCHAINS_OVERWINTER,ASSETCHAINS_BLOCKTIME;
 extern uint64_t ASSETCHAINS_SUPPLY, ASSETCHAINS_FOUNDERS_REWARD;
 
+extern int32_t ASSETCHAINS_LWMAPOS, ASSETCHAINS_SAPLING, ASSETCHAINS_OVERWINTER,ASSETCHAINS_BLOCKTIME;
+extern int32_t KOMODO_BLOCK_POSUNITS, KOMODO_CONSECUTIVE_POS_THRESHOLD, KOMODO_NOPOS_THRESHHOLD;
+
 extern uint64_t ASSETCHAINS_TIMELOCKGTE;
-extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH,KOMODO_INITDONE;
+extern uint32_t ASSETCHAINS_ALGO,ASSETCHAINS_EQUIHASH,KOMODO_INITDONE;
 
 extern int32_t KOMODO_MININGTHREADS,KOMODO_LONGESTCHAIN,ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,KOMODO_ON_DEMAND,KOMODO_PASSPORT_INITDONE,ASSETCHAINS_STAKED,KOMODO_NSPV;
 extern uint64_t ASSETCHAINS_COMMISSION, ASSETCHAINS_LASTERA,ASSETCHAINS_CBOPRET;
@@ -286,8 +370,6 @@ extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY,ASSETCHAINS_SCRIPTP
 extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],ASSETCHAINS_MARMARA;
 extern std::vector<std::string> ASSETCHAINS_PRICES,ASSETCHAINS_STOCKS;
 
-extern int32_t KOMODO_BLOCK_POSUNITS, KOMODO_CONSECUTIVE_POS_THRESHOLD, KOMODO_NOPOS_THRESHHOLD;
-
 extern uint256 KOMODO_EARLYTXID;
 
 extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE,KOMODO_DEALERNODE;
@@ -296,20 +378,22 @@ extern std::string CCerror,ASSETCHAINS_CCLIB;
 extern uint8_t ASSETCHAINS_CCDISABLES[256];
 
 extern int32_t USE_EXTERNAL_PUBKEY;
-extern std::string NOTARY_PUBKEY;
+extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS;
 extern int32_t KOMODO_EXCHANGEWALLET;
 extern std::string DONATION_PUBKEY;
 extern uint8_t ASSETCHAINS_PRIVATE;
 extern int32_t USE_EXTERNAL_PUBKEY;
-extern char NOTARYADDRS[64][64]; // should be depreciated later. Only affects labs.
+extern char NOTARYADDRS[64][64];
 extern char NOTARY_ADDRESSES[NUM_KMD_SEASONS][64][64];
-extern int32_t KOMODO_TESTNODE, KOMODO_SNAPSHOT_INTERVAL;
+extern int32_t KOMODO_TESTNODE, KOMODO_SNAPSHOT_INTERVAL,IS_STAKED_NOTARY,STAKED_ERA;
 extern int32_t ASSETCHAINS_EARLYTXIDCONTRACT;
+extern int32_t ASSETCHAINS_STAKED_SPLIT_PERCENTAGE;
 int tx_height( const uint256 &hash );
 extern std::vector<std::string> vWhiteListAddress;
 extern std::map <std::int8_t, int32_t> mapHeightEvalActivate;
 void komodo_netevent(std::vector<uint8_t> payload);
 int32_t getacseason(uint32_t timestamp);
+int32_t getkmdseason(int32_t height);
 
 #define IGUANA_MAXSCRIPTSIZE 10001
 #define KOMODO_KVDURATION 1440
@@ -341,8 +425,19 @@ uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 
 int32_t komodo_currentheight();
 int32_t komodo_notarized_bracket(struct notarized_checkpoint *nps[2],int32_t height);
 arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,uint32_t nTime);
+bool hush_hardfork_active(uint32_t time);
 
 uint256 Parseuint256(const char *hexstr);
+void komodo_sendmessage(int32_t minpeers, int32_t maxpeers, const char *message, std::vector<uint8_t> payload);
+CBlockIndex *komodo_getblockindex(uint256 hash);
+int32_t komodo_nextheight();
+CBlockIndex *komodo_blockindex(uint256 hash);
+CBlockIndex *komodo_chainactive(int32_t height);
+int32_t komodo_blockheight(uint256 hash);
+bool komodo_txnotarizedconfirmed(uint256 txid);
+int32_t komodo_blockload(CBlock& block, CBlockIndex *pindex);
+uint32_t komodo_chainactive_timestamp();
+uint32_t GetLatestTimestamp(int32_t height);
 
 #ifndef KOMODO_NSPV_FULLNODE
 #define KOMODO_NSPV_FULLNODE (KOMODO_NSPV <= 0)

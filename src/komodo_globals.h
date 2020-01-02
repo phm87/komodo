@@ -1,4 +1,4 @@
-// Copyright 2019 The Hush Developers
+// Copyright 2019-2020 The Hush Developers
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -48,11 +48,6 @@ struct komodo_state KOMODO_STATES[34];
 int COINBASE_MATURITY = _COINBASE_MATURITY;//100;
 unsigned int WITNESS_CACHE_SIZE = _COINBASE_MATURITY+10;
 uint256 KOMODO_EARLYTXID;
-int32_t KOMODO_BLOCK_POSUNITS = 1024;    // one block is 1024 units
-int32_t KOMODO_MIN_STAKEAGE = 150;       // 1/2 this should also be a cap on the POS averaging window, or startup could be too easy
-int32_t KOMODO_CONSECUTIVE_POS_THRESHOLD = 7;
-int32_t KOMODO_NOPOS_THRESHHOLD = 150;   // if we have no POS blocks in this many blocks, set to default difficulty
-
 
 int32_t KOMODO_MININGTHREADS = -1,IS_KOMODO_NOTARY,IS_STAKED_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,KOMODO_ON_DEMAND,KOMODO_EXTERNAL_NOTARIES,KOMODO_PASSPORT_INITDONE,KOMODO_PAX,KOMODO_EXCHANGEWALLET,KOMODO_REWIND,STAKED_ERA,KOMODO_CONNECTING = -1,KOMODO_DEALERNODE,KOMODO_EXTRASATOSHI,ASSETCHAINS_FOUNDERS,ASSETCHAINS_CBMATURITY,KOMODO_NSPV;
 int32_t KOMODO_INSYNC,KOMODO_LASTMINED,prevKOMODO_LASTMINED,KOMODO_CCACTIVATE,JUMBLR_PAUSE = 1;

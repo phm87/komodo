@@ -1,7 +1,7 @@
 #include "cc/eval.h"
 #include "crosschain.h"
 #include "notarisationdb.h"
-#include "notaries_staked.h"
+
 
 int GetSymbolAuthority(const char* symbol)
 {

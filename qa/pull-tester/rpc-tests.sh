@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copyright 2019 The Hush developers
+# Copyright (c) 2019-2020 The Hush developers
+# Released under the GPLv3
 
 set -e -o pipefail
 
@@ -68,7 +69,6 @@ testScripts=(
     'zcjoinsplitdoublespend.py'
     'ivk_import_export.py'
     'zkey_import_export.py'
-    'reorg_limit.py'
     'getblocktemplate.py'
     'bip65-cltv-p2p.py'
     'bipdersig-p2p.py'

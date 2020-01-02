@@ -1,3 +1,4 @@
+// Copyright (c) 2019      The Hush developers
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
@@ -13,11 +14,8 @@
  *                                                                            *
  ******************************************************************************/
 
-
 #include "komodo_defs.h"
 #include "komodo_cJSON.h"
-
-#include "notaries_staked.h"
 
 #define KOMODO_MAINNET_START 178999
 #define KOMODO_NOTARIES_HEIGHT1 814000
@@ -69,7 +67,7 @@ int32_t getkmdseason(int32_t height)
         return(1);
     for (int32_t i = 1; i < NUM_KMD_SEASONS; i++)
     {
-        if ( height <= KMD_SEASON_HEIGHTS[i] && height >= KMD_SEASON_HEIGHTS[i-1] )
+        if ( height <= KMD_SEASON_HEIGHTS[i] && height > KMD_SEASON_HEIGHTS[i-1] )
             return(i+1);
     }
     return(0);
@@ -81,7 +79,7 @@ int32_t getacseason(uint32_t timestamp)
         return(1);
     for (int32_t i = 1; i < NUM_KMD_SEASONS; i++)
     {
-        if ( timestamp <= KMD_SEASON_TIMESTAMPS[i] && timestamp >= KMD_SEASON_TIMESTAMPS[i-1] )
+        if ( timestamp <= KMD_SEASON_TIMESTAMPS[i] && timestamp > KMD_SEASON_TIMESTAMPS[i-1] )
             return(i+1);
     }
     return(0);
@@ -101,15 +99,12 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
     if ( is_STAKED(ASSETCHAINS_SYMBOL) == 0 )
     {
         int32_t kmd_season = 0;
-        if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        {
-            // This is KMD, use block heights to determine the KMD notary season.. 
-            if ( height >= KOMODO_NOTARIES_HARDCODED )
-                kmd_season = getkmdseason(height);
-        }
-        else 
-        {
-            // This is a non LABS assetchain, use timestamp to detemine notary pubkeys. 
+        bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+        if ( ishush3 ) {
+            // This is HUSH, use block heights to determine the notary season.. 
+            kmd_season = getkmdseason(height);
+        } else {
+            // Use timestamp to detemine notary pubkeys. 
             kmd_season = getacseason(timestamp);
         }
         if ( kmd_season != 0 )
@@ -120,7 +115,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                     decode_hex(kmd_pubkeys[kmd_season-1][i],33,(char *)notaries_elected[kmd_season-1][i][1]);
                 if ( ASSETCHAINS_PRIVATE != 0 )
                 {
-                    // this is PIRATE, we need to populate the address array for the notary exemptions. 
+                    // we need to populate the address array for the notary exemptions. 
                     for (i = 0; i<NUM_KMD_NOTARIES; i++)
                         pubkey2addr((char *)NOTARY_ADDRESSES[kmd_season-1][i],(uint8_t *)kmd_pubkeys[kmd_season-1][i]);
                 }
@@ -129,16 +124,6 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             memcpy(pubkeys,kmd_pubkeys[kmd_season-1],NUM_KMD_NOTARIES * 33);
             return(NUM_KMD_NOTARIES);
         }
-    }
-    else if ( timestamp != 0 )
-    { 
-        // here we can activate our pubkeys for LABS chains everythig is in notaries_staked.cpp
-        int32_t staked_era; int8_t numSN;
-        uint8_t staked_pubkeys[64][33];
-        staked_era = STAKED_era(timestamp);
-        numSN = numStakedNotaries(staked_pubkeys,staked_era);
-        memcpy(pubkeys,staked_pubkeys,numSN * 33);
-        return(numSN);
     }
 
     htind = height / KOMODO_ELECTION_GAP;

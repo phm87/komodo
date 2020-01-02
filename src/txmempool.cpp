@@ -1,5 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019-2020 The Hush developers
+
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -863,6 +865,7 @@ void CTxMemPool::NotifyRecentlyAdded()
         try {
             SyncWithWallets(tx, NULL);
         } catch (const boost::thread_interrupted&) {
+			fprintf(stderr,"%s: thread interrupted\n", __FUNCTION__);
             throw;
         } catch (const std::exception& e) {
             PrintExceptionContinue(&e, "CTxMemPool::NotifyRecentlyAdded()");
@@ -883,6 +886,10 @@ bool CTxMemPool::IsFullyNotified() {
     assert(Params().NetworkIDString() == "regtest");
     LOCK(cs);
     return nRecentlyAddedSequence == nNotifiedSequence;
+}
+
+std::map<uint256, const CTransaction*> CTxMemPool::getNullifiers() {
+    return mapSaplingNullifiers;
 }
 
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }

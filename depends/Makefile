@@ -146,6 +146,9 @@ install: check-packages $(host_prefix)/share/config.site
 
 download-one: check-sources $(all_sources)
 
+clean:
+	echo "Fake clean"
+
 download-osx:
 	@$(MAKE) -s HOST=x86_64-apple-darwin11 download-one
 download-linux:

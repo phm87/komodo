@@ -1,5 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019-2020 The Hush developers
+
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -33,7 +35,7 @@
 
 using namespace std;
 
-// NOTE: Per issue #3277, do not use the prefix 'X' or 'x' as they were
+// NOTE: Per zcash issue #3277, do not use the prefix 'X' or 'x' as they were
 // previously used by DB_SAPLING_ANCHOR and DB_BEST_SAPLING_ANCHOR.
 static const char DB_SPROUT_ANCHOR = 'A';
 static const char DB_SAPLING_ANCHOR = 'Z';
@@ -285,10 +287,14 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) const {
 
 bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockFileInfo*> >& fileInfo, int nLastFile, const std::vector<const CBlockIndex*>& blockinfo) {
     CDBBatch batch(*this);
+    if (fZdebug)
+	    fprintf(stderr, "%s: Writing block files\n", __FUNCTION__);
     for (std::vector<std::pair<int, const CBlockFileInfo*> >::const_iterator it=fileInfo.begin(); it != fileInfo.end(); it++) {
         batch.Write(make_pair(DB_BLOCK_FILES, it->first), *it->second);
     }
     batch.Write(DB_LAST_BLOCK, nLastFile);
+    if (fZdebug)
+	    fprintf(stderr, "%s: Writing block index\n", __FUNCTION__);
     for (std::vector<const CBlockIndex*>::const_iterator it=blockinfo.begin(); it != blockinfo.end(); it++) {
         batch.Write(make_pair(DB_BLOCK_INDEX, (*it)->GetBlockHash()), CDiskBlockIndex(*it));
     }
@@ -690,18 +696,23 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
     boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
 
     pcursor->Seek(make_pair(DB_BLOCK_INDEX, uint256()));
+    //fprintf(stderr,"%s: Seeked cursor to block index\n",__FUNCTION__);
 
     // Load mapBlockIndex
     while (pcursor->Valid()) {
+        //fprintf(stderr,"%s: Valid cursor\n",__FUNCTION__);
         boost::this_thread::interruption_point();
         std::pair<char, uint256> key;
         if (pcursor->GetKey(key) && key.first == DB_BLOCK_INDEX) {
+            //fprintf(stderr,"%s: Found DB_BLOCK_INDEX\n",__FUNCTION__);
             CDiskBlockIndex diskindex;
             if (pcursor->GetValue(diskindex)) {
                 // Construct block index object
-                CBlockIndex* pindexNew = InsertBlockIndex(diskindex.GetBlockHash());
+                //fprintf(stderr,"%s: Creating CBlockIndex...\n",__FUNCTION__);
+                CBlockIndex* pindexNew    = InsertBlockIndex(diskindex.GetBlockHash());
                 pindexNew->pprev          = InsertBlockIndex(diskindex.hashPrev);
                 pindexNew->SetHeight(diskindex.GetHeight());
+                //fprintf(stderr,"%s: Setting CBlockIndex height...\n",__FUNCTION__);
                 pindexNew->nFile                  = diskindex.nFile;
                 pindexNew->nDataPos               = diskindex.nDataPos;
                 pindexNew->nUndoPos               = diskindex.nUndoPos;
@@ -718,10 +729,22 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nTx                    = diskindex.nTx;
                 pindexNew->nSproutValue           = diskindex.nSproutValue;
                 pindexNew->nSaplingValue          = diskindex.nSaplingValue;
+                //fprintf(stderr,"%s: Setting CBlockIndex details...\n",__FUNCTION__);
                 pindexNew->segid                  = diskindex.segid;
                 pindexNew->nNotaryPay             = diskindex.nNotaryPay;
+                pindexNew->nPayments              = diskindex.nPayments;
+                pindexNew->nShieldedTx            = diskindex.nShieldedTx;
+                pindexNew->nShieldedOutputs       = diskindex.nShieldedOutputs;
+                pindexNew->nShieldedPayments      = diskindex.nShieldedPayments;
+                pindexNew->nShieldingTx           = diskindex.nShieldingTx;
+                pindexNew->nShieldingPayments     = diskindex.nShieldingPayments;
+                pindexNew->nDeshieldingTx         = diskindex.nDeshieldingTx;
+                pindexNew->nDeshieldingPayments   = diskindex.nDeshieldingPayments;
+                pindexNew->nFullyShieldedTx       = diskindex.nFullyShieldedTx;
+                pindexNew->nFullyShieldedPayments = diskindex.nFullyShieldedPayments;
+                pindexNew->nNotarizations         = diskindex.nNotarizations;
 
-//fprintf(stderr,"loadguts ht.%d\n",pindexNew->GetHeight());
+                //fprintf(stderr,"loadguts ht.%d\n",pindexNew->GetHeight());
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
                 if (header.GetHash() != pindexNew->GetBlockHash())

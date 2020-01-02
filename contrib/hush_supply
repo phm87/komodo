@@ -1,4 +1,6 @@
 #!/usr/bin/env perl
+# Copyright 2019 The Hush developers
+# Released under the GPLv3
 use warnings;
 use strict;
 

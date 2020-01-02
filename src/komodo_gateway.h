@@ -1,4 +1,4 @@
-// Copyright 2019 The Hush developers
+// Copyright 2019-2020 The Hush developers
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
@@ -20,15 +20,12 @@
 /*#include "secp256k1/include/secp256k1.h"
 #include "secp256k1/include/secp256k1_schnorrsig.h"
 #include "secp256k1/include/secp256k1_musig.h"
-
 int32_t dummy_linker_tricker()
 {
     secp256k1_context *ctx = 0; std::vector<uint8_t> musig64; CPubKey pk; secp256k1_schnorrsig musig; secp256k1_pubkey combined_pk;
     if ( secp256k1_schnorrsig_parse((const secp256k1_context *)ctx,&musig,(const uint8_t *)&musig64[0]) > 0 && secp256k1_ec_pubkey_parse(ctx,&combined_pk,pk.begin(),33) > 0 )
         return(1);
 }*/
-
-int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx);
 
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base)
 {
@@ -703,8 +700,29 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         {
             if ( i == 0 && txn_count > 1 && block.vtx[txn_count-1].vout.size() > 0 && block.vtx[txn_count-1].vout[0].nValue == 5000 )
             {
+                /*
                 if ( block.vtx[txn_count-1].vin.size() == 1 && GetTransaction(block.vtx[txn_count-1].vin[0].prevout.hash,tx,hash,false) && block.vtx[0].vout[0].scriptPubKey == tx.vout[block.vtx[txn_count-1].vin[0].prevout.n].scriptPubKey )
                     notmatched = 1;
+                */
+                if ( block.vtx[txn_count-1].vin.size() == 1 ) {
+                    uint256 hashNotaryProofVin = block.vtx[txn_count-1].vin[0].prevout.hash;
+                    int fNotaryProofVinTxFound = GetTransaction(hashNotaryProofVin,tx,hash,false);
+                    if (!fNotaryProofVinTxFound) {
+                        // try to search in the same block
+                        BOOST_FOREACH(const CTransaction &txInThisBlock, block.vtx) {
+                            if (txInThisBlock.GetHash() == hashNotaryProofVin) {
+                                fNotaryProofVinTxFound = 1;
+                                tx = txInThisBlock;
+                                hash = block.GetHash();
+                                break;
+                            }
+                        }
+                    }
+                    if ( fNotaryProofVinTxFound && block.vtx[0].vout[0].scriptPubKey == tx.vout[block.vtx[txn_count-1].vin[0].prevout.n].scriptPubKey )
+                        {
+                            notmatched = 1;
+                        }
+                }  
             }
             n = block.vtx[i].vin.size();
             for (j=0; j<n; j++)
@@ -718,14 +736,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                     }
                 }
             }
-        }
-    }
-    if ( height > 0 && ASSETCHAINS_MARMARA != 0 && (height & 1) == 0 )
-    {
-        if ( MarmaraValidateCoinbase(height,block.vtx[0]) < 0 )
-        {
-            fprintf(stderr,"MARMARA error ht.%d constrains even height blocks to pay 100%% to CC in vout0 with opreturn\n",height);
-            return(-1);
         }
     }
     if ( ASSETCHAINS_SYMBOL[0] == 0 ||
@@ -1232,7 +1242,6 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
     printf("numR.%d numV.%d numN.%d count.%d\n",numR,numV,numN,count);
     /*else if ( func == 'K' ) // KMD height: stop after 1st
     else if ( func == 'T' ) // KMD height+timestamp: stop after 1st
-
     else if ( func == 'N' ) // notarization, scan backwards 1440+ blocks;
     else if ( func == 'V' ) // price feed: can stop after 1440+
     else if ( func == 'R' ) // opreturn:*/
@@ -2016,7 +2025,6 @@ const char *Techstocks[] =
 { "AAPL","ADBE","ADSK","AKAM","AMD","AMZN","ATVI","BB","CDW","CRM","CSCO","CYBR","DBX","EA","FB","GDDY","GOOG","GRMN","GSAT","HPQ","IBM","INFY","INTC","INTU","JNPR","MSFT","MSI","MU","MXL","NATI","NCR","NFLX","NTAP","NVDA","ORCL","PANW","PYPL","QCOM","RHT","S","SHOP","SNAP","SPOT","SYMC","SYNA","T","TRIP","TWTR","TXN","VMW","VOD","VRSN","VZ","WDC","XRX","YELP","YNDX","ZEN"
 };
 const char *Metals[] = { "XAU", "XAG", "XPT", "XPD", };
-
 const char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
 */
 
@@ -2142,7 +2150,6 @@ int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vect
     }
     return(price);
 }
-
 uint32_t get_currencyprice(const char *symbol)
 {
     char url[512]; cJSON *json,*obj; uint32_t price = 0;
@@ -2155,7 +2162,6 @@ uint32_t get_currencyprice(const char *symbol)
     }
     return(price);
 }
-
 int32_t get_stocks(const char *list[],int32_t n)
 {
     int32_t i,errs=0; uint32_t price;
@@ -2822,3 +2828,4 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
     pthread_mutex_unlock(&pricemutex);
     return(retval);
 }
+

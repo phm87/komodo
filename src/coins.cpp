@@ -52,6 +52,11 @@ void CCoins::CalcMaskSize(unsigned int &nBytes, unsigned int &nNonzeroBytes) con
     nBytes += nLastUsedByte;
 }
 
+CNullifiersMap CCoinsViewCache::getNullifiers()
+{
+    return cacheSaplingNullifiers;
+}
+
 bool CCoins::Spend(uint32_t nPos) 
 {
     if (nPos >= vout.size() || vout[nPos].IsNull())
@@ -334,10 +339,13 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt, ShieldedType type) {
 }
 
 void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
+
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
         std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(spendDescription.nullifier, CNullifiersCacheEntry()));
         ret.first->second.entered = spent;
         ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
+        if (fZdebug)
+           LogPrintf("%s: Inserted spent=%d nullifier=%s into Sapling nullifier cache\n", __FUNCTION__, spent, spendDescription.nullifier.GetHex().c_str());
     }
 }
 
@@ -428,6 +436,8 @@ void CCoinsViewCache::SetBestBlock(const uint256 &hashBlockIn) {
 
 void BatchWriteNullifiers(CNullifiersMap &mapNullifiers, CNullifiersMap &cacheNullifiers)
 {
+    if(fZdebug)
+        LogPrintf("%s\n", __FUNCTION__);
     for (CNullifiersMap::iterator child_it = mapNullifiers.begin(); child_it != mapNullifiers.end();) {
         if (child_it->second.flags & CNullifiersCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
             CNullifiersMap::iterator parent_it = cacheNullifiers.find(child_it->first);
@@ -525,10 +535,10 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
         mapCoins.erase(itOld);
     }
 
-    ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry>(mapSproutAnchors, cacheSproutAnchors, cachedCoinsUsage);
+    //::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry>(mapSproutAnchors, cacheSproutAnchors, cachedCoinsUsage);
     ::BatchWriteAnchors<CAnchorsSaplingMap, CAnchorsSaplingMap::iterator, CAnchorsSaplingCacheEntry>(mapSaplingAnchors, cacheSaplingAnchors, cachedCoinsUsage);
 
-    ::BatchWriteNullifiers(mapSproutNullifiers, cacheSproutNullifiers);
+    //::BatchWriteNullifiers(mapSproutNullifiers, cacheSproutNullifiers);
     ::BatchWriteNullifiers(mapSaplingNullifiers, cacheSaplingNullifiers);
 
     hashSproutAnchor = hashSproutAnchorIn;
@@ -616,15 +626,44 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
 
 bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
 {
-    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-        if (GetNullifier(spendDescription.nullifier, SAPLING)) { // Prevent double spends
-            fprintf(stderr,"%s: sapling nullifier %s exists, preventing double spend\n", __FUNCTION__, spendDescription.nullifier);
+    boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
+
+    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit)
+    {
+        BOOST_FOREACH(const uint256& nullifier, joinsplit.nullifiers)
+        {
+            if (GetNullifier(nullifier, SPROUT)) {
+                // If the nullifier is set, this transaction
+                // double-spends!
+                return false;
+            }
+        }
+
+        SproutMerkleTree tree;
+        auto it = intermediates.find(joinsplit.anchor);
+        if (it != intermediates.end()) {
+            tree = it->second;
+        } else if (!GetSproutAnchorAt(joinsplit.anchor, tree)) {
             return false;
         }
 
+        BOOST_FOREACH(const uint256& commitment, joinsplit.commitments)
+        {
+            tree.append(commitment);
+        }
+
+        intermediates.insert(std::make_pair(tree.root(), tree));
+    }
+
+    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+        if (GetNullifier(spendDescription.nullifier, SAPLING)) { // Prevent double spends
+            LogPrintf("%s: sapling nullifier %s exists, preventing double spend\n", __FUNCTION__, spendDescription.nullifier.GetHex().c_str());
+            return false;
+		}
+
         SaplingMerkleTree tree;
         if (!GetSaplingAnchorAt(spendDescription.anchor, tree)) {
-            fprintf(stderr,"%s: missing sapling anchor: %s \n", __FUNCTION__, spendDescription.anchor);
+            LogPrintf("%s: missing sapling anchor: %s \n", __FUNCTION__, spendDescription.anchor.GetHex().c_str());
             return false;
         }
     }

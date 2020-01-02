@@ -1,4 +1,7 @@
 // Copyright (c) 2018 The Zcash developers
+// Copyright (c) 2019-2020 The Hush developers
+// Released under the GPLv3
+
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,6 +12,7 @@
 #include "script/sign.h"
 
 #include <boost/variant.hpp>
+#include <boost/optional/optional_io.hpp>
 #include <librustzcash.h>
 
 SpendDescriptionInfo::SpendDescriptionInfo(
@@ -169,6 +173,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
 
     auto ctx = librustzcash_sapling_proving_ctx_init();
 
+    LogPrintf("%s: Creating Sapling SpendDescriptions\n", __FUNCTION__);
     // Create Sapling SpendDescriptions
     for (auto spend : spends) {
         auto cm = spend.note.cm();
@@ -203,6 +208,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
 
         sdesc.anchor = spend.anchor;
         sdesc.nullifier = *nf;
+        LogPrintf("%s: Created cm + nullifier=%s\n", __FUNCTION__, sdesc.nullifier.ToString().c_str() );
         mtx.vShieldedSpend.push_back(sdesc);
     }
 

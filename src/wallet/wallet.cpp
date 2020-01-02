@@ -970,7 +970,13 @@ std::set<uint256> CWallet::GetNullifiers()
 int64_t CWallet::NullifierCount()
 {
     LOCK(cs_wallet);
-    return mempool.getNullifiers().size();
+    //return mempool.getNullifiers().size();
+    if(fZdebug) {
+        fprintf(stderr,"%s:mapTxSaplingNullifers.size=%d\n",__FUNCTION__,(int)mapTxSaplingNullifiers.size() );
+        fprintf(stderr,"%s:mempool.getNullifiers.size=%d\n",__FUNCTION__,(int)mempool.getNullifiers().size() );
+        fprintf(stderr,"%s:cacheSaplingNullifiers.size=%d\n",__FUNCTION__,(int)pcoinsTip->getNullifiers().size() );
+    }
+    return mapTxSaplingNullifiers.size();
 }
 
 

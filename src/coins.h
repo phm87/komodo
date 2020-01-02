@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019      The Hush developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -490,8 +490,9 @@ public:
     CCoinsViewCache(CCoinsView *baseIn);
     ~CCoinsViewCache();
 
+    CNullifiersMap getNullifiers();
+
     // Standard CCoinsView methods
-    //static CLaunchMap &LaunchMap() { return launchMap; }
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
     bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;

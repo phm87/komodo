@@ -52,6 +52,11 @@ void CCoins::CalcMaskSize(unsigned int &nBytes, unsigned int &nNonzeroBytes) con
     nBytes += nLastUsedByte;
 }
 
+CNullifiersMap CCoinsViewCache::getNullifiers()
+{
+    return cacheSaplingNullifiers;
+}
+
 bool CCoins::Spend(uint32_t nPos) 
 {
     if (nPos >= vout.size() || vout[nPos].IsNull())

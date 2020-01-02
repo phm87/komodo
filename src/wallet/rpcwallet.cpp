@@ -3764,9 +3764,9 @@ UniValue z_listnullifiers(const UniValue& params, bool fHelp, const CPubKey& myp
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
     UniValue ret(UniValue::VARR);
-    //for (auto nullifier: mempool.getNullifiers()) {
-    //   ret.push_back(nullifier.GetHex());
-    //}
+    for (auto nullifier: mempool.getNullifiers()) {
+        ret.push_back(nullifier.first.GetHex());
+    }
     return ret;
 }
 

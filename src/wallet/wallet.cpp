@@ -970,13 +970,16 @@ std::set<uint256> CWallet::GetNullifiers()
 int64_t CWallet::NullifierCount()
 {
     LOCK(cs_wallet);
-    //return mempool.getNullifiers().size();
     if(fZdebug) {
+        // this is our *local* nullifier count
         fprintf(stderr,"%s:mapTxSaplingNullifers.size=%d\n",__FUNCTION__,(int)mapTxSaplingNullifiers.size() );
+        // here be dragons
         fprintf(stderr,"%s:mempool.getNullifiers.size=%d\n",__FUNCTION__,(int)mempool.getNullifiers().size() );
+        // this is the global nullifier count
         fprintf(stderr,"%s:cacheSaplingNullifiers.size=%d\n",__FUNCTION__,(int)pcoinsTip->getNullifiers().size() );
     }
-    return mapTxSaplingNullifiers.size();
+    // TODO: expose local nullifier stats, for now global only
+    return pcoinsTip->getNullifiers().size();
 }
 
 

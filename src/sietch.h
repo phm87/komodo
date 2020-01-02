@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2019 The Hush developers                                       *
+ * Copyright © 2019-2020 The Hush developers                                       *
  *                                                                            *
  * See the AUTHORS and LICENSE files at                                       *
  * the top-level directory of this distribution for the individual copyright  *

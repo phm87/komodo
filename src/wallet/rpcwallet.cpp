@@ -4565,30 +4565,29 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
         // OK, we identify this xtn as needing privacy zdust, we must decide how much, non-deterministically
 		int nAmount = 0;
         int decider = 1 + GetRandInt(100); // random int between 1 and 100
-		string memo = "f600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
         string zdust1, zdust2;
 
-        // Which zaddr we send to is non-deterministically chosen from two zpools...
-        zdust1 = randomSietchZaddr();
+        // Which zaddr we send to is dynamically generated
+        zdust1 = newSietchZaddr();
 
         // And their ordering when given to internals is also non-deterministic, which
         // helps breaks assumptions blockchain analysts may use from z_sendmany internals
         if (decider % 2) {
-	        zaddrRecipients.insert(std::begin(zaddrRecipients), SendManyRecipient(zdust1, nAmount, memo) );
+	        zaddrRecipients.insert(std::begin(zaddrRecipients), newSietchRecipient(zdust1) );
         } else {
-	        zaddrRecipients.push_back( SendManyRecipient(zdust1, nAmount, memo) );
+	        zaddrRecipients.push_back( newSietchRecipient(zdust1) );
         }
         if(fZdebug)
             fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust1.c_str());
 
         //50% chance of adding another zout
         if (decider % 2) {
-            zdust2 = randomSietchZaddr();
+            zdust2 = newSietchZaddr();
             if(decider % 4 == 3) {
-                zaddrRecipients.push_back( SendManyRecipient(zdust2, nAmount, memo) );
+                zaddrRecipients.push_back( newSietchRecipient(zdust2) );
             } else {
-                zaddrRecipients.insert(std::begin(zaddrRecipients), SendManyRecipient(zdust2, nAmount, memo) );
+                zaddrRecipients.insert(std::begin(zaddrRecipients), newSietchRecipient(zdust2) );
             }
             if(fZdebug)
                 fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust2.c_str());

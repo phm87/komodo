@@ -70,8 +70,8 @@ using namespace libzcash;
 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern std::string ASSETCHAINS_OVERRIDE_PUBKEY;
-const std::string ADDR_TYPE_SPROUT = "sprout";
-const std::string ADDR_TYPE_SAPLING = "sapling";
+const std::string ADDR_TYPE_SAPLING       = "sapling";
+const std::string ADDR_TYPE_DONOTREMEMBER = "donotremember";
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 extern int32_t KOMODO_INSYNC;
 uint32_t komodo_segid32(char *coinaddr);
@@ -3716,15 +3716,16 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
         throw runtime_error(
             "z_getnewaddress ( type )\n"
             "\nReturns a new shielded address for receiving payments.\n"
-            "\nWith no arguments, returns a Sprout address.\n"
+            "\nWith no arguments, returns a Sapling address.\n"
+            "\nBe very careful with 'donotremember' address type, the extended spending key (xsk) of that address is not stored in wallet.dat!\n"
             "\nArguments:\n"
-            "1. \"type\"         (string, optional, default=\"" + defaultType + "\") The type of address. One of [\""
-            + ADDR_TYPE_SAPLING + "\"].\n"
+            "1. \"type\"         (string, optional, default=\"" + defaultType + "\") The type of address. Either "+ ADDR_TYPE_SAPLING + " or " + ADDR_TYPE_DONOTREMEMBER + " .\n"
             "\nResult:\n"
             "\"" + strprintf("%s",komodo_chainname()) + "_address\"    (string) The new shielded address.\n"
             "\nExamples:\n"
             + HelpExampleCli("z_getnewaddress", "")
             + HelpExampleCli("z_getnewaddress", ADDR_TYPE_SAPLING)
+            + HelpExampleCli("z_getnewaddress", ADDR_TYPE_DONOTREMEMBER)
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -3735,11 +3736,17 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
     if (params.size() > 0) {
         addrType = params[0].get_str();
     }
-
     if (addrType == ADDR_TYPE_SAPLING) {
         return EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey());
+    } else if (addrType == ADDR_TYPE_DONOTREMEMBER) {
+        bool addToWallet = false;
+        auto zaddr = EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey(addToWallet));
+        if(fZdebug) {
+            fprintf(stderr,"%s: Sietch zaddr=%s created, xsk not stored in wallet.dat!\n", __FUNCTION__, zaddr.c_str() );
+        }
+        return zaddr;
     } else {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type!");
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type! Try " + ADDR_TYPE_SAPLING + " or " + ADDR_TYPE_DONOTREMEMBER);
     }
 }
 
@@ -4049,7 +4056,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp, const CPubKey& my
             "\nResult:\n"
             "{\n"
             "  \"transparent\": xxxxx,     (numeric) the total balance of transparent funds\n"
-            "  \"private\": xxxxx,         (numeric) the total balance of private funds (in both Sprout and Sapling addresses)\n"
+            "  \"private\": xxxxx,         (numeric) the total balance of shielded funds\n"
             "  \"total\": xxxxx,           (numeric) the total balance of both transparent and private funds\n"
             "}\n"
             "\nExamples:\n"

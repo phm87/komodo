@@ -64,6 +64,7 @@ CBlockIndex *komodo_chainactive(int32_t height);
 extern std::string DONATION_PUBKEY;
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int tx_height( const uint256 &hash );
+void komodo_statefname(char *fname,char *symbol,char *str);
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)

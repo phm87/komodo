@@ -2178,14 +2178,15 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         }
 
 	static std::string NotaryAddress = ""; static bool didinit = false;
-        if ( !didinit && NotaryAddress.empty() && NOTARY_PUBKEY33[0] != 0 )
+        if ( !didinit && NotaryAddress.empty() /*&& NOTARY_PUBKEY33[0] != 0*/ )
         {
-            if ( NotaryAddress.empty() && NOTARY_PUBKEY33[0] != 0 )
+/*            if ( NotaryAddress.empty() && NOTARY_PUBKEY33[0] != 0 )
             {
                 char Raddress[64]; 
                 pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
                 NotaryAddress.assign(Raddress);
             }
+*/
             komodo_loadwalletfilter();
             didinit = true;
         }
@@ -2218,6 +2219,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 if ( numvinIsOurs == 0 && numvinIsWhiteList == 0 )
                     return false;
             }
+	}
 
         bool canSign = false;
         bool isMine = false;
@@ -3221,6 +3223,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
     return ISMINE_NO;
 }
 
+/*
  void komodo_loadwalletfilter()
  {
      // Read any entries in the conf file first. 
@@ -3262,6 +3265,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
     else
         fprintf(stderr, "Wallet Filter is Disabled.\n");
  }
+*/
 
 bool CWallet::IsFromMe(const CTransaction& tx) const
 {

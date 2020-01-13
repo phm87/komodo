@@ -457,7 +457,7 @@ void komodo_dumpwalletfilter()
     out.close();
 }
 
-UniValue addwhitelistaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue addwhitelistaddress(const UniValue& params, bool fHelp)//(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -477,12 +477,14 @@ UniValue addwhitelistaddress(const UniValue& params, bool fHelp, const CPubKey& 
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
     int n = 0; std::string NotaryAddress;
+/*
     if ( NOTARY_PUBKEY33[0] != 0 )
     {
        char Raddress[64]; 
        pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
        NotaryAddress.assign(Raddress);
     }
+*/
     for ( int i = 0; i < params.size(); i++)
     {
         // check address is a valid address
@@ -505,7 +507,7 @@ UniValue addwhitelistaddress(const UniValue& params, bool fHelp, const CPubKey& 
     return n;
 }
 
-UniValue removewhitelistaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue removewhitelistaddress(const UniValue& params, bool fHelp) // , const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -552,7 +554,7 @@ UniValue removewhitelistaddress(const UniValue& params, bool fHelp, const CPubKe
     return total;
 }
 
-UniValue setwalletfilter(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue setwalletfilter(const UniValue& params, bool fHelp) // , const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -582,7 +584,7 @@ UniValue setwalletfilter(const UniValue& params, bool fHelp, const CPubKey& mypk
     return 0;
 }
 
-UniValue getwalletfilterstatus(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue getwalletfilterstatus(const UniValue& params, bool fHelp) // , const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -608,13 +610,14 @@ UniValue getwalletfilterstatus(const UniValue& params, bool fHelp, const CPubKey
     // get address list
     for ( auto address : vWhiteListAddress )
         addresses.push_back(address);
-
+/*
     if ( NOTARY_PUBKEY33[0] != 0 )
     {
        char Raddress[64]; 
        pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
        addresses.push_back(Raddress);
     }
+*/
     ret.push_back(make_pair("addresses", addresses));
 
     return ret;

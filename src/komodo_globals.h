@@ -30,6 +30,9 @@ int32_t komodo_longestchain();
 uint64_t komodo_maxallowed(int32_t baseid);
 int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max);
 
+std::vector<std::string> vWhiteListAddress;
+bool fWalletFilter = false;
+
 pthread_mutex_t komodo_mutex;
 
 #define KOMODO_ELECTION_GAP 2000    //((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)

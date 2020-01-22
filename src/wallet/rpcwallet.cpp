@@ -1529,7 +1529,6 @@ UniValue sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
         CRecipient recipient = {scriptPubKey, nAmount, fSubtractFeeFromAmount};
         vecSend.push_back(recipient);
-        i++;
     }
 
     EnsureWalletIsUnlocked();

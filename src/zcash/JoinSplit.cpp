@@ -10,10 +10,6 @@
 #include <boost/format.hpp>
 #include <boost/optional.hpp>
 #include <fstream>
-#include <libsnark/common/default_types/r1cs_ppzksnark_pp.hpp>
-#include <libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
-#include <libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp>
-#include <libsnark/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.hpp>
 #include "tinyformat.h"
 #include "sync.h"
 #include "amount.h"
@@ -321,51 +317,7 @@ public:
             return proof;
         }
 
-        if (!computeProof) {
-            return PHGRProof();
-        }
-
-        protoboard<FieldT> pb;
-        {
-            joinsplit_gadget<FieldT, NumInputs, NumOutputs> g(pb);
-            g.generate_r1cs_constraints();
-            g.generate_r1cs_witness(
-                phi,
-                rt,
-                h_sig,
-                inputs,
-                out_notes,
-                vpub_old,
-                vpub_new
-            );
-        }
-
-        // The constraint system must be satisfied or there is an unimplemented
-        // or incorrect sanity check above. Or the constraint system is broken!
-        assert(pb.is_satisfied());
-
-        // TODO: These are copies, which is not strictly necessary.
-        std::vector<FieldT> primary_input = pb.primary_input();
-        std::vector<FieldT> aux_input = pb.auxiliary_input();
-
-        // Swap A and B if it's beneficial (less arithmetic in G2)
-        // In our circuit, we already know that it's beneficial
-        // to swap, but it takes so little time to perform this
-        // estimate that it doesn't matter if we check every time.
-        pb.constraint_system.swap_AB_if_beneficial();
-
-        std::ifstream fh(pkPath, std::ios::binary);
-
-        if(!fh.is_open()) {
-            throw std::runtime_error(strprintf("could not load param file at %s", pkPath));
-        }
-
-        return PHGRProof(r1cs_ppzksnark_prover_streaming<ppzksnark_ppT>(
-            fh,
-            primary_input,
-            aux_input,
-            pb.constraint_system
-        ));
+        throw std::invalid_argument("Cannot create non-Groth16 Sprout proofs");
     }
 };
 

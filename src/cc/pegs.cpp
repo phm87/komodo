@@ -16,7 +16,7 @@
 #include "CCPegs.h"
 #include "../importcoin.h"
 #include "key_io.h"
-#include "mini-gmp.h"
+#include <gmp.h>
 
 
 /*

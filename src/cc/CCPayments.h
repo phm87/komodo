@@ -18,7 +18,7 @@
 #define CC_PAYMENTS_H
 
 #include "CCinclude.h"
-#include "mini-gmp.h"
+#include <gmp.h>
 #include <key_io.h>
 
 #define PAYMENTS_TXFEE 10000

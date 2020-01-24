@@ -73,7 +73,7 @@ GetKomodoEarlytxidScriptPub is on line #2080 of komodo_bitcoind.h
 #include "CCPrices.h"
 
 #include <cstdlib>
-#include "mini-gmp.h"
+#include <gmp.h>
 
 #define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
 

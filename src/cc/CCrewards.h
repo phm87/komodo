@@ -18,7 +18,7 @@
 #define CC_REWARDS_H
 
 #include "CCinclude.h"
-#include "mini-gmp.h"
+#include <gmp.h>
 
 #define EVAL_REWARDS 0xe5
 #define REWARDSCC_MAXAPR (COIN * 25)

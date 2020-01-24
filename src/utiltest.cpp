@@ -1,4 +1,5 @@
 // Copyright (c) 2016 The Zcash developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -43,7 +44,7 @@ CWalletTx GetValidReceive(ZCJoinSplit& params,
 
     // Prepare JoinSplits
     uint256 rt;
-    JSDescription jsdesc {false, params, mtx.joinSplitPubKey, rt,
+    JSDescription jsdesc {params, mtx.joinSplitPubKey, rt,
                           inputs, outputs, 2*value, 0, false};
     mtx.vjoinsplit.push_back(jsdesc);
 
@@ -132,7 +133,7 @@ CWalletTx GetValidSpend(ZCJoinSplit& params,
 
     // Prepare JoinSplits
     uint256 rt = tree.root();
-    JSDescription jsdesc {false, params, mtx.joinSplitPubKey, rt,
+    JSDescription jsdesc {params, mtx.joinSplitPubKey, rt,
                           inputs, outputs, 0, value, false};
     mtx.vjoinsplit.push_back(jsdesc);
 

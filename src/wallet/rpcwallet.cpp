@@ -3245,8 +3245,7 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp, const CPubKey& 
 
     uint256 joinSplitPubKey;
     uint256 anchor = SproutMerkleTree().root();
-    JSDescription samplejoinsplit(true,
-                                  *pzcashParams,
+    JSDescription samplejoinsplit(*pzcashParams,
                                   joinSplitPubKey,
                                   anchor,
                                   {JSInput(), JSInput()},
@@ -3306,8 +3305,6 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp, const CPubKey& mypk)
     for (int i = 0; i < samplecount; i++) {
         if (benchmarktype == "sleep") {
             sample_times.push_back(benchmark_sleep());
-        } else if (benchmarktype == "parameterloading") {
-            sample_times.push_back(benchmark_parameter_loading());
         } else if (benchmarktype == "createjoinsplit") {
             if (params.size() < 3) {
                 sample_times.push_back(benchmark_create_joinsplit());
@@ -3605,8 +3602,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp, const CPubKey& myp
     mtx.nVersion = 2;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    JSDescription jsdesc(false,
-                         *pzcashParams,
+    JSDescription jsdesc(*pzcashParams,
                          joinSplitPubKey,
                          anchor,
                          {vjsin[0], vjsin[1]},

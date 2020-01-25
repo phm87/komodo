@@ -1,6 +1,7 @@
 // Copyright (c) 2017 The Zcash developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -927,7 +928,6 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
     uint256 esk; // payment disclosure - secret
 
     JSDescription jsdesc = JSDescription::Randomized(
-                                                     mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION),
                                                      *pzcashParams,
                                                      joinSplitPubKey_,
                                                      anchor,

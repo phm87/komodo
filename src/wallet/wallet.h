@@ -23,6 +23,7 @@
 #define BITCOIN_WALLET_WALLET_H
 
 #include "amount.h"
+#include "asyncrpcoperation.h"
 #include "coins.h"
 #include "key.h"
 #include "keystore.h"
@@ -60,6 +61,11 @@ extern unsigned int nTxConfirmTarget;
 extern bool bSpendZeroConfChange;
 extern bool fSendFreeTransactions;
 extern bool fPayAtLeastCustomFee;
+extern bool fTxDeleteEnabled;
+extern bool fTxConflictDeleteEnabled;
+extern int fDeleteInterval;
+extern unsigned int fDeleteTransactionsAfterNBlocks;
+extern unsigned int fKeepLastNTransactions;
 
 
 //! -paytxfee default
@@ -81,6 +87,18 @@ extern unsigned int WITNESS_CACHE_SIZE;
 
 //! Size of HD seed in bytes
 static const size_t HD_WALLET_SEED_LENGTH = 32;
+
+//Default Transaction Rentention N-BLOCKS
+static const int DEFAULT_TX_DELETE_INTERVAL = 1000;
+
+//Default Transaction Rentention N-BLOCKS
+static const unsigned int DEFAULT_TX_RETENTION_BLOCKS = 10000;
+
+//Default Retenion Last N-Transactions
+static const unsigned int DEFAULT_TX_RETENTION_LASTTX = 200;
+
+//Amount of transactions to delete per run while syncing
+static const int MAX_DELETE_TX_SIZE = 50000;
 
 class CBlockIndex;
 class CCoinControl;
@@ -250,15 +268,18 @@ public:
      * -1 as a placeholder. The next time CWallet::ChainTip is called, we can
      * determine what height the witness cache for this note is valid for (even
      * if no witnesses were cached), and so can set the correct value in
-     * CWallet::IncrementNoteWitnesses and CWallet::DecrementNoteWitnesses.
+     * CWallet::BuildWitnessCache and CWallet::DecrementNoteWitnesses.
      */
     int witnessHeight;
 
-    SproutNoteData() : address(), nullifier(), witnessHeight {-1} { }
+      //In Memory Only
+    bool witnessRootValidated;
+
+    SproutNoteData() : address(), nullifier(), witnessHeight {-1}, witnessRootValidated {false} { }
     SproutNoteData(libzcash::SproutPaymentAddress a) :
-            address {a}, nullifier(), witnessHeight {-1} { }
+            address {a}, nullifier(), witnessHeight {-1}, witnessRootValidated {false} { }
     SproutNoteData(libzcash::SproutPaymentAddress a, uint256 n) :
-            address {a}, nullifier {n}, witnessHeight {-1} { }
+            address {a}, nullifier {n}, witnessHeight {-1}, witnessRootValidated {false} { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -299,6 +320,9 @@ public:
     int witnessHeight;
     libzcash::SaplingIncomingViewingKey ivk;
     boost::optional<uint256> nullifier;
+
+    //In Memory Only
+    bool witnessRootValidated;
 
     ADD_SERIALIZE_METHODS;
 
@@ -779,6 +803,9 @@ private:
     typedef TxSpendMap<uint256> TxNullifiers;
     TxNullifiers mapTxSproutNullifiers;
     TxNullifiers mapTxSaplingNullifiers;
+    
+    std::vector<CTransaction> pendingSaplingConsolidationTxs;
+    AsyncRPCOperationId saplingConsolidationOperationId;
 
     void AddToTransparentSpends(const COutPoint& outpoint, const uint256& wtxid);
     void AddToSproutSpends(const uint256& nullifier, const uint256& wtxid);
@@ -793,6 +820,7 @@ public:
      */
     int64_t nWitnessCacheSize;
     bool needsRescan = false;
+    bool fSaplingConsolidationEnabled = false;
 
     void ClearNoteWitnessCache();
 
@@ -800,13 +828,16 @@ public:
     std::set<uint256> GetNullifiers();
 
 protected:
+
+    int SproutWitnessMinimumHeight(const uint256& nullifier, int nWitnessHeight, int nMinimumHeight);
+    int SaplingWitnessMinimumHeight(const uint256& nullifier, int nWitnessHeight, int nMinimumHeight);
+
     /**
      * pindex is the new tip being connected.
      */
-    void IncrementNoteWitnesses(const CBlockIndex* pindex,
-                                const CBlock* pblock,
-                                SproutMerkleTree& sproutTree,
-                                SaplingMerkleTree& saplingTree);
+     int VerifyAndSetInitialWitness(const CBlockIndex* pindex, bool witnessOnly);
+     void BuildWitnessCache(const CBlockIndex* pindex, bool witnessOnly);
+
     /**
      * pindex is the old tip being disconnected.
      */
@@ -1001,8 +1032,11 @@ public:
     bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const;
 
     bool IsSpent(const uint256& hash, unsigned int n) const;
+    unsigned int GetSpendDepth(const uint256& hash, unsigned int n) const;
     bool IsSproutSpent(const uint256& nullifier) const;
+    unsigned int GetSproutSpendDepth(const uint256& nullifier) const;
     bool IsSaplingSpent(const uint256& nullifier) const;
+    unsigned int GetSaplingSpendDepth(const uint256& nullifier) const;
 
     bool IsLockedCoin(uint256 hash, unsigned int n) const;
     void LockCoin(COutPoint& output);
@@ -1137,8 +1171,9 @@ public:
     void MarkDirty();
     bool UpdateNullifierNoteMap();
     void UpdateNullifierNoteMapWithTx(const CWalletTx& wtx);
+    void UpdateSproutNullifierNoteMapWithTx(CWalletTx& wtx);
     void UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx);
-    void UpdateSaplingNullifierNoteMapForBlock(const CBlock* pblock);
+    void UpdateNullifierNoteMapForBlock(const CBlock* pblock);
     bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb);
     void EraseFromWallet(const uint256 &hash);
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
@@ -1148,6 +1183,10 @@ public:
          std::vector<uint256> commitments,
          std::vector<boost::optional<SproutWitness>>& witnesses,
          uint256 &final_anchor);
+    void ReorderWalletTransactions(std::map<std::pair<int,int>, CWalletTx> &mapSorted, int64_t &maxOrderPos);
+    void UpdateWalletTransactionOrder(std::map<std::pair<int,int>, CWalletTx> &mapSorted, bool resetOrder);
+    void DeleteTransactions(std::vector<uint256> &removeTxs);
+    void DeleteWalletTransactions(const CBlockIndex* pindex);
     int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
     void ReacceptWalletTransactions();
     void ResendWalletTransactions(int64_t nBestBlockTime);
@@ -1215,6 +1254,8 @@ public:
     CAmount GetCredit(const CTransaction& tx, const isminefilter& filter) const;
     CAmount GetChange(const CTransaction& tx) const;
     void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, SproutMerkleTree sproutTree, SaplingMerkleTree saplingTree, bool added);
+    void RunSaplingConsolidation(int blockHeight);
+    void CommitConsolidationTx(const CTransaction& tx);
     /** Saves witness caches and best block locator to disk. */
     void SetBestChain(const CBlockLocator& loc);
     std::set<std::pair<libzcash::PaymentAddress, uint256>> GetNullifiersForAddresses(const std::set<libzcash::PaymentAddress> & addresses);

@@ -64,7 +64,7 @@ be able to:
   each note ciphertext on the blockchain.
 
 You should ensure no other users have the ability to execute code (even
-unprivileged) on the hardware your `zcashd` process runs on until these
+unprivileged) on the hardware your `hushd` process runs on until these
 vulnerabilities are fully analyzed and fixed.
 
 REST Interface
@@ -77,9 +77,9 @@ security review.
 RPC Interface
 ---------------
 
-Users should choose a strong RPC password. If no RPC username and password are set, zcashd will not start and will print an error message with a suggestion for a strong random password. If the client knows the RPC password, they have at least full access to the node. In addition, certain RPC commands can be misused to overwrite files and/or take over the account that is running zcashd. (In the future we may restrict these commands, but full node access – including the ability to spend from and export keys held by the wallet – would still be possible unless wallet methods are disabled.)
+Users should choose a strong RPC password. If no RPC username and password are set, hush will not start and will print an error message with a suggestion for a strong random password. If the client knows the RPC password, they have at least full access to the node. In addition, certain RPC commands can be misused to overwrite files and/or take over the account that is running hushd. (In the future we may restrict these commands, but full node access – including the ability to spend from and export keys held by the wallet – would still be possible unless wallet methods are disabled.)
 
-Users should also refrain from changing the default setting that only allows RPC connections from localhost. Allowing connections from remote hosts would enable a MITM to execute arbitrary RPC commands, which could lead to compromise of the account running zcashd and loss of funds. For multi-user services that use one or more zcashd instances on the backend, the parameters passed in by users should be controlled to prevent confused-deputy attacks which could spend from any keys held by that zcashd.
+Users should also refrain from changing the default setting that only allows RPC connections from localhost. Allowing connections from remote hosts would enable a MITM to execute arbitrary RPC commands, which could lead to compromise of the account running hushd and loss of funds. For multi-user services that use one or more hushd instances on the backend, the parameters passed in by users should be controlled to prevent confused-deputy attacks which could spend from any keys held by that zcashd.
 
 Block Chain Reorganization: Major Differences
 -------------------------------------------------
@@ -100,11 +100,9 @@ Private spending keys for z addresses are never logged.
 Potentially-Missing Required Modifications
 ------------------------------------------
 
-In addition to potential mistakes in code we added to Bitcoin Core, and
-potential mistakes in our modifications to Bitcoin Core, it is also possible
-that there were potential changes we were supposed to make to Bitcoin Core but
+In addition to potential mistakes in code we added to Bitcoin Core, Zcash
+and Komodo and
+potential mistakes in our modifications to Bitcoin Core, Zcash and Komodo, it is also possible
+that there were potential changes we were supposed to make to Bitcoin Core, Zcash and Komodo but
 didn't, either because we didn't even consider making those changes, or we ran
-out of time. We have brainstormed and documented a variety of such possibilities
-in [issue #826](https://github.com/zcash/zcash/issues/826), and believe that we
-have changed or done everything that was necessary for the 1.0.0 launch. Users
-may want to review this list themselves.
+out of time.

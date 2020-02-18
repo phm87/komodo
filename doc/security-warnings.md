@@ -1,12 +1,14 @@
 Security Warnings
 ====================
 
-Security Audit
+Security Audits
 --------------
 
-Hush has been subjected to a formal third-party security review. For security
+Hush has not been subjected to a formal third-party security review! But the
+Zcash source code has. For security
 announcements, audit results and other general security information, see
 https://z.cash/support/security.html
+
 
 x86-64 Linux Only
 -----------------------

@@ -9,6 +9,11 @@ Zcash source code has. For security
 announcements, audit results and other general security information, see
 https://z.cash/support/security.html
 
+Hush does our best to integrate fixes and recommendations from Zcash audits
+to our own code, such as audits on ZecWallet that apply to SilentDragon.
+Hush also reports many new bugs and issues to upstream Zcash and many other
+Zcash Protocol coins.
+
 
 x86-64 Linux Only
 -----------------------

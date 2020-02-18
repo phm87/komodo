@@ -104,5 +104,5 @@ In addition to potential mistakes in code we added to Bitcoin Core, Zcash
 and Komodo and
 potential mistakes in our modifications to Bitcoin Core, Zcash and Komodo, it is also possible
 that there were potential changes we were supposed to make to Bitcoin Core, Zcash and Komodo but
-didn't, either because we didn't even consider making those changes, or we ran
-out of time.
+didn't, either because we didn't even consider making those changes or have not found out about
+them. Submitting Github issues is highly appreciated!

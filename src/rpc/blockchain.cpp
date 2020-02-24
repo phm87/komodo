@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019      The Hush developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -1875,9 +1875,11 @@ inline CBlockIndex* LookupBlockIndex(const uint256& hash)
     return it == mapBlockIndex.end() ? nullptr : it->second;
 }
 
+// Every coin can have different number of coinbase due to Founders Reward addresses/etc
+#define COINBASE_PER_BLOCK 2
 // given a transaction count X, subtract out coinbase and dpow transactions
 // to give an "organic count". We return 0 instead of negative values
-#define ORG(X)  ( (X - blockcount - nNotarizationsDiff) > 0 ? (X - blockcount - nNotarizationsDiff) : 0 )
+#define ORG(X)  ( (X - COINBASE_PER_BLOCK*blockcount - nNotarizationsDiff) > 0 ? (X - COINBASE_PER_BLOCK*blockcount - nNotarizationsDiff) : 0 )
 
 //TODO: Allow custom error message in this macro
 #define THROW_IF_SYNCING(INSYNC)  if (INSYNC == 0) { throw runtime_error(strprintf("%s: Chain still syncing at height %d, aborting to prevent garbage data. Please wait until the chain is synced to run this RPC",__FUNCTION__,chainActive.Tip()->GetHeight())); }

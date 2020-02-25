@@ -170,6 +170,11 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_importviewingkey", 2 },
     { "z_getpaymentdisclosure", 1},
     { "z_getpaymentdisclosure", 2},
+    { "z_listsentbyaddress", 1},
+    { "z_listsentbyaddress", 2},
+    { "z_listsentbyaddress", 3},
+    { "z_listsentbyaddress", 4},
+    { "z_listsentbyaddress", 5},
     // crosschain
     { "assetchainproof", 1},
     { "crosschainproof", 1},

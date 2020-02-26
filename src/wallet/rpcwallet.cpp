@@ -8181,6 +8181,8 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_exportwallet",           &z_exportwallet,           true  },
     { "wallet",             "z_importwallet",           &z_importwallet,           true  },
     { "wallet",             "z_viewtransaction",        &z_viewtransaction,        true  },
+    { "wallet",             "z_listsentbyaddress",      &z_listsentbyaddress,      true  },
+    { "wallet",             "z_listreceivedbyaddress",  &z_listreceivedbyaddress,  true  },
     // TODO: rearrange into another category
     { "disclosure",         "z_getpaymentdisclosure",   &z_getpaymentdisclosure,   true  },
     { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }

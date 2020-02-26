@@ -131,6 +131,104 @@ void zsTxSpendsToJSON(const CWalletTx& wtx, UniValue& spends, CAmount& totalSpen
   }
 }
 
+
+void zsTxReceivedToJSON(const CWalletTx& wtx, UniValue& received, CAmount& totalReceived, const std::string& strAddress, bool filterByAddress) {
+
+  LOCK2(cs_main, pwalletMain->cs_wallet);
+
+  //Check address
+  bool isTAddress = false;
+  bool isZsAddress = false;
+
+  CTxDestination tAddress = DecodeDestination(strAddress);
+  auto zAddress = DecodePaymentAddress(strAddress);
+  SaplingPaymentAddress zsAddress;
+
+  if (filterByAddress) {
+
+    if (IsValidDestination(tAddress))
+      isTAddress = true;
+
+    if (IsValidPaymentAddress(zAddress)) {
+      if (boost::get<libzcash::SaplingPaymentAddress>(&zAddress) != nullptr) {
+          zsAddress = boost::get<libzcash::SaplingPaymentAddress>(zAddress);
+          isZsAddress = true;
+      }
+    }
+  }
+
+
+  //Transparent Received txos belonging to the wallet
+  UniValue tReceived(UniValue::VARR);
+  if (isTAddress || !filterByAddress) {
+    for (int i = 0; i < wtx.vout.size(); i++) {
+      const CTxOut& txout = wtx.vout[i];
+      UniValue obj(UniValue::VOBJ);
+      CTxDestination address;
+      ExtractDestination(txout.scriptPubKey, address);
+      if(IsMine(*pwalletMain, address)){
+        obj.push_back(Pair("address",EncodeDestination(address)));
+        obj.push_back(Pair("scriptPubKey",HexStr(txout.scriptPubKey.begin(), txout.scriptPubKey.end())));
+        obj.push_back(Pair("amount",ValueFromAmount(txout.nValue)));
+        obj.push_back(Pair("vout", i));
+        if (address == tAddress || !filterByAddress) {
+          totalReceived += CAmount(txout.nValue);
+          tReceived.push_back(obj);
+        }
+      }
+    }
+  }
+  received.push_back(Pair("transparentReceived",tReceived));
+
+
+  //Sapling Sends belonging to the wallet
+  UniValue zsReceived(UniValue::VARR);
+  if (isZsAddress || !filterByAddress) {
+    for (int i = 0; i < wtx.vShieldedOutput.size(); i++) {
+      const OutputDescription& outputDesc = wtx.vShieldedOutput[i];
+      UniValue obj(UniValue::VOBJ);
+      bool changeTx = false;
+      //Decrypt sapling incoming commitments using IVK
+      std::set<libzcash::SaplingPaymentAddress> addresses;
+      pwalletMain->GetSaplingPaymentAddresses(addresses);
+      for (auto addr : addresses) {
+        libzcash::SaplingExtendedSpendingKey extsk;
+        if (pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk)) {
+          auto pt = libzcash::SaplingNotePlaintext::decrypt(
+                  outputDesc.encCiphertext, extsk.expsk.full_viewing_key().in_viewing_key(), outputDesc.ephemeralKey, outputDesc.cm);
+
+          if (pt) {
+            auto note = pt.get();
+            obj.push_back(Pair("address",EncodePaymentAddress(addr)));
+            obj.push_back(Pair("amount", ValueFromAmount(CAmount(note.value()))));
+            obj.push_back(Pair("shieldedOutputIndex",i));
+
+            //Check Change Status
+            if (wtx.vShieldedSpend.size()!=0) {
+              std::set<std::pair<PaymentAddress, uint256>> nullifierSet;
+              nullifierSet = pwalletMain->GetNullifiersForAddresses({addr});
+              BOOST_FOREACH(const SpendDescription& spendDesc, wtx.vShieldedSpend) {
+                if (nullifierSet.count(std::make_pair(addr, spendDesc.nullifier))) {
+                    changeTx = true;
+                }
+              }
+            }
+            obj.push_back(Pair("change",changeTx));
+            if (addr == zsAddress || !filterByAddress) {
+              totalReceived += CAmount(note.value());
+              zsReceived.push_back(obj);
+            }
+          }
+        }
+      }
+    }
+  }
+  received.push_back(Pair("saplingReceived",zsReceived));
+
+  received.push_back(Pair("totalReceived",ValueFromAmount(totalReceived)));
+}
+
+
 void zsTxSendsToJSON(const CWalletTx& wtx, UniValue& sends, CAmount& totalSends, const std::string& strAddress, bool filterByAddress) {
 
   LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -273,7 +371,7 @@ void zsTxSendsToJSON(const CWalletTx& wtx, UniValue& sends, CAmount& totalSends,
       }
     }
   }
-    sends.push_back(Pair("saplingSends",zsSends));
+  sends.push_back(Pair("saplingSends",zsSends));
 
   if (shieldedOutputCount != shieldedOutputDecryptedCount) {
     sends.push_back(Pair("missingSaplingOVK", true));
@@ -283,6 +381,7 @@ void zsTxSendsToJSON(const CWalletTx& wtx, UniValue& sends, CAmount& totalSends,
 
   sends.push_back(Pair("totalSends",ValueFromAmount(totalSends)));
 }
+
 
 void zsWalletTxJSON(const CWalletTx& wtx, UniValue& ret, const std::string strAddress, bool fBool, const int returnType) {
 
@@ -349,8 +448,14 @@ void zsWalletTxJSON(const CWalletTx& wtx, UniValue& ret, const std::string strAd
     if ((!fBool || filteredSpends != 0) && (returnType == 0 || returnType == 1)) {
       tx.push_back(Pair("spends",spends));
     }
-   }
-  
+  }
+  // Get Received
+  if (returnType == 0 || returnType == 2) {
+    zsTxReceivedToJSON(wtx, received, totalReceived, strAddress, fBool);
+    if (!fBool || totalReceived != 0) {
+      tx.push_back(Pair("received",received));
+    }
+  }
 
   // Get Sends
   if (returnType == 0 || returnType == 3) {
@@ -363,11 +468,13 @@ void zsWalletTxJSON(const CWalletTx& wtx, UniValue& ret, const std::string strAd
     }
   }
 
-  if ((returnType == 0 && (!fBool || filteredSpends != 0 || totalSends != 0))
+  if ((returnType == 0 && (!fBool || filteredSpends != 0 || totalReceived != 0 || totalSends != 0))
    || (returnType == 1 && (!fBool || filteredSpends != 0))
-   || (returnType == 2 && (!fBool || totalSends != 0))) {
+   || (returnType == 2 && (!fBool || totalReceived != 0))
+   || (returnType == 3 && (!fBool || totalSends != 0))) {
     ret.push_back(tx);
   }
+
 }
 
 UniValue z_listsentbyaddress(const UniValue& params, bool fHelp,const CPubKey&) {
@@ -509,6 +616,7 @@ UniValue z_listsentbyaddress(const UniValue& params, bool fHelp,const CPubKey&) 
           continue;
 
       zsWalletTxJSON(wtx, ret, "*", false, 0);
+
 
       if (ret.size() >= nCount) break;
     }

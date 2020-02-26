@@ -638,17 +638,15 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp, const CPubKey& my
             "{\n"
             "  \"isvalid\" : true|false,      (boolean) If the address is valid or not. If not, this is the only property returned.\n"
             "  \"address\" : \"zaddr\",         (string) The z address validated\n"
-            "  \"type\" : \"xxxx\",             (string) \"sprout\" or \"sapling\"\n"
+            "  \"type\" : \"xxxx\",             (string) \"sapling\"\n"
             "  \"ismine\" : true|false,       (boolean) If the address is yours or not\n"
-            "  \"payingkey\" : \"hex\",         (string) [sprout] The hex value of the paying key, a_pk\n"
-            "  \"transmissionkey\" : \"hex\",   (string) [sprout] The hex value of the transmission key, pk_enc\n"
             "  \"diversifier\" : \"hex\",       (string) [sapling] The hex value of the diversifier, d\n"
             "  \"diversifiedtransmissionkey\" : \"hex\", (string) [sapling] The hex value of pk_d\n"
 
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("z_validateaddress", "\"zcWsmqT4X2V4jgxbgiCzyrAfRT1vi1F4sn7M5Pkh66izzw8Uk7LBGAH3DtcSMJeUb2pi3W4SQF8LMKkU2cUuVP68yAGcomL\"")
-            + HelpExampleRpc("z_validateaddress", "\"zcWsmqT4X2V4jgxbgiCzyrAfRT1vi1F4sn7M5Pkh66izzw8Uk7LBGAH3DtcSMJeUb2pi3W4SQF8LMKkU2cUuVP68yAGcomL\"")
+            + HelpExampleCli("z_validateaddress", "\"zs1z7rejlpsa98s2rrrfkwmaxu53e4ue0ulcrw0h4x5g8jl04tak0d3mm47vdtahatqrlkngh9slya\"")
+            + HelpExampleRpc("z_validateaddress", "\"zs1z7rejlpsa98s2rrrfkwmaxu53e4ue0ulcrw0h4x5g8jl04tak0d3mm47vdtahatqrlkngh9slya\"")
         );
 
 

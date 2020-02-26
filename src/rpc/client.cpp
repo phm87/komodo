@@ -175,6 +175,12 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_listsentbyaddress", 3},
     { "z_listsentbyaddress", 4},
     { "z_listsentbyaddress", 5},
+    { "z_listreceivedbyaddress", 1},
+    { "z_listreceivedbyaddress", 2},
+    { "z_listreceivedbyaddress", 3},
+    { "z_listreceivedbyaddress", 4},
+    { "z_listreceivedbyaddress", 5},
+
     // crosschain
     { "assetchainproof", 1},
     { "crosschainproof", 1},
@@ -183,6 +189,10 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "height_MoM", 1},
     { "calc_MoM", 2},
     { "migrate_completeimporttransaction", 1},
+    { "getalldata", 0},
+    { "getalldata", 1},
+    { "getalldata", 2},
+    { "getalldata", 3}
 };
 
 class CRPCConvertTable

@@ -34,8 +34,6 @@ void RegisterMiscRPCCommands(CRPCTable &tableRPC);
 void RegisterMiningRPCCommands(CRPCTable &tableRPC);
 /** Register raw transaction RPC commands */
 void RegisterRawTransactionRPCCommands(CRPCTable &tableRPC);
-/** Register Experimental RPC commands */
-void RegisterHushExclusiveRPCCommands(CRPCTable &tableRPC);
 
 /** Register test transaction RPC commands */
 void RegisterTesttransactionsRPCCommands(CRPCTable &tableRPC);
@@ -48,7 +46,6 @@ static inline void RegisterAllCoreRPCCommands(CRPCTable &tableRPC)
     RegisterMiscRPCCommands(tableRPC);
     RegisterMiningRPCCommands(tableRPC);
     RegisterRawTransactionRPCCommands(tableRPC);
-    RegisterHushExclusiveRPCCommands(tableRPC);
 #ifdef TESTMODE
     RegisterTesttransactionsRPCCommands(tableRPC);
 #endif

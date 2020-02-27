@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -130,12 +131,6 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getaddressdeltas", 0},
     { "getaddressutxos", 0},
     { "getaddressmempool", 0},
-    { "zcrawjoinsplit", 1 },
-    { "zcrawjoinsplit", 2 },
-    { "zcrawjoinsplit", 3 },
-    { "zcrawjoinsplit", 4 },
-    { "zcbenchmark", 1 },
-    { "zcbenchmark", 2 },
     { "getblocksubsidy", 0},
     { "z_listaddresses", 0},
     { "z_listreceivedbyaddress", 1},

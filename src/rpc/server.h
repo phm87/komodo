@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019      The Hush Developers
+// Copyright (c) 2019-2020 The Hush Developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -402,11 +402,6 @@ extern UniValue getnetworkinfo(const UniValue& params, bool fHelp, const CPubKey
 extern UniValue getdeprecationinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue setmocktime(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue resendwallettransactions(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue zc_benchmark(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue zc_raw_keygen(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue zc_raw_receive(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
 extern UniValue jumblr_deposit(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue jumblr_secret(const UniValue& params, bool fHelp, const CPubKey& mypk);

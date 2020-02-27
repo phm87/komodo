@@ -448,7 +448,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageGroup(_("Wallet options:"));
     strUsage += HelpMessageOpt("-disablewallet", _("Do not load the wallet and disable wallet RPC calls"));
     strUsage += HelpMessageOpt("-keypool=<n>", strprintf(_("Set key pool size to <n> (default: %u)"), 100));
-    strUsage += HelpMessageOpt("-consolidation", _("Enable auto Sapling note consolidation"));
+    strUsage += HelpMessageOpt("-consolidation", _("Enable auto Sapling note consolidation (default: false)"));
     strUsage += HelpMessageOpt("-consolidatesaplingaddress=<zaddr>", _("Specify Sapling Address to Consolidate. (default: all)"));
     strUsage += HelpMessageOpt("-consolidationtxfee", strprintf(_("Fee amount in Puposhis used send consolidation transactions. (default %i)"), DEFAULT_CONSOLIDATION_FEE));
     strUsage += HelpMessageOpt("-deletetx", _("Enable Old Transaction Deletion"));

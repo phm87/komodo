@@ -167,6 +167,10 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             }
 
             builder.SetFee(fConsolidationTxFee);
+
+            //TODO: we want at least 2 zouts and potentially Sietch
+            // We could split funds into 2 parts and send as 2 zouts
+            // or add amount=0 sietch zaddrs
             builder.AddSaplingOutput(extsk.expsk.ovk, addr, amountToSend - fConsolidationTxFee);
             //CTransaction tx = builder.Build();
 

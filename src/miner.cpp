@@ -481,7 +481,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 if (ParseMoney(mapArgs["-opretmintxfee"], n) && n > 0)
                     opretMinFeeRate = CFeeRate(n);
                 else
-                    opretMinFeeRate = CFeeRate(400000); // default opretMinFeeRate (1 KMD per 250 Kb = 0.004 per 1 Kb = 400000 sat per 1 Kb)
+                    opretMinFeeRate = CFeeRate(400000); // default opretMinFeeRate (1 HUSH per 250 Kb = 0.004 per 1 Kb = 400000 puposhis per 1 Kb)
 
                 bool fSpamTx = false;
                 unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);

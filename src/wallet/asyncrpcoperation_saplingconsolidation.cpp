@@ -1,3 +1,8 @@
+// Copyright (c) 2020 The Hush developers
+// TODO: Forge should add his preferred copyright line here
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "assert.h"
 #include "boost/variant/static_visitor.hpp"
 #include "asyncrpcoperation_saplingconsolidation.h"
@@ -11,11 +16,13 @@
 #include "util.h"
 #include "utilmoneystr.h"
 #include "wallet.h"
+//#include "sietch.h"
 
 CAmount fConsolidationTxFee = DEFAULT_CONSOLIDATION_FEE;
 bool fConsolidationMapUsed = false;
 const int CONSOLIDATION_EXPIRY_DELTA = 15;
 
+extern string randomSietchZaddr();
 
 AsyncRPCOperation_saplingconsolidation::AsyncRPCOperation_saplingconsolidation(int targetHeight) : targetHeight_(targetHeight) {}
 
@@ -168,10 +175,22 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
 
             builder.SetFee(fConsolidationTxFee);
 
-            //TODO: we want at least 2 zouts and potentially Sietch
-            // We could split funds into 2 parts and send as 2 zouts
-            // or add amount=0 sietch zaddrs
+            // Add the actual consolidation tx
             builder.AddSaplingOutput(extsk.expsk.ovk, addr, amountToSend - fConsolidationTxFee);
+
+            // Add sietch zouts
+            int MIN_ZOUTS = 7;
+            for(size_t i = 0; i < MIN_ZOUTS; i++) {
+                // In Privacy Zdust We Trust -- Duke
+                string zdust = randomSietchZaddr();
+                LogPrint("zrpcunsafe", "%s: Adding sietch output", getId(), zdust);
+                auto zaddr = DecodePaymentAddress(zdust);
+                if (IsValidPaymentAddress(zaddr)) {
+                    auto sietchZoutput = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
+                    int amount=0;
+                    builder.AddSaplingOutput(extsk.expsk.ovk, sietchZoutput, amount);
+                }
+            }
             //CTransaction tx = builder.Build();
 
             auto maybe_tx = builder.Build();

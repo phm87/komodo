@@ -120,7 +120,10 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
 
             std::vector<SaplingNoteEntry> fromNotes;
             CAmount amountToSend = 0;
-            int maxQuantity = rand() % 35 + 10;
+            // max of 8 zins means the tx cannot reduce the anonset,
+            // since there will be 8 zins and 8 zouts at worst case
+            // This also helps reduce ztx creation time
+            int maxQuantity = rand() % 8 + 1;
             for (const SaplingNoteEntry& saplingEntry : saplingEntries) {
 
                 libzcash::SaplingIncomingViewingKey ivk;
@@ -132,14 +135,16 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
                   fromNotes.push_back(saplingEntry);
                 }
 
-                //Only use a randomly determined number of notes between 10 and 45
+                //Only use a randomly determined number of notes
                 if (fromNotes.size() >= maxQuantity)
                   break;
 
             }
 
-            //random minimum 2 - 12 required
-            int minQuantity = rand() % 10 + 2;
+            // minimum required
+            // We use 3 so that addresses can spent one zutxo and still have another zutxo to use while that
+            // tx is confirming
+            int minQuantity = 3;
             if (fromNotes.size() < minQuantity)
               continue;
 

@@ -16,7 +16,6 @@
 #include "util.h"
 #include "utilmoneystr.h"
 #include "wallet.h"
-//#include "sietch.h"
 
 CAmount fConsolidationTxFee = DEFAULT_CONSOLIDATION_FEE;
 bool fConsolidationMapUsed = false;

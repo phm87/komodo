@@ -62,7 +62,6 @@
 
 #include "komodo_defs.h"
 #include <string.h>
-//#include "sietch.h"
 #include "rpchushwallet.h"
 
 using namespace std;

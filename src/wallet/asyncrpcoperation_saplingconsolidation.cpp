@@ -1,3 +1,8 @@
+// Copyright (c) 2020 The Hush developers
+// TODO: Forge should add his preferred copyright line here
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "assert.h"
 #include "boost/variant/static_visitor.hpp"
 #include "asyncrpcoperation_saplingconsolidation.h"
@@ -16,6 +21,7 @@ CAmount fConsolidationTxFee = DEFAULT_CONSOLIDATION_FEE;
 bool fConsolidationMapUsed = false;
 const int CONSOLIDATION_EXPIRY_DELTA = 15;
 
+extern string randomSietchZaddr();
 
 AsyncRPCOperation_saplingconsolidation::AsyncRPCOperation_saplingconsolidation(int targetHeight) : targetHeight_(targetHeight) {}
 
@@ -113,7 +119,10 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
 
             std::vector<SaplingNoteEntry> fromNotes;
             CAmount amountToSend = 0;
-            int maxQuantity = rand() % 35 + 10;
+            // max of 8 zins means the tx cannot reduce the anonset,
+            // since there will be 8 zins and 8 zouts at worst case
+            // This also helps reduce ztx creation time
+            int maxQuantity = rand() % 8 + 1;
             for (const SaplingNoteEntry& saplingEntry : saplingEntries) {
 
                 libzcash::SaplingIncomingViewingKey ivk;
@@ -125,14 +134,16 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
                   fromNotes.push_back(saplingEntry);
                 }
 
-                //Only use a randomly determined number of notes between 10 and 45
+                //Only use a randomly determined number of notes
                 if (fromNotes.size() >= maxQuantity)
                   break;
 
             }
 
-            //random minimum 2 - 12 required
-            int minQuantity = rand() % 10 + 2;
+            // minimum required
+            // We use 3 so that addresses can spent one zutxo and still have another zutxo to use while that
+            // tx is confirming
+            int minQuantity = 3;
             if (fromNotes.size() < minQuantity)
               continue;
 
@@ -168,10 +179,22 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
 
             builder.SetFee(fConsolidationTxFee);
 
-            //TODO: we want at least 2 zouts and potentially Sietch
-            // We could split funds into 2 parts and send as 2 zouts
-            // or add amount=0 sietch zaddrs
+            // Add the actual consolidation tx
             builder.AddSaplingOutput(extsk.expsk.ovk, addr, amountToSend - fConsolidationTxFee);
+
+            // Add sietch zouts
+            int MIN_ZOUTS = 7;
+            for(size_t i = 0; i < MIN_ZOUTS; i++) {
+                // In Privacy Zdust We Trust -- Duke
+                string zdust = randomSietchZaddr();
+                LogPrint("zrpcunsafe", "%s: Adding sietch output", getId(), zdust);
+                auto zaddr = DecodePaymentAddress(zdust);
+                if (IsValidPaymentAddress(zaddr)) {
+                    auto sietchZoutput = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
+                    int amount=0;
+                    builder.AddSaplingOutput(extsk.expsk.ovk, sietchZoutput, amount);
+                }
+            }
             //CTransaction tx = builder.Build();
 
             auto maybe_tx = builder.Build();

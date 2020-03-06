@@ -1,11 +1,16 @@
+// Copyright (c) 2020 The Hush developers
+// TODO: Forge should add his preferred copyright line here
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "amount.h"
 #include "asyncrpcoperation.h"
 #include "univalue.h"
 #include "zcash/Address.hpp"
 #include "zcash/zip32.h"
 
-//Default fee used for consolidation transactions
-static const CAmount DEFAULT_CONSOLIDATION_FEE = 0;
+//Default fee used for consolidation transactions, in puposhis
+static const CAmount DEFAULT_CONSOLIDATION_FEE = 10000;
 extern CAmount fConsolidationTxFee;
 extern bool fConsolidationMapUsed;
 

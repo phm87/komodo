@@ -147,7 +147,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                 // empty root.
                 SaplingMerkleTree oldSaplingTree;
                 if (chainParams.GetConsensus().NetworkUpgradeActive(
-                    pindex->pprev->nHeight, Consensus::UPGRADE_SAPLING)) {
+                    pindex->pprev->GetHeight(), Consensus::UPGRADE_SAPLING)) {
                     assert(pcoinsTip->GetSaplingAnchorAt(
                         pindex->pprev->hashFinalSaplingRoot, oldSaplingTree));
                 } else {

@@ -69,6 +69,10 @@ struct CMainSignals {
     boost::signals2::signal<void (int64_t nBestBlockTime)> Broadcast;
     /** Notifies listeners of a block validation result */
     boost::signals2::signal<void (const CBlock&, const CValidationState&)> BlockChecked;
+    // boost::signals2::signal<void (boost::shared_ptr<CReserveScript>&)> ScriptForMining;
+    /** Notifies listeners that a block has been successfully mined */
+    boost::signals2::signal<void (const uint256 &)> BlockFound;
+
 };
 
 CMainSignals& GetMainSignals();

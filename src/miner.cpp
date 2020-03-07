@@ -983,6 +983,9 @@ static bool ProcessBlockFound(CBlock* pblock)
         }
     }
 
+    // Inform about the new block
+    GetMainSignals().BlockFound(pblock->GetHash());
+
 #ifdef ENABLE_WALLET
     // Remove key from key pool
     if ( IS_KOMODO_NOTARY == 0 )

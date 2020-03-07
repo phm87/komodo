@@ -174,7 +174,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         while (pindexLastTip && pindexLastTip != pindexFork) {
             // Read block from disk.
             CBlock block;
-            if (!ReadBlockFromDisk(block, pindexLastTip, chainParams.GetConsensus())) {
+            if (!ReadBlockFromDisk(block, pindexLastTip,1)) {
                 LogPrintf("*** %s\n", "Failed to read block while notifying wallets of block disconnects");
                 uiInterface.ThreadSafeMessageBox(
                     _("Error: A fatal internal error occurred, see debug.log for details"),
@@ -201,7 +201,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 
             // Read block from disk.
             CBlock block;
-            if (!ReadBlockFromDisk(block, blockData.pindex, chainParams.GetConsensus())) {
+            if (!ReadBlockFromDisk(block, blockData.pindex, 1)) {
                 LogPrintf("*** %s\n", "Failed to read block while notifying wallets of block connects");
                 uiInterface.ThreadSafeMessageBox(
                     _("Error: A fatal internal error occurred, see debug.log for details"),

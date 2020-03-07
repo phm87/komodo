@@ -146,10 +146,8 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                 // the Sapling activation height. Otherwise, the last anchor was the
                 // empty root.
                 SaplingMerkleTree oldSaplingTree;
-                if (chainParams.GetConsensus().NetworkUpgradeActive(
-                    pindex->pprev->GetHeight(), Consensus::UPGRADE_SAPLING)) {
-                    assert(pcoinsTip->GetSaplingAnchorAt(
-                        pindex->pprev->hashFinalSaplingRoot, oldSaplingTree));
+                if (NetworkUpgradeActive(pindex->pprev->GetHeight(),Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+                    assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, oldSaplingTree));
                 } else {
                     assert(pcoinsTip->GetSaplingAnchorAt(SaplingMerkleTree::empty_root(), oldSaplingTree));
                 }

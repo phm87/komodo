@@ -2060,8 +2060,6 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             }
         }
     }
-    // This should be here still? 
-    //SyncWithWallets(tx, NULL); 
     return true;
 }
 
@@ -5318,11 +5316,6 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         LogPrintf("CheckBlockHeader komodo_check_deposit error");
         return(false);
     }
-
-  //  if (ptx)
-  //  {
-   //     SyncWithWallets(*ptx, &block);
-  //  }
 
     if ( ASSETCHAINS_CC != 0 )
     {

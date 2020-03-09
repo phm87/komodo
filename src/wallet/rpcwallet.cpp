@@ -3489,9 +3489,9 @@ UniValue z_getinfo(const UniValue& params, bool fHelp,const CPubKey&)
         );
   }
   UniValue result(UniValue::VOBJ);
-  result.push_back(Pair("consolidation_enabled",(bool)pwalletMain->fSaplingConsolidationEnabled ));
+  result.push_back(Pair("consolidation",(bool)pwalletMain->fSaplingConsolidationEnabled ));
   result.push_back(Pair("consolidationtxfee",(int)fConsolidationTxFee));
-  result.push_back(Pair("deletetx",(int)fTxDeleteEnabled));
+  result.push_back(Pair("deletetx",(bool)fTxDeleteEnabled));
   result.push_back(Pair("delete_interval",(int)fDeleteInterval));
   result.push_back(Pair("keeptxnum",(int)fKeepLastNTransactions));
   result.push_back(Pair("keeptxfornblocks",(int)fDeleteTransactionsAfterNBlocks));

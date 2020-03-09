@@ -4157,8 +4157,8 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     assert(pindexNew->pprev == chainActive.Tip());
     // Read block from disk.
     int64_t nTime1 = GetTimeMicros();
-    CBlock block;
     if (!pblock) {
+        CBlock block;
         if (!ReadBlockFromDisk(block, pindexNew,1))
             return AbortNode(state, "Failed to read block");
         pblock = &block;

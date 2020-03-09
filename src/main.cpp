@@ -4203,6 +4203,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     }
     int64_t nTime5 = GetTimeMicros(); nTimeChainState += nTime5 - nTime4;
     LogPrint("bench", "  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001, nTimeChainState * 0.000001);
+
     // Remove conflicting transactions from the mempool.
     std::list<CTransaction> txConflicted;
     mempool.removeForBlock(pblock->vtx, pindexNew->GetHeight(), txConflicted, !IsInitialBlockDownload());
@@ -4212,8 +4213,6 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
 
     // Update chainActive & related variables.
     UpdateTip(pindexNew);
-    if ( KOMODO_NSPV_FULLNODE )
-    {
         
     // Cache the conflicted transactions for subsequent notification.
     // Updates to connected wallets are triggered by ThreadNotifyWallets
@@ -4253,7 +4252,6 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     }
 	//fprintf(stderr,"%s: returning true\n", __FUNCTION__);
     return true;
-}
 }
 std::pair<std::map<CBlockIndex*, std::list<CTransaction>>, uint64_t> DrainRecentlyConflicted()
 {

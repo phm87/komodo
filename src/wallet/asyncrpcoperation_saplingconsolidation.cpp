@@ -215,6 +215,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
                 consolidationTxIds.push_back(tx.GetHash().ToString());
             } else {
                 LogPrint("zrpcunsafe", "%s: Consolidation transaction FAILED in CommitTransaction, txid=%s\n", getId(), tx.GetHash().ToString());
+                setConsolidationResult(numTxCreated, amountConsolidated, consolidationTxIds);
                 return false;
             }
 

@@ -80,6 +80,7 @@ int32_t komodo_isnotaryvout(char *coinaddr,uint32_t tiptime); // from ac_private
 CBlockIndex *komodo_getblockindex(uint256 hash);
 extern string randomSietchZaddr();
 extern CAmount fConsolidationTxFee;
+extern bool fZindex;
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
@@ -3489,6 +3490,7 @@ UniValue z_getinfo(const UniValue& params, bool fHelp,const CPubKey&)
         );
   }
   UniValue result(UniValue::VOBJ);
+  result.push_back(Pair("zindex",(bool)fZindex));
   result.push_back(Pair("consolidation",(bool)pwalletMain->fSaplingConsolidationEnabled ));
   result.push_back(Pair("consolidationtxfee",(int)fConsolidationTxFee));
   result.push_back(Pair("deletetx",(bool)fTxDeleteEnabled));

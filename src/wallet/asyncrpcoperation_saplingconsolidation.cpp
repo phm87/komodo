@@ -181,6 +181,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
 
             // Add the actual consolidation tx
             builder.AddSaplingOutput(extsk.expsk.ovk, addr, amountToSend - fConsolidationTxFee);
+            LogPrint("zrpcunsafe", "%s: Added consolidation output", getId(), addr);
 
             // Add sietch zouts
             int MIN_ZOUTS = 7;
@@ -191,8 +192,11 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
                 auto zaddr = DecodePaymentAddress(zdust);
                 if (IsValidPaymentAddress(zaddr)) {
                     auto sietchZoutput = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
-                    int amount=0;
+                    CAmount amount=0;
                     builder.AddSaplingOutput(extsk.expsk.ovk, sietchZoutput, amount);
+                } else {
+                    LogPrint("zrpcunsafe", "%s: Invalid payment address! Stopping.", getId(), zaddr);
+                    break;
                 }
             }
             //CTransaction tx = builder.Build();

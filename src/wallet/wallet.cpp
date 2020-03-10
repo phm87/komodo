@@ -637,10 +637,10 @@ void CWallet::RunSaplingConsolidation(int blockHeight) {
     }
 }
 
-void CWallet::CommitConsolidationTx(const CTransaction& tx) {
+bool CWallet::CommitConsolidationTx(const CTransaction& tx) {
   CWalletTx wtx(this, tx);
   CReserveKey reservekey(pwalletMain);
-  CommitTransaction(wtx, reservekey);
+  return CommitTransaction(wtx, reservekey);
 }
 
 void CWallet::SetBestChain(const CBlockLocator& loc)

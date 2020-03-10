@@ -1258,7 +1258,7 @@ public:
         const CBlock *pblock,
         boost::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added);
     void RunSaplingConsolidation(int blockHeight);
-    void CommitConsolidationTx(const CTransaction& tx);
+    bool CommitConsolidationTx(const CTransaction& tx);
     /** Saves witness caches and best block locator to disk. */
     void SetBestChain(const CBlockLocator& loc);
     std::set<std::pair<libzcash::PaymentAddress, uint256>> GetNullifiersForAddresses(const std::set<libzcash::PaymentAddress> & addresses);

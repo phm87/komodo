@@ -1173,96 +1173,6 @@ int CWallet::VerifyAndSetInitialWitness(const CBlockIndex* pindex, bool witnessO
       auto wtxHash = wtxItem.second.GetHash();
       int wtxHeight = mapBlockIndex[wtxItem.second.hashBlock]->GetHeight();
 
-      for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
-
-        auto op = item.first;
-        auto* nd = &(item.second);
-        CBlockIndex* pblockindex;
-        uint256 blockRoot;
-        uint256 witnessRoot;
-
-        if (!nd->nullifier)
-          ::ClearSingleNoteWitnessCache(nd);
-
-        if (!nd->witnesses.empty() && nd->witnessHeight > 0) {
-
-          //Skip all functions for validated witness while witness only = true
-          if (nd->witnessRootValidated && witnessOnly)
-            continue;
-
-          //Skip Validation when witness root has been validated
-          if (nd->witnessRootValidated) {
-            nMinimumHeight = SproutWitnessMinimumHeight(*item.second.nullifier, nd->witnessHeight, nMinimumHeight);
-            continue;
-          }
-
-          //Skip Validation when witness height is greater that block height
-          if (nd->witnessHeight > pindex->GetHeight() - 1) {
-            nMinimumHeight = SproutWitnessMinimumHeight(*item.second.nullifier, nd->witnessHeight, nMinimumHeight);
-            continue;
-          }
-
-          //Validate the witness at the witness height
-          witnessRoot = nd->witnesses.front().root();
-          pblockindex = chainActive[nd->witnessHeight];
-          blockRoot = pblockindex->hashFinalSproutRoot;
-          if (witnessRoot == blockRoot) {
-            nd->witnessRootValidated = true;
-            nMinimumHeight = SproutWitnessMinimumHeight(*item.second.nullifier, nd->witnessHeight, nMinimumHeight);
-            continue;
-          }
-        }
-
-        //Clear witness Cache for all other scenarios
-        pblockindex = chainActive[wtxHeight];
-        ::ClearSingleNoteWitnessCache(nd);
-
-        LogPrintf("Setting Inital Sprout Witness for tx %s, %i of %i\n", wtxHash.ToString(), nWitnessTxIncrement, nWitnessTotalTxCount);
-
-        SproutMerkleTree sproutTree;
-        blockRoot = pblockindex->pprev->hashFinalSproutRoot;
-        pcoinsTip->GetSproutAnchorAt(blockRoot, sproutTree);
-
-        //Cycle through blocks and transactions building sprout tree until the commitment needed is reached
-        const CBlock* pblock;
-        CBlock block;
-        ReadBlockFromDisk(block, pblockindex, 1);
-        pblock = &block;
-
-        for (const CTransaction& tx : block.vtx) {
-          auto hash = tx.GetHash();
-
-          for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
-            const JSDescription& jsdesc = tx.vjoinsplit[i];
-            for (uint8_t j = 0; j < jsdesc.commitments.size(); j++) {
-              const uint256& note_commitment = jsdesc.commitments[j];
-
-              // Increment existing witness until the end of the block
-              if (!nd->witnesses.empty()) {
-                nd->witnesses.front().append(note_commitment);
-              }
-
-              //Only needed for intial witness
-              if (nd->witnesses.empty()) {
-                sproutTree.append(note_commitment);
-
-                // If this is our note, witness it
-                if (hash == wtxHash) {
-                  JSOutPoint outPoint {hash, i, j};
-                  if (op == outPoint) {
-                    nd->witnesses.push_front(sproutTree.witness());
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        nd->witnessHeight = pblockindex->GetHeight();
-        UpdateSproutNullifierNoteMapWithTx(wtxItem.second);
-        nMinimumHeight = SproutWitnessMinimumHeight(*item.second.nullifier, nd->witnessHeight, nMinimumHeight);
-      }
-
       for (mapSaplingNoteData_t::value_type& item : wtxItem.second.mapSaplingNoteData) {
 
         auto op = item.first;
@@ -1307,7 +1217,7 @@ int CWallet::VerifyAndSetInitialWitness(const CBlockIndex* pindex, bool witnessO
         pblockindex = chainActive[wtxHeight];
         ::ClearSingleNoteWitnessCache(nd);
 
-        LogPrintf("Setting Inital Sapling Witness for tx %s, %i of %i\n", wtxHash.ToString(), nWitnessTxIncrement, nWitnessTotalTxCount);
+        LogPrintf("Setting Initial Sapling Witness for tx %s, %i of %i\n", wtxHash.ToString(), nWitnessTxIncrement, nWitnessTotalTxCount);
 
         SaplingMerkleTree saplingTree;
         blockRoot = pblockindex->pprev->hashFinalSaplingRoot;
@@ -1395,31 +1305,6 @@ void CWallet::BuildWitnessCache(const CBlockIndex* pindex, bool witnessOnly)
         continue;
 
       if (wtxItem.second.GetDepthInMainChain() > 0) {
-
-        //Sprout
-        for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
-          auto* nd = &(item.second);
-          if (nd->nullifier && nd->witnessHeight == pblockindex->GetHeight() - 1
-              && GetSproutSpendDepth(*item.second.nullifier) <= WITNESS_CACHE_SIZE) {
-
-
-            nd->witnesses.push_front(nd->witnesses.front());
-            while (nd->witnesses.size() > WITNESS_CACHE_SIZE) {
-                nd->witnesses.pop_back();
-            }
-
-            for (const CTransaction& tx : block.vtx) {
-              for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
-                const JSDescription& jsdesc = tx.vjoinsplit[i];
-                for (uint8_t j = 0; j < jsdesc.commitments.size(); j++) {
-                  const uint256& note_commitment = jsdesc.commitments[j];
-                  nd->witnesses.front().append(note_commitment);
-                }
-              }
-            }
-            nd->witnessHeight = pblockindex->GetHeight();
-          }
-        }
 
         //Sapling
         for (mapSaplingNoteData_t::value_type& item : wtxItem.second.mapSaplingNoteData) {
@@ -1639,11 +1524,6 @@ void CWallet::UpdateNullifierNoteMapWithTx(const CWalletTx& wtx)
 {
     {
         LOCK(cs_wallet);
-        for (const mapSproutNoteData_t::value_type& item : wtx.mapSproutNoteData) {
-            if (item.second.nullifier) {
-                mapSproutNullifiersToNotes[*item.second.nullifier] = item.first;
-            }
-        }
 
         for (const mapSaplingNoteData_t::value_type& item : wtx.mapSaplingNoteData) {
             if (item.second.nullifier) {

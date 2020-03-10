@@ -1936,7 +1936,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             pwalletMain->GenerateNewSeed();
         }
 
-            //Set Sapling Consolidation
+        //Set Sapling Consolidation
         pwalletMain->fSaplingConsolidationEnabled = GetBoolArg("-consolidation", false);
         fConsolidationTxFee  = GetArg("-consolidationtxfee", DEFAULT_CONSOLIDATION_FEE);
         fConsolidationMapUsed = !mapMultiArgs["-consolidatesaplingaddress"].empty();

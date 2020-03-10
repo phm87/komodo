@@ -79,6 +79,8 @@ int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int32_t komodo_isnotaryvout(char *coinaddr,uint32_t tiptime); // from ac_private chains only
 CBlockIndex *komodo_getblockindex(uint256 hash);
 extern string randomSietchZaddr();
+extern CAmount fConsolidationTxFee;
+extern bool fZindex;
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
@@ -3477,6 +3479,34 @@ UniValue z_listreceivedaddress(const UniValue& params, bool fHelp,const CPubKey&
     }
 
     return ret;
+}
+
+UniValue z_getinfo(const UniValue& params, bool fHelp,const CPubKey&)
+{
+  if (fHelp || params.size() > 0) {
+      throw runtime_error(
+        "z_getinfo\n"
+        "\nReturns various information about shielded operations, such as sapling consolidation details.\n"
+        );
+  }
+  UniValue result(UniValue::VOBJ);
+  result.push_back(Pair("zindex",(bool)fZindex));
+  result.push_back(Pair("consolidation",(bool)pwalletMain->fSaplingConsolidationEnabled ));
+  result.push_back(Pair("consolidationtxfee",(int)fConsolidationTxFee));
+  result.push_back(Pair("deletetx",(bool)fTxDeleteEnabled));
+  result.push_back(Pair("delete_interval",(int)fDeleteInterval));
+  result.push_back(Pair("keeptxnum",(int)fKeepLastNTransactions));
+  result.push_back(Pair("keeptxfornblocks",(int)fDeleteTransactionsAfterNBlocks));
+
+  std::set<libzcash::SaplingPaymentAddress> saplingzaddrs = {};
+  pwalletMain->GetSaplingPaymentAddresses(saplingzaddrs);
+  result.push_back(Pair("num_sapling_zaddrs",(int)saplingzaddrs.size()));
+
+  std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+  std::vector<AsyncRPCOperationId> ids = q->getAllOperationIds();
+  result.push_back(Pair("num_op_ids",(int)ids.size()));
+
+  return result;
 }
 
 UniValue z_listsentbyaddress(const UniValue& params, bool fHelp,const CPubKey&)
@@ -8326,6 +8356,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_exportwallet",           &z_exportwallet,           true  },
     { "wallet",             "z_importwallet",           &z_importwallet,           true  },
     { "wallet",             "z_viewtransaction",        &z_viewtransaction,        true  },
+    { "wallet",             "z_getinfo",                &z_getinfo,                true  },
     { "wallet",             "z_listsentbyaddress",      &z_listsentbyaddress,      true  },
     { "wallet",             "z_listreceivedbyaddress",  &z_listreceivedbyaddress,  true  },
     // TODO: rearrange into another category

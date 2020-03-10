@@ -209,10 +209,15 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
                 break;
             }
 
-            pwalletMain->CommitConsolidationTx(tx);
-            LogPrint("zrpcunsafe", "%s: Committed consolidation transaction with txid=%s\n", getId(), tx.GetHash().ToString());
-            amountConsolidated += amountToSend - fConsolidationTxFee;
-            consolidationTxIds.push_back(tx.GetHash().ToString());
+            if(pwalletMain->CommitConsolidationTx(tx)) {
+                LogPrint("zrpcunsafe", "%s: Committed consolidation transaction with txid=%s\n", getId(), tx.GetHash().ToString());
+                amountConsolidated += amountToSend - fConsolidationTxFee;
+                consolidationTxIds.push_back(tx.GetHash().ToString());
+            } else {
+                LogPrint("zrpcunsafe", "%s: Consolidation transaction FAILED in CommitTransaction, txid=%s\n", getId(), tx.GetHash().ToString());
+                setConsolidationResult(numTxCreated, amountConsolidated, consolidationTxIds);
+                return false;
+            }
 
         }
     }

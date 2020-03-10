@@ -3483,12 +3483,21 @@ UniValue z_listreceivedaddress(const UniValue& params, bool fHelp,const CPubKey&
 
 UniValue z_getinfo(const UniValue& params, bool fHelp,const CPubKey&)
 {
+  if (!EnsureWalletIsAvailable(fHelp))
+      return NullUniValue;
+
   if (fHelp || params.size() > 0) {
       throw runtime_error(
         "z_getinfo\n"
         "\nReturns various information about shielded operations, such as sapling consolidation details.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_getinfo", "")
+            + HelpExampleRpc("z_getinfo", "")
         );
   }
+
+  LOCK2(cs_main, pwalletMain->cs_wallet);
+
   UniValue result(UniValue::VOBJ);
   result.push_back(Pair("zindex",(bool)fZindex));
   result.push_back(Pair("consolidation",(bool)pwalletMain->fSaplingConsolidationEnabled ));

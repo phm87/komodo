@@ -181,21 +181,22 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
 
             // Add the actual consolidation tx
             builder.AddSaplingOutput(extsk.expsk.ovk, addr, amountToSend - fConsolidationTxFee);
-            LogPrint("zrpcunsafe", "%s: Added consolidation output %s", getId(), addr);
+            LogPrint("zrpcunsafe", "%s: Added consolidation output %s", getId(), addr.GetHash().ToString().c_str() );
+
 
             // Add sietch zouts
             int MIN_ZOUTS = 7;
             for(size_t i = 0; i < MIN_ZOUTS; i++) {
                 // In Privacy Zdust We Trust -- Duke
                 string zdust = randomSietchZaddr();
-                LogPrint("zrpcunsafe", "%s: Adding sietch output %s", getId(), zdust);
                 auto zaddr = DecodePaymentAddress(zdust);
                 if (IsValidPaymentAddress(zaddr)) {
                     auto sietchZoutput = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
+                    LogPrint("zrpcunsafe", "%s: Adding sietch output %s", getId(), sietchZoutput.GetHash().ToString().c_str() );
                     CAmount amount=0;
                     builder.AddSaplingOutput(extsk.expsk.ovk, sietchZoutput, amount);
                 } else {
-                    LogPrint("zrpcunsafe", "%s: Invalid payment address %s! Stopping.", getId(), zaddr);
+                    LogPrint("zrpcunsafe", "%s: Invalid payment address! Stopping.", getId());
                     break;
                 }
             }

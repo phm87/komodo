@@ -2951,8 +2951,12 @@ void CWallet::DeleteTransactions(std::vector<uint256> &removeTxs) {
             return;
         }
     }
-     // Miodrag: release memory back to the OS
+#if defined(__unix__) || defined(_WIN64)
+    // Miodrag: release memory back to the OS
     malloc_trim(0);
+#else
+    //TODO: This doesn't work on Mac
+#endif
 }
 
 void CWallet::DeleteWalletTransactions(const CBlockIndex* pindex) {

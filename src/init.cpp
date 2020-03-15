@@ -2078,10 +2078,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // original value of chainActive.Tip(), which corresponds with the wallet's
     // view of the chaintip, is passed to ThreadNotifyWallets before the chain
     // tip changes again.
-    boost::function<void()> threadnotifywallets = boost::bind(&ThreadNotifyWallets, chainActive.Tip());
-    threadGroup.create_thread(
-        boost::bind(&TraceThread<boost::function<void()>>, "txnotify", threadnotifywallets)
-    );
+    {
+        CBlockIndex *pindexLastTip;
+        {
+            LOCK(cs_main);
+            pindexLastTip = chainActive.Tip();
+        }
+        boost::function<void()> threadnotifywallets = boost::bind(&ThreadNotifyWallets, pindexLastTip);
+        threadGroup.create_thread(
+            boost::bind(&TraceThread<boost::function<void()>>, "txnotify", threadnotifywallets)
+        );
+    }
 
     // ********************************************************* Step 9: data directory maintenance
 
@@ -2124,10 +2131,22 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             vImportFiles.push_back(strFile);
     }
     threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
-    if (chainActive.Tip() == NULL) {
-        LogPrintf("Waiting for genesis block to be imported...\n");
-        while (!fRequestShutdown && chainActive.Tip() == NULL)
+
+    // Wait for genesis block to be processed
+    bool fHaveGenesis = false;
+    while (!fHaveGenesis && !fRequestShutdown) {
+        {
+            LOCK(cs_main);
+            fHaveGenesis = (chainActive.Tip() != NULL);
             MilliSleep(10);
+        }
+
+        if (!fHaveGenesis) {
+            MilliSleep(10);
+        }
+    }
+    if (!fHaveGenesis) {
+        return false;
     }
 
     // ********************************************************* Step 11: start node

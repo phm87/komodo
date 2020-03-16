@@ -189,7 +189,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             for(size_t i = 0; i < MIN_ZOUTS; i++) {
                 // In Privacy Zdust We Trust -- Duke
                 string zdust = randomSietchZaddr();
-                auto zaddr = DecodePaymentAddress(zdust);
+                auto zaddr   = DecodePaymentAddress(zdust);
                 if (IsValidPaymentAddress(zaddr)) {
                     auto sietchZoutput = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
                     LogPrint("zrpcunsafe", "%s: Adding sietch output %s", getId(), sietchZoutput.GetHash().ToString().c_str() );
@@ -200,6 +200,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
                     break;
                 }
             }
+            LogPrint("zrpcunsafe", "%s: Done adding sietch zouts", getId());
             //CTransaction tx = builder.Build();
 
             auto maybe_tx = builder.Build();

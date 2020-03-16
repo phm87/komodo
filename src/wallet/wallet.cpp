@@ -640,6 +640,7 @@ void CWallet::RunSaplingConsolidation(int blockHeight) {
 bool CWallet::CommitConsolidationTx(const CTransaction& tx) {
   CWalletTx wtx(this, tx);
   CReserveKey reservekey(pwalletMain);
+  fprintf(stderr,"%s: %s\n",__func__,tx.ToString().c_str());
   return CommitTransaction(wtx, reservekey);
 }
 

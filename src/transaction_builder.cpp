@@ -153,6 +153,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         // Send change to the specified change address. If no change address
         // was set, send change to the first Sapling address given as input.
         if (zChangeAddr) {
+            LogPrintf("%s: Adding specified Sapling change output: %s\n", __FUNCTION__, zChangeAddr->second.GetHash().ToString().c_str());
             AddSaplingOutput(zChangeAddr->first, zChangeAddr->second, change);
         } else if (tChangeAddr) {
             // tChangeAddr has already been validated.
@@ -162,6 +163,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
             auto note = spends[0].note;
             libzcash::SaplingPaymentAddress changeAddr(note.d, note.pk_d);
             AddSaplingOutput(fvk.ovk, changeAddr, change);
+            LogPrintf("%s: Adding Sapling change output from first zinput: %s\n", __FUNCTION__, changeAddr.GetHash().ToString().c_str() );
         } else {
             return boost::none;
         }

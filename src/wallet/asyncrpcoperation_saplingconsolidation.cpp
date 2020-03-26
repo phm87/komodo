@@ -78,11 +78,11 @@ void AsyncRPCOperation_saplingconsolidation::main() {
 bool AsyncRPCOperation_saplingconsolidation::main_impl() {
     bool status=true;
     auto opid=getId();
-    LogPrintf("zrpcunsafe", "%s: Beginning AsyncRPCOperation_saplingconsolidation.\n", opid);
+    LogPrint("zrpcunsafe", "%s: Beginning AsyncRPCOperation_saplingconsolidation.\n", opid);
     auto consensusParams = Params().GetConsensus();
     auto nextActivationHeight = NextActivationHeight(targetHeight_, consensusParams);
     if (nextActivationHeight && targetHeight_ + CONSOLIDATION_EXPIRY_DELTA >= nextActivationHeight.get()) {
-        LogPrintf("zrpcunsafe", "%s: Consolidation txs would be created before a NU activation but may expire after. Skipping this round.\n", getId());
+        LogPrint("zrpcunsafe", "%s: Consolidation txs would be created before a NU activation but may expire after. Skipping this round.\n",opid);
         setConsolidationResult(0, 0, std::vector<std::string>());
         return status;
     }
@@ -154,7 +154,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             amountConsolidated += amountToSend;
             auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain);
             //builder.SetExpiryHeight(targetHeight_ + CONSOLIDATION_EXPIRY_DELTA);
-            LogPrintf("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - fConsolidationTxFee));
+            LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", opid, FormatMoney(amountToSend - fConsolidationTxFee));
 
             // Select Sapling notes
             std::vector<SaplingOutPoint> ops;
@@ -175,7 +175,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             // Add Sapling spends
             for (size_t i = 0; i < notes.size(); i++) {
                 if (!witnesses[i]) {
-                    LogPrintf("zrpcunsafe", "%s: Missing Witnesses. Stopping.\n", getId());
+                    LogPrint("zrpcunsafe", "%s: Missing Witnesses. Stopping.\n", opid);
                     status=false;
                     break;
                 }
@@ -186,7 +186,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
 
             // Add the actual consolidation tx
             builder.AddSaplingOutput(extsk.expsk.ovk, addr, amountToSend - fConsolidationTxFee);
-            LogPrintf("zrpcunsafe", "%s: Added consolidation output %s", getId(), addr.GetHash().ToString().c_str() );
+            LogPrint("zrpcunsafe", "%s: Added consolidation output %s", opid, addr.GetHash().ToString().c_str() );
 
 
             // Add sietch zouts
@@ -194,22 +194,22 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             for(size_t i = 0; i < MIN_ZOUTS; i++) {
                 // In Privacy Zdust We Trust -- Duke
                 string zdust = randomSietchZaddr();
-                LogPrintf("zrpcunsafe", "%s: random zdust=%s", opid, zdust);
+                LogPrint("zrpcunsafe", "%s: random zdust=%s", opid, zdust);
                 auto zaddr   = DecodePaymentAddress(zdust);
                 if (IsValidPaymentAddress(zaddr)) {
                     auto sietchZoutput = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
-                    LogPrintf("zrpcunsafe", "%s: Adding OLD sietch output %d %s", getId(), i, sietchZoutput.GetHash().ToString().c_str() );
+                    LogPrint("zrpcunsafe", "%s: Adding OLD sietch output %d %s", opid, i, sietchZoutput.GetHash().ToString().c_str() );
                     CAmount amount=0;
 
                     // actually add our sietch zoutput, the new way
                     builder.AddSaplingOutput(extsk.expsk.ovk, sietchZoutput, amount);
                 } else {
-                    LogPrintf("zrpcunsafe", "%s: Invalid payment address! Stopping.", getId());
+                    LogPrint("zrpcunsafe", "%s: Invalid payment address! Stopping.", opid);
                     status = false;
                     break;
                 }
             }
-            LogPrintf("zrpcunsafe", "%s: Done adding %d sietch zouts", getId(), MIN_ZOUTS);
+            LogPrint("zrpcunsafe", "%s: Done adding %d sietch zouts", opid, MIN_ZOUTS);
             //CTransaction tx = builder.Build();
 
             auto maybe_tx = builder.Build();
@@ -221,17 +221,17 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             CTransaction tx = maybe_tx.get();
 
             if (isCancelled()) {
-                LogPrintf("zrpcunsafe", "%s: Canceled. Stopping.\n", opid);
+                LogPrint("zrpcunsafe", "%s: Canceled. Stopping.\n", opid);
                 status=false;
                 break;
             }
 
             if(pwalletMain->CommitConsolidationTx(tx)) {
-                LogPrintf("zrpcunsafe", "%s: Committed consolidation transaction with txid=%s\n", getId(), tx.GetHash().ToString());
+                LogPrint("zrpcunsafe", "%s: Committed consolidation transaction with txid=%s\n",opid, tx.GetHash().ToString());
                 amountConsolidated += amountToSend - fConsolidationTxFee;
                 consolidationTxIds.push_back(tx.GetHash().ToString());
             } else {
-                LogPrintf("zrpcunsafe", "%s: Consolidation transaction FAILED in CommitTransaction, txid=%s\n", getId(), tx.GetHash().ToString());
+                LogPrint("zrpcunsafe", "%s: Consolidation transaction FAILED in CommitTransaction, txid=%s\n",opid , tx.GetHash().ToString());
                 setConsolidationResult(numTxCreated, amountConsolidated, consolidationTxIds);
                 status = false;
                 break;
@@ -240,7 +240,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
         }
     }
 
-    LogPrintf("zrpcunsafe", "%s: Created %d transactions with total Sapling output amount=%s,status=%d\n", getId(), numTxCreated, FormatMoney(amountConsolidated), (int)status);
+    LogPrint("zrpcunsafe", "%s: Created %d transactions with total Sapling output amount=%s,status=%d\n",opid , numTxCreated, FormatMoney(amountConsolidated), (int)status);
     setConsolidationResult(numTxCreated, amountConsolidated, consolidationTxIds);
     return status;
 }

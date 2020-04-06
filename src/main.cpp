@@ -957,7 +957,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
         }
         else if (!txin.IsFinal())
         {
-            LogPrintf("non-final txin seq.%x locktime.%u vs nTime.%u\n",txin.nSequence,(uint32_t)tx.nLockTime,(uint32_t)nBlockTime);
+            LogPrintf("non-final txin txid.%s seq.%x locktime.%u vs nTime.%u\n",tx.GetHash().ToString().c_str(),txin.nSequence,(uint32_t)tx.nLockTime,(uint32_t)nBlockTime);
             return false;
         }
     }

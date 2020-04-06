@@ -436,8 +436,8 @@ void CCoinsViewCache::SetBestBlock(const uint256 &hashBlockIn) {
 
 void BatchWriteNullifiers(CNullifiersMap &mapNullifiers, CNullifiersMap &cacheNullifiers)
 {
-    if(fZdebug)
-        LogPrintf("%s\n", __FUNCTION__);
+    //if(fZdebug)
+    //    LogPrintf("%s\n", __FUNCTION__);
     for (CNullifiersMap::iterator child_it = mapNullifiers.begin(); child_it != mapNullifiers.end();) {
         if (child_it->second.flags & CNullifiersCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
             CNullifiersMap::iterator parent_it = cacheNullifiers.find(child_it->first);

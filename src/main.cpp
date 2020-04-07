@@ -1327,6 +1327,7 @@ bool ContextualCheckTransaction(int32_t slowflag,const CBlock *block, CBlockInde
         ))
         {
             librustzcash_sapling_verification_ctx_free(ctx);
+            fprintf(stderr,"%s: valueBalance=%li\n", __func__, tx.valueBalance );
             return state.DoS(100, error("ContextualCheckTransaction(): Sapling binding signature invalid"),
                                   REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid");
         }

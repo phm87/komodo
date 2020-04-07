@@ -186,7 +186,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
 
             // Add the actual consolidation tx
             builder.AddSaplingOutput(extsk.expsk.ovk, addr, amountToSend - fConsolidationTxFee);
-            LogPrint("zrpcunsafe", "%s: Added consolidation output %s", opid, addr.GetHash().ToString().c_str() );
+            LogPrint("zrpcunsafe", "%s: Added consolidation output %s\n", opid, addr.GetHash().ToString().c_str() );
 
 
             // Add sietch zouts
@@ -194,27 +194,27 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             for(size_t i = 0; i < MIN_ZOUTS; i++) {
                 // In Privacy Zdust We Trust -- Duke
                 string zdust = randomSietchZaddr();
-                LogPrint("zrpcunsafe", "%s: random zdust=%s", opid, zdust);
+                LogPrint("zrpcunsafe", "%s: random zdust=%s\n", opid, zdust);
                 auto zaddr   = DecodePaymentAddress(zdust);
                 if (IsValidPaymentAddress(zaddr)) {
                     auto sietchZoutput = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
-                    LogPrint("zrpcunsafe", "%s: Adding OLD sietch output %d %s", opid, i, sietchZoutput.GetHash().ToString().c_str() );
+                    LogPrint("zrpcunsafe", "%s: Adding OLD sietch output %d %s\n", opid, i, sietchZoutput.GetHash().ToString().c_str() );
                     CAmount amount=0;
 
                     // actually add our sietch zoutput, the new way
                     builder.AddSaplingOutput(extsk.expsk.ovk, sietchZoutput, amount);
                 } else {
-                    LogPrint("zrpcunsafe", "%s: Invalid payment address! Stopping.", opid);
+                    LogPrint("zrpcunsafe", "%s: Invalid payment address! Stopping.\n", opid);
                     status = false;
                     break;
                 }
             }
-            LogPrint("zrpcunsafe", "%s: Done adding %d sietch zouts", opid, MIN_ZOUTS);
+            LogPrint("zrpcunsafe", "%s: Done adding %d sietch zouts\n", opid, MIN_ZOUTS);
             //CTransaction tx = builder.Build();
 
             auto maybe_tx = builder.Build();
             if (!maybe_tx) {
-                LogPrint("zrpcunsafe", "%s: Failed to build transaction.",opid);
+                LogPrint("zrpcunsafe", "%s: Failed to build transaction.\n",opid);
                 status=false;
                 break;
             }

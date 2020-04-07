@@ -5360,6 +5360,9 @@ void CWallet::GetFilteredNotes(
 
         if (minDepth > 1) {
             int nHeight    = tx_height(wtx.GetHash());
+            if ( nHeight == 0 ) {
+                continue;
+            }
             int nDepth     = wtx.GetDepthInMainChain();
             int dpowconfs  = komodo_dpowconfs(nHeight,nDepth);
             if ( dpowconfs < minDepth || dpowconfs > maxDepth) {

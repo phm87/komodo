@@ -71,6 +71,7 @@ int tx_height( const uint256 &hash ){
     uint256 hashBlock;
     if (!GetTransaction(hash, tx, hashBlock, true)) {
         fprintf(stderr,"tx hash %s does not exist!\n", hash.ToString().c_str() );
+        return nHeight;
     }
 
     BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
@@ -79,6 +80,7 @@ int tx_height( const uint256 &hash ){
         //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
     } else {
         // Unconfirmed xtns
+        fprintf(stderr,"tx %s is unconfirmed\n", hash.ToString().c_str() );
         //fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
     }
     return nHeight;

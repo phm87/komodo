@@ -154,7 +154,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             amountConsolidated += amountToSend;
             auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain);
             //builder.SetExpiryHeight(targetHeight_ + CONSOLIDATION_EXPIRY_DELTA);
-            LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", opid, FormatMoney(amountToSend - fConsolidationTxFee));
+            LogPrint("zrpcunsafe", "%s: Beginning to create transaction with Sapling output amount=%s\n", opid, FormatMoney(amountToSend - fConsolidationTxFee));
 
             // Select Sapling notes
             std::vector<SaplingOutPoint> ops;
@@ -169,6 +169,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             std::vector<boost::optional<SaplingWitness>> witnesses;
             {
                 LOCK2(cs_main, pwalletMain->cs_wallet);
+                LogPrint("zrpcunsafe", "%s: Fetching note witenesses\n", opid);
                 pwalletMain->GetSaplingNoteWitnesses(ops, witnesses, anchor);
             }
 
@@ -180,6 +181,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
                     break;
                 }
                 builder.AddSaplingSpend(extsk.expsk, notes[i], anchor, witnesses[i].get());
+                LogPrint("zrpcunsafe", "%s: Added consolidation input %d\n", opid, i);
             }
 
             builder.SetFee(fConsolidationTxFee);
@@ -194,17 +196,16 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             for(size_t i = 0; i < MIN_ZOUTS; i++) {
                 // In Privacy Zdust We Trust -- Duke
                 string zdust = randomSietchZaddr();
-                LogPrint("zrpcunsafe", "%s: random zdust=%s\n", opid, zdust);
                 auto zaddr   = DecodePaymentAddress(zdust);
                 if (IsValidPaymentAddress(zaddr)) {
                     auto sietchZoutput = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
-                    LogPrint("zrpcunsafe", "%s: Adding OLD sietch output %d %s\n", opid, i, sietchZoutput.GetHash().ToString().c_str() );
+                    LogPrint("zrpcunsafe", "%s: Adding Sietch zdust output %d %s amount=%li\n", opid, i, zdust, amount);
                     CAmount amount=0;
 
                     // actually add our sietch zoutput, the new way
                     builder.AddSaplingOutput(extsk.expsk.ovk, sietchZoutput, amount);
                 } else {
-                    LogPrint("zrpcunsafe", "%s: Invalid payment address! Stopping.\n", opid);
+                    LogPrint("zrpcunsafe", "%s: Invalid payment address %s! Stopping.\n", opid, zdust);
                     status = false;
                     break;
                 }

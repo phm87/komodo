@@ -186,7 +186,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
 
             // Add the actual consolidation tx
             builder.AddSaplingOutput(extsk.expsk.ovk, addr, amountToSend - fConsolidationTxFee);
-            LogPrint("zrpcunsafe", "%s: Added consolidation output %s\n", opid, addr.GetHash().ToString().c_str() );
+            LogPrint("zrpcunsafe", "%s: Added consolidation output %s with amount=%li\n", opid, addr.GetHash().ToString().c_str(), amountToSend - fConsolidationTxFee );
 
 
             // Add sietch zouts

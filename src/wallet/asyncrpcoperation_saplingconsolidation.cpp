@@ -154,7 +154,8 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             amountConsolidated += amountToSend;
             auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain);
             //builder.SetExpiryHeight(targetHeight_ + CONSOLIDATION_EXPIRY_DELTA);
-            LogPrint("zrpcunsafe", "%s: Beginning to create transaction with Sapling output amount=%s\n", opid, FormatMoney(amountToSend - fConsolidationTxFee));
+            auto actualAmountToSend = amountToSend < fConsolidationTxFee ? 0 : amountToSend - fConsolidationTxFee;
+            LogPrint("zrpcunsafe", "%s: Beginning to create transaction with Sapling output amount=%s\n", opid, FormatMoney(actualAmountToSend));
 
             // Select Sapling notes
             std::vector<SaplingOutPoint> ops;
@@ -187,9 +188,8 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             builder.SetFee(fConsolidationTxFee);
 
             // Add the actual consolidation tx
-            builder.AddSaplingOutput(extsk.expsk.ovk, addr, amountToSend - fConsolidationTxFee);
-            LogPrint("zrpcunsafe", "%s: Added consolidation output %s with amount=%li\n", opid, addr.GetHash().ToString().c_str(), amountToSend - fConsolidationTxFee );
-
+            builder.AddSaplingOutput(extsk.expsk.ovk, addr, actualAmountToSend);
+            LogPrint("zrpcunsafe", "%s: Added consolidation output %s with amount=%li\n", opid, addr.GetHash().ToString().c_str(), actualAmountToSend);
 
             // Add sietch zouts
             int MIN_ZOUTS = 7;
@@ -198,9 +198,9 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
                 string zdust = randomSietchZaddr();
                 auto zaddr   = DecodePaymentAddress(zdust);
                 if (IsValidPaymentAddress(zaddr)) {
+                    CAmount amount=0;
                     auto sietchZoutput = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
                     LogPrint("zrpcunsafe", "%s: Adding Sietch zdust output %d %s amount=%li\n", opid, i, zdust, amount);
-                    CAmount amount=0;
 
                     // actually add our sietch zoutput, the new way
                     builder.AddSaplingOutput(extsk.expsk.ovk, sietchZoutput, amount);
@@ -229,7 +229,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
 
             if(pwalletMain->CommitConsolidationTx(tx)) {
                 LogPrint("zrpcunsafe", "%s: Committed consolidation transaction with txid=%s\n",opid, tx.GetHash().ToString());
-                amountConsolidated += amountToSend - fConsolidationTxFee;
+                amountConsolidated += actualAmountToSend;
                 consolidationTxIds.push_back(tx.GetHash().ToString());
             } else {
                 LogPrint("zrpcunsafe", "%s: Consolidation transaction FAILED in CommitTransaction, txid=%s\n",opid , tx.GetHash().ToString());

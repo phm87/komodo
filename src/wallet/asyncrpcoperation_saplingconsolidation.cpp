@@ -170,7 +170,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             std::vector<boost::optional<SaplingWitness>> witnesses;
             {
                 LOCK2(cs_main, pwalletMain->cs_wallet);
-                LogPrint("zrpcunsafe", "%s: Fetching note witenesses\n", opid);
+                LogPrint("zrpcunsafe", "%s: Fetching note witnesses\n", opid);
                 pwalletMain->GetSaplingNoteWitnesses(ops, witnesses, anchor);
             }
 

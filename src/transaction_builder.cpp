@@ -142,6 +142,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         change -= tOut.nValue;
     }
     if (change < 0) {
+        LogPrintf("%s: negative change!\n", __func__);
         return boost::none;
     }
 
@@ -182,6 +183,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         auto nf = spend.note.nullifier(
             spend.expsk.full_viewing_key(), spend.witness.position());
         if (!(cm && nf)) {
+            LogPrintf("%s: Invalid commitment or nullifier!\n", __FUNCTION__);
             librustzcash_sapling_proving_ctx_free(ctx);
             return boost::none;
         }
@@ -205,6 +207,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
                 sdesc.rk.begin(),
                 sdesc.zkproof.data())) {
             librustzcash_sapling_proving_ctx_free(ctx);
+            LogPrintf("%s: Invalid sapling spend proof!\n", __FUNCTION__);
             return boost::none;
         }
 
@@ -218,6 +221,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
     for (auto output : outputs) {
         auto cm = output.note.cm();
         if (!cm) {
+            LogPrintf("%s: Invalid sapling note commitment!\n", __FUNCTION__);
             librustzcash_sapling_proving_ctx_free(ctx);
             return boost::none;
         }
@@ -243,6 +247,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
                 odesc.cv.begin(),
                 odesc.zkproof.begin())) {
             librustzcash_sapling_proving_ctx_free(ctx);
+            LogPrintf("%s: Invalid sapling output proof!\n", __FUNCTION__);
             return boost::none;
         }
 
@@ -275,6 +280,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
     } catch (std::logic_error ex) {
         librustzcash_sapling_proving_ctx_free(ctx);
+        LogPrintf("%s: SignatureHash exception!\n", __func__);
         return boost::none;
     }
 
@@ -293,6 +299,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         mtx.bindingSig.data());
 
     librustzcash_sapling_proving_ctx_free(ctx);
+    LogPrintf("%s: Created spendAuth and binding sigs\n", __func__);
 
     // Transparent signatures
     CTransaction txNewConst(mtx);

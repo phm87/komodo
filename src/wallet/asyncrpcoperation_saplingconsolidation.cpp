@@ -185,7 +185,9 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
                 LogPrint("zrpcunsafe", "%s: Added consolidation input %d\n", opid, i);
             }
 
-            builder.SetFee(fConsolidationTxFee);
+            CAmount thisTxFee = amountToSend < fConsolidationTxFee ? 0 : fConsolidationTxFee;
+            LogPrint("zrpcunsafe", "%s: Using fee=%d\n", opid, thisTxFee);
+            builder.SetFee(thisTxFee);
 
             // Add the actual consolidation tx
             builder.AddSaplingOutput(extsk.expsk.ovk, addr, actualAmountToSend);
@@ -231,13 +233,13 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
                 LogPrint("zrpcunsafe", "%s: Committed consolidation transaction with txid=%s\n",opid, tx.GetHash().ToString());
                 amountConsolidated += actualAmountToSend;
                 consolidationTxIds.push_back(tx.GetHash().ToString());
+                numTxCreated++;
             } else {
                 LogPrint("zrpcunsafe", "%s: Consolidation transaction FAILED in CommitTransaction, txid=%s\n",opid , tx.GetHash().ToString());
                 setConsolidationResult(numTxCreated, amountConsolidated, consolidationTxIds);
                 status = false;
                 break;
             }
-
         }
     }
 

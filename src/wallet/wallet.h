@@ -94,7 +94,7 @@ static const int DEFAULT_TX_DELETE_INTERVAL = 1000;
 //Default Transaction Rentention N-BLOCKS
 static const unsigned int DEFAULT_TX_RETENTION_BLOCKS = 10000;
 
-//Default Retenion Last N-Transactions
+//Default Retention Last N-Transactions
 static const unsigned int DEFAULT_TX_RETENTION_LASTTX = 200;
 
 //Amount of transactions to delete per run while syncing

@@ -1741,6 +1741,25 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, int dosLevel)
 {
     AssertLockHeld(cs_main);
+    uint32_t z2zTransitionWindow = 10;
+    uint32_t z2zTransitionStart  = 340000 - z2zTransitionWindow;
+    uint32_t z2zTransitionEnd    = 340000;
+    bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+    uint32_t nHeight = chainActive.Height();
+
+    // This only applies to HUSH3, other chains can start off z2z via ac_private=1
+    if(ishush3) {
+        if((nHeight >= z2zTransitionStart) || (nHeight <= z2zTransitionEnd)) {
+            // During the z2z transition window, only coinbase tx's as part of blocks are allowed
+            // Theory: We want an empty mempool at our fork block height, and the only way to assure that
+            // is to have an empty mempool for a few previous blocks, to take care of potential re-orgs
+            // and edge cases. This empty mempool assures there will be no transactions involving taddrs
+            // stuck in the mempool, when the z2z rule takes effect.
+            // Thanks to jl777 for helping design this
+            fprintf(stderr,"%s: rejecting all tx's during z2z transition window at height=%d\n", __func__,nHeight);
+            return false;
+        }
+    }
     if (pfMissingInputs)
         *pfMissingInputs = false;
     uint32_t tiptime;

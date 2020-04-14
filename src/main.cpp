@@ -3368,6 +3368,19 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         return(false);
     //fprintf(stderr,"connectblock ht.%d\n",(int32_t)pindex->GetHeight());
     AssertLockHeld(cs_main);
+
+    bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+    if(!ASSETCHAINS_PRIVATE && ishush3) {
+        unsigned int z2zForkHeight = 340000;
+        unsigned int nHeight       = pindex->GetHeight();
+        if(nHeight >= z2zForkHeight) {
+            // At startup, HUSH3 doesn't know a block height yet and so we must wait until
+            // connecting a block
+            fprintf(stderr, "%s: Going full z2z at height %d!\n",__func__,nHeight);
+            ASSETCHAINS_PRIVATE = 1;
+        }
+    }
+
     bool fExpensiveChecks = true;
     if (fCheckpointsEnabled) {
         CBlockIndex *pindexLastCheckpoint = Checkpoints::GetLastCheckpoint(chainparams.Checkpoints());

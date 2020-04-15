@@ -1591,11 +1591,11 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
         if ( counter++ < 10 )
             fprintf(stderr,"found taddr in private chain: z_z.%d z_t.%d t_z.%d vinsize.%d\n",z_z,z_t,t_z,(int32_t)tx.vin.size());
         if ( z_t == 0 || z_z != 0 || t_z != 0 || tx.vin.size() != 0 )
-            return state.DoS(100, error("CheckTransaction(): this is a private chain, only sprout -> taddr allowed until deadline"),REJECT_INVALID, "bad-txns-acprivacy-chain");
+            return state.DoS(100, error("CheckTransaction(): this is a private chain, sending to taddrs not allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
     }
     if ( ASSETCHAINS_TXPOW != 0 )
     {
-        // genesis coinbase 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+        // BTC genesis coinbase 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
         uint256 txid = tx.GetHash();
         if ( ((ASSETCHAINS_TXPOW & 2) != 0 && iscoinbase != 0) || ((ASSETCHAINS_TXPOW & 1) != 0 && iscoinbase == 0) )
         {

@@ -6121,7 +6121,7 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
     // Create new
     CBlockIndex* pindexNew = new CBlockIndex();
     if (!pindexNew)
-        throw runtime_error("LoadBlockIndex(): new CBlockIndex failed");
+        throw runtime_error("InsertBlockIndex(): new CBlockIndex failed");
     mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
     pindexNew->phashBlock = &((*mi).first);
     //fprintf(stderr,"inserted to block index %s\n",hash.ToString().c_str());

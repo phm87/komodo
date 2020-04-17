@@ -115,7 +115,7 @@ bool fAlerts = DEFAULT_ALERTS;
  */
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
-unsigned int z2zForkHeight = 340000;
+unsigned int z2zForkHeight = GetArg("-z2zforkheight",340000);
 
 unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
@@ -1329,7 +1329,7 @@ bool ContextualCheckTransaction(int32_t slowflag,const CBlock *block, CBlockInde
         ))
         {
             librustzcash_sapling_verification_ctx_free(ctx);
-            fprintf(stderr,"%s: Invalid sapling binding sig! tx=%s valueBalance=%li, bindingSig.size=%d\n", __func__, tx.GetHash().ToString().c_str(), tx.valueBalance, tx.bindingSig.size() );
+            fprintf(stderr,"%s: Invalid sapling binding sig! tx=%s valueBalance=%li, bindingSig.size=%li\n", __func__, tx.GetHash().ToString().c_str(), tx.valueBalance, tx.bindingSig.size() );
             return state.DoS(100, error("ContextualCheckTransaction(): Sapling binding signature invalid"),
                                   REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid");
         }

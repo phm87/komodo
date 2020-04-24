@@ -4213,6 +4213,42 @@ UniValue z_getbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
     return ValueFromAmount(nBalance);
 }
 
+UniValue z_getnotescount(const UniValue& params, bool fHelp,const CPubKey& mypk)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_getnotescount\n"
+            "\nArguments:\n"
+            "1. minconf      (numeric, optional, default=1) Only include notes in transactions confirmed at least this many times.\n"
+            "\nReturns the number of sprout and sapling notes available in the wallet.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"sapling\"     (numeric) the number of sapling notes in the wallet\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_getnotescount", "0")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    int nMinDepth = 1;
+    if (params.size() > 0)
+        nMinDepth = params[0].get_int();
+
+    int sapling = 0;
+    for (auto& wtx : pwalletMain->mapWallet) {
+        if (wtx.second.GetDepthInMainChain() >= nMinDepth) {
+            sapling += wtx.second.mapSaplingNoteData.size();
+        }
+    }
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("sapling", sapling));
+
+    return ret;
+}
 
 UniValue z_gettotalbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
@@ -8368,6 +8404,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_getinfo",                &z_getinfo,                true  },
     { "wallet",             "z_listsentbyaddress",      &z_listsentbyaddress,      true  },
     { "wallet",             "z_listreceivedbyaddress",  &z_listreceivedbyaddress,  true  },
+    { "wallet",             "z_getnotescount",          &z_getnotescount,          false },
     // TODO: rearrange into another category
     { "disclosure",         "z_getpaymentdisclosure",   &z_getpaymentdisclosure,   true  },
     { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }

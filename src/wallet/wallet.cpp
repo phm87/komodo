@@ -1288,10 +1288,6 @@ void CWallet::BuildWitnessCache(const CBlockIndex* pindex, bool witnessOnly)
       LogPrintf("Building Witnesses for block %i %.4f complete\n", pblockindex->GetHeight(), pblockindex->GetHeight() / double(height));
     }
 
-    SproutMerkleTree sproutTree;
-    sproutRoot = pblockindex->pprev->hashFinalSproutRoot;
-    pcoinsTip->GetSproutAnchorAt(sproutRoot, sproutTree);
-
     SaplingMerkleTree saplingTree;
     saplingRoot = pblockindex->pprev->hashFinalSaplingRoot;
     pcoinsTip->GetSaplingAnchorAt(saplingRoot, saplingTree);

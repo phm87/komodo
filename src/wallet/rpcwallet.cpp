@@ -4388,7 +4388,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp, const CPubKey& my
         // Fetch the note that is being spent
         auto res = pwalletMain->mapSaplingNullifiersToNotes.find(spend.nullifier);
         if (res == pwalletMain->mapSaplingNullifiersToNotes.end()) {
-			fprintf(stderr,"Could not find spending note %s", uint256_str(str, spend.nullifier));
+            if(fZdebug) {
+			    fprintf(stderr,"Could not find spending note %s\n", uint256_str(str, spend.nullifier));
+            }
             continue;
         }
         auto op        = res->second;
@@ -4442,8 +4444,10 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp, const CPubKey& my
                 pa = recovered->second;
                 isOutgoing = true;
             } else {
-                // Unreadable
-			    fprintf(stderr,"Could not recover Sapling note!");
+                // Unreadable or unconfirmed?
+                if(fZdebug) {
+			        fprintf(stderr,"Could not recover Sapling note!\n");
+                }
                 continue;
             }
         }

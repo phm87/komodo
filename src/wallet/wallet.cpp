@@ -1298,7 +1298,7 @@ void CWallet::BuildWitnessCache(const CBlockIndex* pindex, bool witnessOnly)
 
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
 
-      if (wtxItem.second.mapSproutNoteData.empty() && wtxItem.second.mapSaplingNoteData.empty())
+      if (wtxItem.second.mapSaplingNoteData.empty())
         continue;
 
       if (wtxItem.second.GetDepthInMainChain() > 0) {
@@ -3062,36 +3062,9 @@ void CWallet::DeleteWalletTransactions(const CBlockIndex* pindex) {
               continue;
             }
 
-            //Check for unspent inputs or spend less than N Blocks ago. (Sprout)
-            for (auto & pair : pwtx->mapSproutNoteData) {
-              SproutNoteData nd = pair.second;
-              if (!nd.nullifier || pwalletMain->GetSproutSpendDepth(*nd.nullifier) <= fDeleteTransactionsAfterNBlocks) {
-                LogPrint("deletetx","DeleteTx - Unspent sprout input tx %s\n", pwtx->GetHash().ToString());
-                deleteTx = false;
-                continue;
-              }
-            }
-
             if (!deleteTx) {
               txSaveCount++;
               continue;
-            }
-
-            //Check for outputs that no longer have parents in the wallet. Exclude parents that are in the same transaction. (Sprout)
-            for (int i = 0; i < pwtx->vjoinsplit.size(); i++) {
-              const JSDescription& jsdesc = pwtx->vjoinsplit[i];
-              for (const uint256 &nullifier : jsdesc.nullifiers) {
-                // JSOutPoint op = pwalletMain->mapSproutNullifiersToNotes[nullifier];
-                if (pwalletMain->IsSproutNullifierFromMe(nullifier)) {
-                  const uint256& parentHash = pwalletMain->mapSproutNullifiersToNotes[nullifier].hash;
-                  const CWalletTx* parent = pwalletMain->GetWalletTx(parentHash);
-                  if (parent != NULL && parentHash != wtxid) {
-                    LogPrint("deletetx","DeleteTx - Parent of sprout tx %s found\n", pwtx->GetHash().ToString());
-                    deleteTx = false;
-                    continue;
-                  }
-                }
-              }
             }
 
             if (!deleteTx) {

@@ -2123,7 +2123,12 @@ void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
             if (!rt) {
                 rt = witnesses[i]->root();
             } else {
-                assert(*rt == witnesses[i]->root());
+                if(*rt == witnesses[i]->root()) {
+                    // Something is fucky
+                    std::string err = "CWallet::GetSaplingNoteWitnesses: Invalid witness root:" << rt.GetHash();
+                    throw std::logic_error(err);
+                }
+
             }
         }
         i++;

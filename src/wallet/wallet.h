@@ -589,11 +589,8 @@ public:
         MarkDirty();
     }
 
-    void SetSproutNoteData(mapSproutNoteData_t &noteData);
     void SetSaplingNoteData(mapSaplingNoteData_t &noteData);
 
-    std::pair<libzcash::SproutNotePlaintext, libzcash::SproutPaymentAddress> DecryptSproutNote(
-        JSOutPoint jsop) const;
     boost::optional<std::pair<
         libzcash::SaplingNotePlaintext,
         libzcash::SaplingPaymentAddress>> DecryptSaplingNote(SaplingOutPoint op) const;
@@ -801,14 +798,12 @@ private:
      * detect and report conflicts (double-spends).
      */
     typedef TxSpendMap<uint256> TxNullifiers;
-    TxNullifiers mapTxSproutNullifiers;
     TxNullifiers mapTxSaplingNullifiers;
     
     std::vector<CTransaction> pendingSaplingConsolidationTxs;
     AsyncRPCOperationId saplingConsolidationOperationId;
 
     void AddToTransparentSpends(const COutPoint& outpoint, const uint256& wtxid);
-    void AddToSproutSpends(const uint256& nullifier, const uint256& wtxid);
     void AddToSaplingSpends(const uint256& nullifier, const uint256& wtxid);
     void AddToSpends(const uint256& wtxid);
 
@@ -915,7 +910,6 @@ public:
 
     std::set<int64_t> setKeyPool;
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
-    std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapSproutZKeyMetadata;
     std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
@@ -1033,8 +1027,6 @@ public:
 
     bool IsSpent(const uint256& hash, unsigned int n) const;
     unsigned int GetSpendDepth(const uint256& hash, unsigned int n) const;
-    bool IsSproutSpent(const uint256& nullifier) const;
-    unsigned int GetSproutSpendDepth(const uint256& nullifier) const;
     bool IsSaplingSpent(const uint256& nullifier) const;
     unsigned int GetSaplingSpendDepth(const uint256& nullifier) const;
 
@@ -1047,8 +1039,6 @@ public:
     bool IsLockedNote(const JSOutPoint& outpt) const;
     void LockNote(const JSOutPoint& output);
     void UnlockNote(const JSOutPoint& output);
-    void UnlockAllSproutNotes();
-    std::vector<JSOutPoint> ListLockedSproutNotes();
 
     bool IsLockedNote(const SaplingOutPoint& output) const;
     void LockNote(const SaplingOutPoint& output);
@@ -1099,20 +1089,6 @@ public:
     void GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const;
 
     /**
-      * Sprout ZKeys
-      */
-    //! Generates a new Sprout zaddr
-    libzcash::SproutPaymentAddress GenerateNewSproutZKey();
-    //! Adds spending key to the store, and saves it to disk
-    bool AddSproutZKey(const libzcash::SproutSpendingKey &key);
-    //! Adds spending key to the store, without saving it to disk (used by LoadWallet)
-    bool LoadZKey(const libzcash::SproutSpendingKey &key);
-    //! Load spending key metadata (used by LoadWallet)
-    bool LoadZKeyMetadata(const libzcash::SproutPaymentAddress &addr, const CKeyMetadata &meta);
-    //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
-    bool LoadCryptedZKey(const libzcash::SproutPaymentAddress &addr, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret);
-
-    /**
       * Sapling ZKeys
       */
     //! Generates new Sapling key
@@ -1160,7 +1136,6 @@ public:
     void MarkDirty();
     bool UpdateNullifierNoteMap();
     void UpdateNullifierNoteMapWithTx(const CWalletTx& wtx);
-    void UpdateSproutNullifierNoteMapWithTx(CWalletTx& wtx);
     void UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx);
     void UpdateNullifierNoteMapForBlock(const CBlock* pblock);
     bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb);
@@ -1208,21 +1183,9 @@ public:
 
     std::set<CTxDestination> GetAccountAddresses(const std::string& strAccount) const;
 
-    boost::optional<uint256> GetSproutNoteNullifier(
-        const JSDescription& jsdesc,
-        const libzcash::SproutPaymentAddress& address,
-        const ZCNoteDecryption& dec,
-        const uint256& hSig,
-        uint8_t n) const;
-    mapSproutNoteData_t FindMySproutNotes(const CTransaction& tx) const;
     std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> FindMySaplingNotes(const CTransaction& tx) const;
-    bool IsSproutNullifierFromMe(const uint256& nullifier) const;
     bool IsSaplingNullifierFromMe(const uint256& nullifier) const;
 
-    void GetSproutNoteWitnesses(
-         std::vector<JSOutPoint> notes,
-         std::vector<boost::optional<SproutWitness>>& witnesses,
-         uint256 &final_anchor);
     void GetSaplingNoteWitnesses(
          std::vector<SaplingOutPoint> notes,
          std::vector<boost::optional<SaplingWitness>>& witnesses,

@@ -234,25 +234,7 @@ bool CWallet::AddSaplingIncomingViewingKey(
 // Add spending key to keystore and persist to disk
 bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
 {
-    AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
-    auto addr = key.address();
-
-    if (!CCryptoKeyStore::AddSproutSpendingKey(key))
-        return false;
-
-    // check if we need to remove from viewing keys
-    if (HaveSproutViewingKey(addr))
-        RemoveSproutViewingKey(key.viewing_key());
-
-    if (!fFileBacked)
-        return true;
-
-    if (!IsCrypted()) {
-        return CWalletDB(strWalletFile).WriteZKey(addr,
-                                                  key,
-                                                  mapSproutZKeyMetadata[addr]);
-    }
-    return true;
+    return false;
 }
 
 CPubKey CWallet::GenerateNewKey()
@@ -2344,13 +2326,6 @@ bool CWallet::IsFromMe(const CTransaction& tx) const
     if (GetDebit(tx, ISMINE_ALL) > 0) {
         return true;
     }
-    for (const JSDescription& jsdesc : tx.vjoinsplit) {
-        for (const uint256& nullifier : jsdesc.nullifiers) {
-            if (IsSproutNullifierFromMe(nullifier)) {
-                return true;
-            }
-        }
-    }
     for (const SpendDescription &spend : tx.vShieldedSpend) {
         if (IsSaplingNullifierFromMe(spend.nullifier)) {
             return true;
@@ -2488,18 +2463,6 @@ bool CWallet::LoadCryptedHDSeed(const uint256& seedFp, const std::vector<unsigne
 
 void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
 {
-    mapSproutNoteData.clear();
-    for (const std::pair<JSOutPoint, SproutNoteData> nd : noteData) {
-        if (nd.first.js < vjoinsplit.size() &&
-                nd.first.n < vjoinsplit[nd.first.js].ciphertexts.size()) {
-            // Store the address and nullifier for the Note
-            mapSproutNoteData[nd.first] = nd.second;
-        } else {
-            // If FindMySproutNotes() was used to obtain noteData,
-            // this should never happen
-            throw std::logic_error("CWalletTx::SetSproutNoteData(): Invalid note");
-        }
-    }
 }
 
 void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)

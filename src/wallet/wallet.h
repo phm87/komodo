@@ -1111,17 +1111,6 @@ public:
     bool LoadZKeyMetadata(const libzcash::SproutPaymentAddress &addr, const CKeyMetadata &meta);
     //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
     bool LoadCryptedZKey(const libzcash::SproutPaymentAddress &addr, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret);
-    //! Adds an encrypted spending key to the store, and saves it to disk (virtual method, declared in crypter.h)
-    bool AddCryptedSproutSpendingKey(
-        const libzcash::SproutPaymentAddress &address,
-        const libzcash::ReceivingKey &rk,
-        const std::vector<unsigned char> &vchCryptedSecret);
-
-    //! Adds a Sprout viewing key to the store, and saves it to disk.
-    bool AddSproutViewingKey(const libzcash::SproutViewingKey &vk);
-    bool RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk);
-    //! Adds a Sprout viewing key to the store, without saving it to disk (used by LoadWallet)
-    bool LoadSproutViewingKey(const libzcash::SproutViewingKey &dest);
 
     /**
       * Sapling ZKeys

@@ -117,22 +117,7 @@ const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
 // Generate a new spending key and return its public payment address
 libzcash::SproutPaymentAddress CWallet::GenerateNewSproutZKey()
 {
-    AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
-
-    auto k = SproutSpendingKey::random();
-    auto addr = k.address();
-
-    // Check for collision, even though it is unlikely to ever occur
-    if (CCryptoKeyStore::HaveSproutSpendingKey(addr))
-        throw std::runtime_error("CWallet::GenerateNewSproutZKey(): Collision detected");
-
-    // Create new metadata
-    int64_t nCreationTime = GetTime();
-    mapSproutZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
-
-    if (!AddSproutZKey(k))
-        throw std::runtime_error("CWallet::GenerateNewSproutZKey(): AddSproutZKey failed");
-    return addr;
+    throw std::runtime_error("unsupported");
 }
 
 // Generate a new Sapling spending key and return its public payment address
@@ -313,24 +298,6 @@ bool CWallet::AddCryptedSproutSpendingKey(
     const libzcash::ReceivingKey &rk,
     const std::vector<unsigned char> &vchCryptedSecret)
 {
-    if (!CCryptoKeyStore::AddCryptedSproutSpendingKey(address, rk, vchCryptedSecret))
-        return false;
-    if (!fFileBacked)
-        return true;
-    {
-        LOCK(cs_wallet);
-        if (pwalletdbEncryption) {
-            return pwalletdbEncryption->WriteCryptedZKey(address,
-                                                         rk,
-                                                         vchCryptedSecret,
-                                                         mapSproutZKeyMetadata[address]);
-        } else {
-            return CWalletDB(strWalletFile).WriteCryptedZKey(address,
-                                                             rk,
-                                                             vchCryptedSecret,
-                                                             mapSproutZKeyMetadata[address]);
-        }
-    }
     return false;
 }
 
@@ -413,47 +380,6 @@ bool CWallet::LoadSaplingPaymentAddress(
 bool CWallet::LoadZKey(const libzcash::SproutSpendingKey &key)
 {
     return CCryptoKeyStore::AddSproutSpendingKey(key);
-}
-
-bool CWallet::AddSproutViewingKey(const libzcash::SproutViewingKey &vk)
-{
-    if (!CCryptoKeyStore::AddSproutViewingKey(vk)) {
-        return false;
-    }
-    nTimeFirstKey = 1; // No birthday information for viewing keys.
-    if (!fFileBacked) {
-        return true;
-    }
-    return CWalletDB(strWalletFile).WriteSproutViewingKey(vk);
-}
-
-bool CWallet::RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk)
-{
-    AssertLockHeld(cs_wallet);
-    if (!CCryptoKeyStore::RemoveSproutViewingKey(vk)) {
-        return false;
-    }
-    if (fFileBacked) {
-        if (!CWalletDB(strWalletFile).EraseSproutViewingKey(vk)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-bool CWallet::LoadSproutViewingKey(const libzcash::SproutViewingKey &vk)
-{
-    return CCryptoKeyStore::AddSproutViewingKey(vk);
-}
-
-bool CWallet::AddCScript(const CScript& redeemScript)
-{
-    if (!CCryptoKeyStore::AddCScript(redeemScript))
-        return false;
-    if (!fFileBacked)
-        return true;
-    return CWalletDB(strWalletFile).WriteCScript(Hash160(redeemScript), redeemScript);
 }
 
 bool CWallet::LoadCScript(const CScript& redeemScript)

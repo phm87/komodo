@@ -429,9 +429,6 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
      * END SCENARIO #0
      */
 
-
-    UniValue obj(UniValue::VOBJ);
-
     /**
      * SCENARIO #1
      *
@@ -440,6 +437,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
      * There are no zaddrs or joinsplits involved.
      */
     if (isPureTaddrOnlyTx) {
+        UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("rawtxn", EncodeHexTx(tx_)));
         sign_send_raw_transaction(obj);
         return true;
@@ -448,8 +446,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
      * END SCENARIO #1
      */
 
-    sign_send_raw_transaction(obj);
-    return true;
+    return false;
 }
 
 

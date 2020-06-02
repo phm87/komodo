@@ -1,4 +1,4 @@
-// Copyright (c) 2020 The Hush developers
+// Copyright (c) 2019-2020 The Hush developers
 // Copyright (c) 2019 CryptoForge
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -93,7 +93,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
         // We set minDepth to 11 to avoid unconfirmed notes and in anticipation of specifying
-        // an anchor at height N-10 for each Sprout JoinSplit description
+        // an anchor at height N-10 for each SpendDescription
         // Consider, should notes be sorted?
         pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, "", 11);
         if (fConsolidationMapUsed) {

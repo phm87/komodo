@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019      The Hush developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -314,22 +314,11 @@ bool CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)
     return true;
 }
 
-bool CWallet::LoadZKeyMetadata(const SproutPaymentAddress &addr, const CKeyMetadata &meta)
-{
-    AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
-    mapSproutZKeyMetadata[addr] = meta;
-    return true;
-}
-
 bool CWallet::LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret)
 {
     return CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret);
 }
 
-bool CWallet::LoadCryptedZKey(const libzcash::SproutPaymentAddress &addr, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret)
-{
-    return CCryptoKeyStore::AddCryptedSproutSpendingKey(addr, rk, vchCryptedSecret);
-}
 
 bool CWallet::LoadCryptedSaplingZKey(
     const libzcash::SaplingExtendedFullViewingKey &extfvk,
@@ -357,10 +346,6 @@ bool CWallet::LoadSaplingPaymentAddress(
     return CCryptoKeyStore::AddSaplingIncomingViewingKey(ivk, addr);
 }
 
-bool CWallet::LoadZKey(const libzcash::SproutSpendingKey &key)
-{
-    return CCryptoKeyStore::AddSproutSpendingKey(key);
-}
 
 bool CWallet::LoadCScript(const CScript& redeemScript)
 {
@@ -648,20 +633,6 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
         range = mapTxSpends.equal_range(txin.prevout);
         for (TxSpends::const_iterator it = range.first; it != range.second; ++it)
             result.insert(it->second);
-    }
-
-    std::pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range_n;
-
-    for (const JSDescription& jsdesc : wtx.vjoinsplit) {
-        for (const uint256& nullifier : jsdesc.nullifiers) {
-            if (mapTxSproutNullifiers.count(nullifier) <= 1) {
-                continue;  // No conflict if zero or one spends
-            }
-            range_n = mapTxSproutNullifiers.equal_range(nullifier);
-            for (TxNullifiers::const_iterator it = range_n.first; it != range_n.second; ++it) {
-                result.insert(it->second);
-            }
-        }
     }
 
     std::pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range_o;
@@ -1367,7 +1338,6 @@ void CWallet::UpdateNullifierNoteMapForBlock(const CBlock *pblock) {
         auto hash = tx.GetHash();
         bool txIsOurs = mapWallet.count(hash);
         if (txIsOurs) {
-            UpdateSproutNullifierNoteMapWithTx(mapWallet[hash]);
             UpdateSaplingNullifierNoteMapWithTx(mapWallet[hash]);
         }
     }
@@ -1750,7 +1720,7 @@ void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
             } else {
                 if(*rt == witnesses[i]->root()) {
                     // Something is fucky
-                    std::string err = "CWallet::GetSaplingNoteWitnesses: Invalid witness root:" << rt.GetHash();
+                    std::string err = "CWallet::GetSaplingNoteWitnesses: Invalid witness root!";
                     throw std::logic_error(err);
                 }
 
@@ -2104,10 +2074,6 @@ bool CWallet::LoadCryptedHDSeed(const uint256& seedFp, const std::vector<unsigne
     return CCryptoKeyStore::SetCryptedHDSeed(seedFp, seed);
 }
 
-void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
-{
-}
-
 void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
 {
     mapSaplingNoteData.clear();
@@ -2251,36 +2217,6 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
     if (isFromMyTaddr) {
         CAmount myVpubOld = 0;
         CAmount myVpubNew = 0;
-        for (const JSDescription& js : vjoinsplit) {
-            bool fMyJSDesc = false;
-
-            // Check input side
-            for (const uint256& nullifier : js.nullifiers) {
-                if (pwallet->IsSproutNullifierFromMe(nullifier)) {
-                    fMyJSDesc = true;
-                    break;
-                }
-            }
-
-            // Check output side
-            if (!fMyJSDesc) {
-                for (const std::pair<JSOutPoint, SproutNoteData> nd : this->mapSproutNoteData) {
-                    if (nd.first.js < vjoinsplit.size() && nd.first.n < vjoinsplit[nd.first.js].ciphertexts.size()) {
-                        fMyJSDesc = true;
-                        break;
-                    }
-                }
-            }
-
-            if (fMyJSDesc) {
-                myVpubOld += js.vpub_old;
-                myVpubNew += js.vpub_new;
-            }
-
-            if (!MoneyRange(js.vpub_old) || !MoneyRange(js.vpub_new) || !MoneyRange(myVpubOld) || !MoneyRange(myVpubNew)) {
-                 throw std::runtime_error("CWalletTx::GetAmounts: value out of range");
-            }
-        }
 
         // Create an output for the value taken from or added to the transparent value pool by JoinSplits
         if (myVpubOld > myVpubNew) {
@@ -4580,38 +4516,6 @@ void CWallet::ListLockedCoins(std::vector<COutPoint>& vOutpts)
 
 // Note Locking Operations
 
-void CWallet::LockNote(const JSOutPoint& output)
-{
-    AssertLockHeld(cs_wallet); // setLockedSproutNotes
-    setLockedSproutNotes.insert(output);
-}
-
-void CWallet::UnlockNote(const JSOutPoint& output)
-{
-    AssertLockHeld(cs_wallet); // setLockedSproutNotes
-    setLockedSproutNotes.erase(output);
-}
-
-void CWallet::UnlockAllSproutNotes()
-{
-    AssertLockHeld(cs_wallet); // setLockedSproutNotes
-    setLockedSproutNotes.clear();
-}
-
-bool CWallet::IsLockedNote(const JSOutPoint& outpt) const
-{
-    AssertLockHeld(cs_wallet); // setLockedSproutNotes
-
-    return (setLockedSproutNotes.count(outpt) > 0);
-}
-
-std::vector<JSOutPoint> CWallet::ListLockedSproutNotes()
-{
-    AssertLockHeld(cs_wallet); // setLockedSproutNotes
-    std::vector<JSOutPoint> vOutpts(setLockedSproutNotes.begin(), setLockedSproutNotes.end());
-    return vOutpts;
-}
-
 void CWallet::LockNote(const SaplingOutPoint& output)
 {
     AssertLockHeld(cs_wallet);
@@ -4988,11 +4892,6 @@ void CWallet::GetFilteredNotes(
 // Shielded key and address generalizations
 //
 
-bool IncomingViewingKeyBelongsToWallet::operator()(const libzcash::SproutPaymentAddress &zaddr) const
-{
-    return m_wallet->HaveSproutViewingKey(zaddr);
-}
-
 bool IncomingViewingKeyBelongsToWallet::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingIncomingViewingKey ivk;
@@ -5002,11 +4901,6 @@ bool IncomingViewingKeyBelongsToWallet::operator()(const libzcash::SaplingPaymen
 bool IncomingViewingKeyBelongsToWallet::operator()(const libzcash::InvalidEncoding& no) const
 {
     return false;
-}
-
-bool PaymentAddressBelongsToWallet::operator()(const libzcash::SproutPaymentAddress &zaddr) const
-{
-    return m_wallet->HaveSproutSpendingKey(zaddr) || m_wallet->HaveSproutViewingKey(zaddr);
 }
 
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
@@ -5024,11 +4918,6 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::InvalidEncoding& 
     return false;
 }
 
-bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
-{
-    return m_wallet->HaveSproutSpendingKey(zaddr);
-}
-
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingIncomingViewingKey ivk;
@@ -5042,17 +4931,6 @@ bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPayment
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::InvalidEncoding& no) const
 {
     return false;
-}
-
-boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
-    const libzcash::SproutPaymentAddress &zaddr) const
-{
-    libzcash::SproutSpendingKey k;
-    if (m_wallet->GetSproutSpendingKey(zaddr, k)) {
-        return libzcash::SpendingKey(k);
-    } else {
-        return boost::none;
-    }
 }
 
 boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
@@ -5073,20 +4951,6 @@ boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator
     return libzcash::SpendingKey();
 }
 
-SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKey &sk) const {
-    auto addr = sk.address();
-    if (log){
-        LogPrint("zrpc", "Importing zaddr %s...\n", EncodePaymentAddress(addr));
-    }
-    if (m_wallet->HaveSproutSpendingKey(addr)) {
-        return KeyAlreadyExists;
-    } else if (m_wallet-> AddSproutZKey(sk)) {
-        m_wallet->mapSproutZKeyMetadata[addr].nCreateTime = nTime;
-        return KeyAdded;
-    } else {
-        return KeyNotAdded;
-    }
-}
 
 SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedSpendingKey &sk) const {
     auto fvk = sk.expsk.full_viewing_key();

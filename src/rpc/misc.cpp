@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -593,19 +594,6 @@ class DescribePaymentAddressVisitor : public boost::static_visitor<UniValue>
 {
 public:
     UniValue operator()(const libzcash::InvalidEncoding &zaddr) const { return UniValue(UniValue::VOBJ); }
-
-    UniValue operator()(const libzcash::SproutPaymentAddress &zaddr) const {
-        UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("type", "sprout"));
-        obj.push_back(Pair("payingkey", zaddr.a_pk.GetHex()));
-        obj.push_back(Pair("transmissionkey", zaddr.pk_enc.GetHex()));
-#ifdef ENABLE_WALLET
-        if (pwalletMain) {
-            obj.push_back(Pair("ismine", pwalletMain->HaveSproutSpendingKey(zaddr)));
-        }
-#endif
-        return obj;
-    }
 
     UniValue operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
         UniValue obj(UniValue::VOBJ);

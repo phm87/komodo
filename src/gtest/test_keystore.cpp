@@ -185,9 +185,6 @@ TEST(keystore_tests, StoreAndRetrieveHDSeedInEncryptedStore) {
     // 3) Test adding a new seed to an already-encrypted key store
     TestCCryptoKeyStore keyStore2;
 
-    // Add a Sprout address so the wallet has something to test when decrypting
-    ASSERT_TRUE(keyStore2.AddSproutSpendingKey(libzcash::SproutSpendingKey::random()));
-
     ASSERT_TRUE(keyStore2.EncryptKeys(vMasterKey));
     ASSERT_TRUE(keyStore2.Unlock(vMasterKey));
 
@@ -201,78 +198,4 @@ TEST(keystore_tests, StoreAndRetrieveHDSeedInEncryptedStore) {
     EXPECT_EQ(seed3, seedOut);
 }
 
-TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
-    TestCCryptoKeyStore keyStore;
-    uint256 r {GetRandHash()};
-    CKeyingMaterial vMasterKey (r.begin(), r.end());
-    libzcash::SproutSpendingKey keyOut;
-    ZCNoteDecryption decOut;
-    std::set<libzcash::SproutPaymentAddress> addrs;
-
-    // 1) Test adding a key to an unencrypted key store, then encrypting it
-    auto sk = libzcash::SproutSpendingKey::random();
-    auto addr = sk.address();
-    EXPECT_FALSE(keyStore.GetNoteDecryptor(addr, decOut));
-
-    keyStore.AddSproutSpendingKey(sk);
-    ASSERT_TRUE(keyStore.HaveSproutSpendingKey(addr));
-    ASSERT_TRUE(keyStore.GetSproutSpendingKey(addr, keyOut));
-    ASSERT_EQ(sk, keyOut);
-    EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
-    EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
-
-    ASSERT_TRUE(keyStore.EncryptKeys(vMasterKey));
-    ASSERT_TRUE(keyStore.HaveSproutSpendingKey(addr));
-    ASSERT_FALSE(keyStore.GetSproutSpendingKey(addr, keyOut));
-    EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
-    EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
-
-    // Unlocking with a random key should fail
-    uint256 r2 {GetRandHash()};
-    CKeyingMaterial vRandomKey (r2.begin(), r2.end());
-    EXPECT_FALSE(keyStore.Unlock(vRandomKey));
-
-    // Unlocking with a slightly-modified vMasterKey should fail
-    CKeyingMaterial vModifiedKey (r.begin(), r.end());
-    vModifiedKey[0] += 1;
-    EXPECT_FALSE(keyStore.Unlock(vModifiedKey));
-
-    // Unlocking with vMasterKey should succeed
-    ASSERT_TRUE(keyStore.Unlock(vMasterKey));
-    ASSERT_TRUE(keyStore.GetSproutSpendingKey(addr, keyOut));
-    ASSERT_EQ(sk, keyOut);
-
-    keyStore.GetSproutPaymentAddresses(addrs);
-    ASSERT_EQ(1, addrs.size());
-    ASSERT_EQ(1, addrs.count(addr));
-
-    // 2) Test adding a spending key to an already-encrypted key store
-    auto sk2 = libzcash::SproutSpendingKey::random();
-    auto addr2 = sk2.address();
-    EXPECT_FALSE(keyStore.GetNoteDecryptor(addr2, decOut));
-
-    keyStore.AddSproutSpendingKey(sk2);
-    ASSERT_TRUE(keyStore.HaveSproutSpendingKey(addr2));
-    ASSERT_TRUE(keyStore.GetSproutSpendingKey(addr2, keyOut));
-    ASSERT_EQ(sk2, keyOut);
-    EXPECT_TRUE(keyStore.GetNoteDecryptor(addr2, decOut));
-    EXPECT_EQ(ZCNoteDecryption(sk2.receiving_key()), decOut);
-
-    ASSERT_TRUE(keyStore.Lock());
-    ASSERT_TRUE(keyStore.HaveSproutSpendingKey(addr2));
-    ASSERT_FALSE(keyStore.GetSproutSpendingKey(addr2, keyOut));
-    EXPECT_TRUE(keyStore.GetNoteDecryptor(addr2, decOut));
-    EXPECT_EQ(ZCNoteDecryption(sk2.receiving_key()), decOut);
-
-    ASSERT_TRUE(keyStore.Unlock(vMasterKey));
-    ASSERT_TRUE(keyStore.GetSproutSpendingKey(addr2, keyOut));
-    ASSERT_EQ(sk2, keyOut);
-    EXPECT_TRUE(keyStore.GetNoteDecryptor(addr2, decOut));
-    EXPECT_EQ(ZCNoteDecryption(sk2.receiving_key()), decOut);
-
-    keyStore.GetSproutPaymentAddresses(addrs);
-    ASSERT_EQ(2, addrs.size());
-    ASSERT_EQ(1, addrs.count(addr));
-    ASSERT_EQ(1, addrs.count(addr2));
-}
 #endif

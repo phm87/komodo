@@ -856,48 +856,27 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp, const CPubKey& m
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
     }
 
-    if (boost::get<libzcash::SproutViewingKey>(&viewingkey) == nullptr) {
-        if (params.size() < 4) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Missing zaddr for Sapling viewing key.");
-        }
-        string strAddress = params[3].get_str();
-        auto address = DecodePaymentAddress(strAddress);
-        if (!IsValidPaymentAddress(address)) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
-        }
+    if (params.size() < 4) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Missing zaddr for Sapling viewing key.");
+    }
+    string strAddress = params[3].get_str();
+    auto address = DecodePaymentAddress(strAddress);
+    if (!IsValidPaymentAddress(address)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
+    }
 
-        auto addr = boost::get<libzcash::SaplingPaymentAddress>(address);
-        auto ivk = boost::get<libzcash::SaplingIncomingViewingKey>(viewingkey);
+    auto addr = boost::get<libzcash::SaplingPaymentAddress>(address);
+    auto ivk = boost::get<libzcash::SaplingIncomingViewingKey>(viewingkey);
 
-        if (pwalletMain->HaveSaplingIncomingViewingKey(addr)) {
-            if (fIgnoreExistingKey) {
-                return NullUniValue;
-            }
-        } else {
-            pwalletMain->MarkDirty();
-
-            if (!pwalletMain->AddSaplingIncomingViewingKey(ivk, addr)) {
-                throw JSONRPCError(RPC_WALLET_ERROR, "Error adding viewing key to wallet");
-            }
+    if (pwalletMain->HaveSaplingIncomingViewingKey(addr)) {
+        if (fIgnoreExistingKey) {
+            return NullUniValue;
         }
     } else {
-        auto vkey = boost::get<libzcash::SproutViewingKey>(viewingkey);
-        auto addr = vkey.address();
-        if (pwalletMain->HaveSproutSpendingKey(addr)) {
-            throw JSONRPCError(RPC_WALLET_ERROR, "The wallet already contains the private key for this viewing key");
-        }
+        pwalletMain->MarkDirty();
 
-        // Don't throw error in case a viewing key is already there
-        if (pwalletMain->HaveSproutViewingKey(addr)) {
-            if (fIgnoreExistingKey) {
-                return NullUniValue;
-            }
-        } else {
-            pwalletMain->MarkDirty();
-
-            if (!pwalletMain->AddSproutViewingKey(vkey)) {
-                throw JSONRPCError(RPC_WALLET_ERROR, "Error adding viewing key to wallet");
-            }
+        if (!pwalletMain->AddSaplingIncomingViewingKey(ivk, addr)) {
+            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding viewing key to wallet");
         }
     }
 
@@ -977,26 +956,12 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp, const CPubKey& m
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
     }
 
-    if (boost::get<libzcash::SproutPaymentAddress>(&address) == nullptr) {
-        auto addr = boost::get<libzcash::SaplingPaymentAddress>(address);
-        libzcash::SaplingIncomingViewingKey ivk;
-        if(!pwalletMain->GetSaplingIncomingViewingKey(addr, ivk)) {
-            throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold viewing key for this zaddr");
-        }
-        return EncodeViewingKey(ivk);
+    auto addr = boost::get<libzcash::SaplingPaymentAddress>(address);
+    libzcash::SaplingIncomingViewingKey ivk;
+    if(!pwalletMain->GetSaplingIncomingViewingKey(addr, ivk)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold viewing key for this zaddr");
     }
-
-    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
-    libzcash::SproutViewingKey vk;
-    if (!pwalletMain->GetSproutViewingKey(addr, vk)) {
-        libzcash::SproutSpendingKey k;
-        if (!pwalletMain->GetSproutSpendingKey(addr, k)) {
-            throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private key or viewing key for this zaddr");
-        }
-        vk = k.viewing_key();
-    }
-
-    return EncodeViewingKey(vk);
+    return EncodeViewingKey(ivk);
 }
 
 extern int32_t KOMODO_NSPV;

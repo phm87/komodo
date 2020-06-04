@@ -4268,7 +4268,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp, const CPubKey& my
             "\nResult:\n"
             "{\n"
             "  \"transparent\": xxxxx,     (numeric) the total balance of transparent funds\n"
-            "  \"private\": xxxxx,         (numeric) the total balance of private funds (in both Sprout and Sapling addresses)\n"
+            "  \"private\": xxxxx,         (numeric) the total balance of private funds (in Sapling addresses)\n"
             "  \"total\": xxxxx,           (numeric) the total balance of both transparent and private funds\n"
             "}\n"
             "\nExamples:\n"

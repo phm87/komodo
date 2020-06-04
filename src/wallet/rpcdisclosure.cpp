@@ -1,4 +1,5 @@
 // Copyright (c) 2017 The Zcash developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -187,6 +188,8 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp, const C
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: payment disclosure is disabled.");
     }
 
+    throw JSONRPCError(RPC_WALLET_ERROR, "Error: payment disclosures not implemented for Sapling yet");
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
@@ -269,8 +272,9 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp, const C
         errs.push_back("Payment disclosure signature does not match transaction signature");        
     }
    
+    /*
     // Check the payment address is valid
-    SproutPaymentAddress zaddr = pd.payload.zaddr;
+    PaymentAddress zaddr = pd.payload.zaddr;
     {
         o.push_back(Pair("paymentAddress", EncodePaymentAddress(zaddr)));
 
@@ -308,6 +312,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp, const C
             errs.push_back(string("Error while decrypting payment disclosure note: ") + string(e.what()) );
         }
     }
+    */
 
     bool isValid = errs.empty();
     o.push_back(Pair("valid", isValid));

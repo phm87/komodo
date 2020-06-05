@@ -236,6 +236,56 @@ public:
     std::string ToString() const;
 };
 
+// NOTE: wallet.dat format depends on this data structure :(
+class SproutNoteData
+ {
+ public:
+    libzcash::SproutPaymentAddress address;
+
+    /**
+     * Cached note nullifier. May not be set if the wallet was not unlocked when
+     * this was SproutNoteData was created. If not set, we always assume that the
+     * note has not been spent.
+     *
+     * It's okay to cache the nullifier in the wallet, because we are storing
+     * the spending key there too, which could be used to derive this.
+     * If the wallet is encrypted, this means that someone with access to the
+     * locked wallet cannot spend notes, but can connect received notes to the
+     * transactions they are spent in. This is the same security semantics as
+     * for transparent addresses.
+     */
+    boost::optional<uint256> nullifier;
+
+    /**
+     * Cached incremental witnesses for spendable Notes.
+     * Beginning of the list is the most recent witness.
+     */
+    std::list<SproutWitness> witnesses;
+
+    /**
+     * Block height corresponding to the most current witness.
+     *
+     * When we first create a SaplingNoteData in CWallet::FindMySaplingNotes, this is set to
+     * -1 as a placeholder. The next time CWallet::ChainTip is called, we can
+     * determine what height the witness cache for this note is valid for (even
+     * if no witnesses were cached), and so can set the correct value in
+     * CWallet::BuildWitnessCache and CWallet::DecrementNoteWitnesses.
+     */
+    int witnessHeight;
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(address);
+        READWRITE(nullifier);
+        READWRITE(witnesses);
+        READWRITE(witnessHeight);
+    }
+
+};
+
+
 class SaplingNoteData
 {
 public:

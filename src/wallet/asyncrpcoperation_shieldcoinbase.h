@@ -1,4 +1,5 @@
 // Copyright (c) 2017 The Zcash developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -123,7 +124,6 @@ public:
     ShieldToAddress(AsyncRPCOperation_shieldcoinbase *op, CAmount sendAmount) :
         m_op(op), sendAmount(sendAmount) {}
 
-    bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     bool operator()(const libzcash::InvalidEncoding& no) const;
 };

@@ -571,9 +571,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     // Verify number of addresses stored in wallet is n1+n2
     int numAddrs = myaddrs.size();
     BOOST_CHECK(numAddrs == (2 * n1) + n2);
-    pwalletMain->GetSproutPaymentAddresses(addrs);
     pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
-    BOOST_CHECK(addrs.size() + saplingAddrs.size() == numAddrs);
+    BOOST_CHECK(saplingAddrs.size() == numAddrs);
 
     // Ask wallet to list addresses
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
@@ -595,9 +594,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     std::string newaddress = retValue.get_str();
     auto address = DecodePaymentAddress(newaddress);
     BOOST_CHECK(IsValidPaymentAddress(address));
-    BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
-    auto newAddr = boost::get<libzcash::SproutPaymentAddress>(address);
-    BOOST_CHECK(pwalletMain->HaveSproutSpendingKey(newAddr));
 
     // Check if too many args
     BOOST_CHECK_THROW(CallRPC("z_getnewaddress toomanyargs"), runtime_error);

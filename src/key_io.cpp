@@ -1,5 +1,6 @@
 // Copyright (c) 2014-2016 The Bitcoin Core developers
 // Copyright (c) 2016-2018 The Zcash developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -84,15 +85,6 @@ private:
 public:
     PaymentAddressEncoder(const CChainParams& params) : m_params(params) {}
 
-    std::string operator()(const libzcash::SproutPaymentAddress& zaddr) const
-    {
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << zaddr;
-        std::vector<unsigned char> data = m_params.Base58Prefix(CChainParams::ZCPAYMENT_ADDRRESS);
-        data.insert(data.end(), ss.begin(), ss.end());
-        return EncodeBase58Check(data);
-    }
-
     std::string operator()(const libzcash::SaplingPaymentAddress& zaddr) const
     {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -117,17 +109,6 @@ private:
 public:
     ViewingKeyEncoder(const CChainParams& params) : m_params(params) {}
 
-    std::string operator()(const libzcash::SproutViewingKey& vk) const
-    {
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << vk;
-        std::vector<unsigned char> data = m_params.Base58Prefix(CChainParams::ZCVIEWING_KEY);
-        data.insert(data.end(), ss.begin(), ss.end());
-        std::string ret = EncodeBase58Check(data);
-        memory_cleanse(data.data(), data.size());
-        return ret;
-    }
-
     std::string operator()(const libzcash::SaplingIncomingViewingKey& vk) const
     {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -151,17 +132,6 @@ private:
 
 public:
     SpendingKeyEncoder(const CChainParams& params) : m_params(params) {}
-
-    std::string operator()(const libzcash::SproutSpendingKey& zkey) const
-    {
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << zkey;
-        std::vector<unsigned char> data = m_params.Base58Prefix(CChainParams::ZCSPENDING_KEY);
-        data.insert(data.end(), ss.begin(), ss.end());
-        std::string ret = EncodeBase58Check(data);
-        memory_cleanse(data.data(), data.size());
-        return ret;
-    }
 
     std::string operator()(const libzcash::SaplingExtendedSpendingKey& zkey) const
     {
@@ -324,18 +294,6 @@ std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr)
 libzcash::PaymentAddress DecodePaymentAddress(const std::string& str)
 {
     std::vector<unsigned char> data;
-    if (DecodeBase58Check(str, data)) {
-        const std::vector<unsigned char>& zaddr_prefix = Params().Base58Prefix(CChainParams::ZCPAYMENT_ADDRRESS);
-        if ((data.size() == libzcash::SerializedSproutPaymentAddressSize + zaddr_prefix.size()) &&
-            std::equal(zaddr_prefix.begin(), zaddr_prefix.end(), data.begin())) {
-            CSerializeData serialized(data.begin() + zaddr_prefix.size(), data.end());
-            CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
-            libzcash::SproutPaymentAddress ret;
-            ss >> ret;
-            return ret;
-        }
-    }
-    data.clear();
     auto bech = bech32::Decode(str);
     if (bech.first == Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS) &&
         bech.second.size() == ConvertedSaplingPaymentAddressSize) {

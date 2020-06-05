@@ -653,6 +653,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "czkey")
         {
+            /*
             libzcash::SproutPaymentAddress addr;
             ssKey >> addr;
             // Deserialization of a pair is just one item after another
@@ -663,12 +664,13 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssValue >> vchCryptedSecret;
             wss.nCKeys++;
 
-            //if (!pwallet->LoadCryptedZKey(addr, rk, vchCryptedSecret))
-            //{
-            //    strErr = "Error reading wallet database: LoadCryptedZKey failed";
-            //    return false;
-            //}
-            //wss.fIsEncrypted = true;
+            if (!pwallet->LoadCryptedZKey(addr, rk, vchCryptedSecret))
+            {
+                strErr = "Error reading wallet database: LoadCryptedZKey failed";
+                return false;
+            }
+            wss.fIsEncrypted = true;
+            */
         }
         else if (strType == "csapzkey")
         {
@@ -704,11 +706,13 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "zkeymeta")
         {
+            /*
             libzcash::SproutPaymentAddress addr;
             ssKey >> addr;
             CKeyMetadata keyMeta;
             ssValue >> keyMeta;
             wss.nZKeyMeta++;
+            */
 
             // pwallet->LoadZKeyMetadata(addr, keyMeta);
 

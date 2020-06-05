@@ -120,12 +120,7 @@ protected:
     KeyMap mapKeys;
     ScriptMap mapScripts;
     WatchOnlySet setWatchOnly;
-    /*
-    SproutSpendingKeyMap mapSproutSpendingKeys;
-    SproutViewingKeyMap mapSproutViewingKeys;
-    NoteDecryptorMap mapNoteDecryptors;
-    */
-
+    
     SaplingSpendingKeyMap mapSaplingSpendingKeys;
     SaplingFullViewingKeyMap mapSaplingFullViewingKeys;
     SaplingIncomingViewingKeyMap mapSaplingIncomingViewingKeys;
@@ -246,7 +241,6 @@ public:
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;
 typedef std::map<CKeyID, std::pair<CPubKey, std::vector<unsigned char> > > CryptedKeyMap;
-//typedef std::map<libzcash::SproutPaymentAddress, std::vector<unsigned char> > CryptedSproutSpendingKeyMap;
 
 //! Sapling 
 typedef std::map<libzcash::SaplingExtendedFullViewingKey, std::vector<unsigned char> > CryptedSaplingSpendingKeyMap;

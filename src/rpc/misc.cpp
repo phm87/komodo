@@ -204,7 +204,7 @@ UniValue getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
             "  \"version\": xxxxx,           (numeric) the server version\n"
             "  \"protocolversion\": xxxxx,   (numeric) the protocol version\n"
             "  \"walletversion\": xxxxx,     (numeric) the wallet version\n"
-            "  \"balance\": xxxxxxx,         (numeric) the total Komodo balance of the wallet\n"
+            "  \"balance\": xxxxxxx,         (numeric) the total Hush balance of the wallet\n"
             "  \"blocks\": xxxxxx,           (numeric) the current number of blocks processed in the server\n"
             "  \"timeoffset\": xxxxx,        (numeric) the time offset\n"
             "  \"connections\": xxxxx,       (numeric) the number of connections\n"
@@ -590,30 +590,6 @@ UniValue validateaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
 }
 
 
-class DescribePaymentAddressVisitor : public boost::static_visitor<UniValue>
-{
-public:
-    UniValue operator()(const libzcash::InvalidEncoding &zaddr) const { return UniValue(UniValue::VOBJ); }
-
-    UniValue operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
-        UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("type", "sapling"));
-        obj.push_back(Pair("diversifier", HexStr(zaddr.d)));
-        obj.push_back(Pair("diversifiedtransmissionkey", zaddr.pk_d.GetHex()));
-#ifdef ENABLE_WALLET
-        if (pwalletMain) {
-            libzcash::SaplingIncomingViewingKey ivk;
-            libzcash::SaplingFullViewingKey fvk;
-            bool isMine = pwalletMain->GetSaplingIncomingViewingKey(zaddr, ivk) &&
-                pwalletMain->GetSaplingFullViewingKey(ivk, fvk) &&
-                pwalletMain->HaveSaplingSpendingKey(fvk);
-            obj.push_back(Pair("ismine", isMine));
-        }
-#endif
-        return obj;
-    }
-};
-
 UniValue z_validateaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
@@ -650,11 +626,25 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp, const CPubKey& my
 
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("isvalid", isValid));
-    if (isValid)
+    auto zaddr = boost::get<libzcash::SaplingPaymentAddress>(&address);
+    if (isValid && (zaddr != nullptr))
     {
         ret.push_back(Pair("address", strAddress));
-        UniValue detail = boost::apply_visitor(DescribePaymentAddressVisitor(), address);
-        ret.pushKVs(detail);
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("type", "sapling"));
+        obj.push_back(Pair("diversifier", HexStr(zaddr->d)));
+        obj.push_back(Pair("diversifiedtransmissionkey", zaddr->pk_d.GetHex()));
+#ifdef ENABLE_WALLET
+        if (pwalletMain) {
+            libzcash::SaplingIncomingViewingKey ivk;
+            libzcash::SaplingFullViewingKey fvk;
+            bool isMine = pwalletMain->GetSaplingIncomingViewingKey(*zaddr, ivk) &&
+                pwalletMain->GetSaplingFullViewingKey(ivk, fvk) &&
+                pwalletMain->HaveSaplingSpendingKey(fvk);
+            obj.push_back(Pair("ismine", isMine));
+        }
+#endif
+        ret.pushKVs(obj);
     }
     return ret;
 }
@@ -733,9 +723,9 @@ UniValue createmultisig(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
             "\nArguments:\n"
             "1. nrequired      (numeric, required) The number of required signatures out of the n keys or addresses.\n"
-            "2. \"keys\"       (string, required) A json array of keys which are Komodo addresses or hex-encoded public keys\n"
+            "2. \"keys\"       (string, required) A json array of keys which are Hush addresses or hex-encoded public keys\n"
             "     [\n"
-            "       \"key\"    (string) Komodo address or hex-encoded public key\n"
+            "       \"key\"    (string) Hush address or hex-encoded public key\n"
             "       ,...\n"
             "     ]\n"
 
@@ -769,10 +759,10 @@ UniValue verifymessage(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error(
-            "verifymessage \"komodoaddress\" \"signature\" \"message\"\n"
+            "verifymessage \"hushaddress\" \"signature\" \"message\"\n"
             "\nVerify a signed message\n"
             "\nArguments:\n"
-            "1. \"komodoaddress\"    (string, required) The Komodo address to use for the signature.\n"
+            "1. \"hushaddress\"    (string, required) The Hush address to use for the signature.\n"
             "2. \"signature\"       (string, required) The signature provided by the signer in base 64 encoding (see signmessage).\n"
             "3. \"message\"         (string, required) The message that was signed.\n"
             "\nResult:\n"

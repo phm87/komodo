@@ -25,7 +25,6 @@
 #include "sodium.h"
 #include "streams.h"
 #include "txdb.h"
-#include "utiltest.h"
 #include "wallet/wallet.h"
 
 #include "zcbenchmarks.h"
@@ -41,7 +40,7 @@ void pre_wallet_load()
 {
     LogPrintf("%s: In progress...\n", __func__);
     if (ShutdownRequested())
-        throw new std::runtime_error("The node is shutting down");
+        throw new std::runtime_error("The Hush node is shutting down");
 
     if (pwalletMain)
         pwalletMain->Flush(false);
@@ -90,37 +89,6 @@ double benchmark_sleep()
     struct timeval tv_start;
     timer_start(tv_start);
     sleep(1);
-    return timer_stop(tv_start);
-}
-
-std::vector<double> benchmark_create_joinsplit_threaded(int nThreads)
-{
-    std::vector<double> ret;
-    std::vector<std::future<double>> tasks;
-    std::vector<std::thread> threads;
-    for (int i = 0; i < nThreads; i++) {
-        std::packaged_task<double(void)> task(&benchmark_create_joinsplit);
-        tasks.emplace_back(task.get_future());
-        threads.emplace_back(std::move(task));
-    }
-    std::future_status status;
-    for (auto it = tasks.begin(); it != tasks.end(); it++) {
-        it->wait();
-        ret.push_back(it->get());
-    }
-    for (auto it = threads.begin(); it != threads.end(); it++) {
-        it->join();
-    }
-    return ret;
-}
-
-double benchmark_verify_joinsplit(const JSDescription &joinsplit)
-{
-    struct timeval tv_start;
-    timer_start(tv_start);
-    uint256 joinSplitPubKey;
-    auto verifier = libzcash::ProofVerifier::Strict();
-    joinsplit.Verify(*pzcashParams, verifier, joinSplitPubKey);
     return timer_stop(tv_start);
 }
 

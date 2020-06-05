@@ -5487,34 +5487,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
                                "Cannot send between Sprout and Sapling addresses using z_mergetoaddress");
         }
 
-        // Find unspent notes and update estimated size
-        for (const CSproutNotePlaintextEntry& entry : sproutEntries) {
-            noteCounter++;
-            CAmount nValue = entry.plaintext.value();
-
-            if (!maxedOutNotesFlag) {
-                // If we haven't added any notes yet and the merge is to a
-                // z-address, we have already accounted for the first JoinSplit.
-                size_t increase = (sproutNoteInputs.empty() && !isToSproutZaddr) || (sproutNoteInputs.size() % 2 == 0) ? JOINSPLIT_SIZE : 0;
-                if (estimatedTxSize + increase >= max_tx_size ||
-                    (sproutNoteLimit > 0 && noteCounter > sproutNoteLimit))
-                {
-                    maxedOutNotesFlag = true;
-                } else {
-                    estimatedTxSize += increase;
-                    auto zaddr = entry.address;
-                    SproutSpendingKey zkey;
-                    pwalletMain->GetSproutSpendingKey(zaddr, zkey);
-                    sproutNoteInputs.emplace_back(entry.jsop, entry.plaintext.note(zaddr), nValue, zkey);
-                    mergedNoteValue += nValue;
-                }
-            }
-
-            if (maxedOutNotesFlag) {
-                remainingNoteValue += nValue;
-            }
-        }
-
         for (const SaplingNoteEntry& entry : saplingEntries) {
             noteCounter++;
             CAmount nValue = entry.note.value();

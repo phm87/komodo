@@ -1,4 +1,5 @@
 // Copyright (c) 2016 The Zcash developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -27,7 +28,6 @@
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Address.hpp"
 #include "wallet.h"
-#include "paymentdisclosure.h"
 
 #include <array>
 #include <unordered_map>
@@ -90,8 +90,6 @@ public:
 
     bool testmode = false;  // Set to true to disable sending txs and generating proofs
 
-    bool paymentDisclosureMode = true; // Set to true to save esk for encrypted notes in payment disclosure database.
-
 private:
     friend class TEST_FRIEND_AsyncRPCOperation_sendmany;    // class for unit testing
 
@@ -143,9 +141,6 @@ private:
         uint256 anchor);
 
     void sign_send_raw_transaction(UniValue obj);     // throws exception if there was an error
-
-    // payment disclosure!
-    std::vector<PaymentDisclosureKeyInfo> paymentDisclosureData_;
 };
 
 

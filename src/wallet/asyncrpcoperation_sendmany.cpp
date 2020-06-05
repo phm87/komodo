@@ -211,25 +211,10 @@ void AsyncRPCOperation_sendmany::main() {
         s += strprintf(", error=%s)\n", getErrorMessage());
     }
     LogPrintf("%s",s);
-
-    // !!! Payment disclosure START
-    if (success && paymentDisclosureMode && paymentDisclosureData_.size()>0) {
-        uint256 txidhash = tx_.GetHash();
-        std::shared_ptr<PaymentDisclosureDB> db = PaymentDisclosureDB::sharedInstance();
-        for (PaymentDisclosureKeyInfo p : paymentDisclosureData_) {
-            p.first.hash = txidhash;
-            if (!db->Put(p.first, p.second)) {
-                LogPrint("paymentdisclosure", "%s: Payment Disclosure: Error writing entry to database for key %s\n", getId(), p.first.ToString());
-            } else {
-                LogPrint("paymentdisclosure", "%s: Payment Disclosure: Successfully added entry to database for key %s\n", getId(), p.first.ToString());
-            }
-        }
-    }
-    // !!! Payment disclosure END
 }
 
 // Notes:
-// 1. #1159 Currently there is no limit set on the number of joinsplits, so size of tx could be invalid.
+// 1. #1159 Currently there is no limit set on the number of shielded spends, so size of tx could be invalid.
 // 2. #1360 Note selection is not optimal
 // 3. #1277 Spendable notes are not locked, so an operation running in parallel could also try to use them
 bool AsyncRPCOperation_sendmany::main_impl() {

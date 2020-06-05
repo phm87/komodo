@@ -1,4 +1,6 @@
 // Copyright (c) 2017 The Zcash developers
+// Copyright (c) 2019-2020 The Hush developers
+
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -22,7 +24,6 @@
 
 #include "amount.h"
 #include "asyncrpcoperation.h"
-#include "paymentdisclosure.h"
 #include "primitives/transaction.h"
 #include "transaction_builder.h"
 #include "wallet.h"
@@ -93,8 +94,6 @@ public:
     
     bool testmode = false; // Set to true to disable sending txs and generating proofs
     
-    bool paymentDisclosureMode = true; // Set to true to save esk for encrypted notes in payment disclosure database.
-    
 private:
     friend class TEST_FRIEND_AsyncRPCOperation_mergetoaddress; // class for unit testing
     
@@ -148,8 +147,6 @@ private:
     
     void unlock_notes();
     
-    // payment disclosure!
-    std::vector<PaymentDisclosureKeyInfo> paymentDisclosureData_;
 };
 
 

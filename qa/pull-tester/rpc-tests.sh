@@ -17,7 +17,6 @@ testScripts=(
     'dpow.py'
     'dpowconfs.py'
     'ac_private.py'
-    'paymentdisclosure.py'
     'prioritisetransaction.py'
     'wallet_treestate.py'
     'wallet_anchorfork.py'

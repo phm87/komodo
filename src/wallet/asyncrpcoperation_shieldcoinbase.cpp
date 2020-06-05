@@ -48,9 +48,6 @@
 
 #include "asyncrpcoperation_shieldcoinbase.h"
 
-#include "paymentdisclosure.h"
-#include "paymentdisclosuredb.h"
-
 using namespace libzcash;
 extern uint64_t ASSETCHAINS_TIMELOCKGTE;
 
@@ -108,8 +105,6 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     // Lock UTXOs
     lock_utxos();
 
-    // Enable payment disclosure if requested
-    paymentDisclosureMode = fExperimentalMode && GetBoolArg("-paymentdisclosure", true);
 }
 
 AsyncRPCOperation_shieldcoinbase::~AsyncRPCOperation_shieldcoinbase() {
@@ -181,20 +176,6 @@ void AsyncRPCOperation_shieldcoinbase::main() {
 
     unlock_utxos(); // clean up
 
-    // !!! Payment disclosure START
-    if (success && paymentDisclosureMode && paymentDisclosureData_.size()>0) {
-        uint256 txidhash = tx_.GetHash();
-        std::shared_ptr<PaymentDisclosureDB> db = PaymentDisclosureDB::sharedInstance();
-        for (PaymentDisclosureKeyInfo p : paymentDisclosureData_) {
-            p.first.hash = txidhash;
-            if (!db->Put(p.first, p.second)) {
-                LogPrint("paymentdisclosure", "%s: Payment Disclosure: Error writing entry to database for key %s\n", getId(), p.first.ToString());
-            } else {
-                LogPrint("paymentdisclosure", "%s: Payment Disclosure: Successfully added entry to database for key %s\n", getId(), p.first.ToString());
-            }
-        }
-    }
-    // !!! Payment disclosure END
 }
 
 bool AsyncRPCOperation_shieldcoinbase::main_impl() {

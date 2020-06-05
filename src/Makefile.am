@@ -181,8 +181,6 @@ BITCOIN_CORE_H = \
   netbase.h \
   notaries_staked.h \
   noui.h \
-  paymentdisclosure.h \
-  paymentdisclosuredb.h \
   policy/fees.h \
   pow.h \
   prevector.h \
@@ -303,8 +301,6 @@ libbitcoin_server_a_SOURCES = \
   notaries_staked.cpp \
   noui.cpp \
   notarisationdb.cpp \
-  paymentdisclosure.cpp \
-  paymentdisclosuredb.cpp \
   policy/fees.cpp \
   pow.cpp \
   rest.cpp \
@@ -355,10 +351,7 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/asyncrpcoperation_shieldcoinbase.cpp \
   wallet/crypter.cpp \
   wallet/db.cpp \
-  paymentdisclosure.cpp \
-  paymentdisclosuredb.cpp \
   transaction_builder.cpp \
-  wallet/rpcdisclosure.cpp \
   wallet/rpcdump.cpp \
   cc/CCtokens.cpp \
   cc/CCassetsCore.cpp \

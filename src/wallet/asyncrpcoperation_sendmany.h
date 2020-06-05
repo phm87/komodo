@@ -46,19 +46,6 @@ typedef std::tuple<std::string, CAmount, std::string> SendManyRecipient;
 // Input UTXO is a tuple (quadruple) of txid, vout, amount, coinbase)
 typedef std::tuple<uint256, int, CAmount, bool, CTxDestination> SendManyInputUTXO;
 
-// Input JSOP is a tuple of JSOutpoint, note and amount
-typedef std::tuple<JSOutPoint, SproutNote, CAmount> SendManyInputJSOP;
-
-// Package of info which is passed to perform_joinsplit methods.
-struct AsyncJoinSplitInfo
-{
-    std::vector<JSInput> vjsin;
-    std::vector<JSOutput> vjsout;
-    std::vector<SproutNote> notes;
-    CAmount vpub_old = 0;
-    CAmount vpub_new = 0;
-};
-
 // A struct to help us track the witness and anchor for a given JSOutPoint
 struct WitnessAnchorData {
 	boost::optional<SproutWitness> witness;
@@ -115,7 +102,7 @@ private:
     std::vector<SendManyRecipient> t_outputs_;
     std::vector<SendManyRecipient> z_outputs_;
     std::vector<SendManyInputUTXO> t_inputs_;
-    std::vector<SendManyInputJSOP> z_sprout_inputs_;
+    //std::vector<SendManyInputJSOP> z_sprout_inputs_;
     std::vector<SaplingNoteEntry> z_sapling_inputs_;
 
     TransactionBuilder builder_;
@@ -127,18 +114,6 @@ private:
     bool find_utxos(bool fAcceptCoinbase);
     std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
     bool main_impl();
-
-    // JoinSplit without any input notes to spend
-    UniValue perform_joinsplit(AsyncJoinSplitInfo &);
-
-    // JoinSplit with input notes to spend (JSOutPoints))
-    UniValue perform_joinsplit(AsyncJoinSplitInfo &, std::vector<JSOutPoint> & );
-
-    // JoinSplit where you have the witnesses and anchor
-    UniValue perform_joinsplit(
-        AsyncJoinSplitInfo & info,
-        std::vector<boost::optional < SproutWitness>> witnesses,
-        uint256 anchor);
 
     void sign_send_raw_transaction(UniValue obj);     // throws exception if there was an error
 };
@@ -183,22 +158,6 @@ public:
     
     bool main_impl() {
         return delegate->main_impl();
-    }
-
-    UniValue perform_joinsplit(AsyncJoinSplitInfo &info) {
-        return delegate->perform_joinsplit(info);
-    }
-
-    UniValue perform_joinsplit(AsyncJoinSplitInfo &info, std::vector<JSOutPoint> &v ) {
-        return delegate->perform_joinsplit(info, v);
-    }
-
-    UniValue perform_joinsplit(
-        AsyncJoinSplitInfo & info,
-        std::vector<boost::optional < SproutWitness>> witnesses,
-        uint256 anchor)
-    {
-        return delegate->perform_joinsplit(info, witnesses, anchor);
     }
 
     void sign_send_raw_transaction(UniValue obj) {

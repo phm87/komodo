@@ -36,6 +36,37 @@ public:
     uint256 pk_enc() const;
 };
 
+
+// NOTE: wallet.dat format depends on this
+class SproutPaymentAddress {
+public:
+    uint256 a_pk;
+    uint256 pk_enc;
+
+    SproutPaymentAddress() : a_pk(), pk_enc() { }
+    SproutPaymentAddress(uint256 a_pk, uint256 pk_enc) : a_pk(a_pk), pk_enc(pk_enc) { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(a_pk);
+        READWRITE(pk_enc);
+    }
+
+    //! Get the 256-bit SHA256d hash of this payment address.
+    uint256 GetHash() const;
+
+    friend inline bool operator==(const SproutPaymentAddress& a, const SproutPaymentAddress& b) {
+        return a.a_pk == b.a_pk && a.pk_enc == b.pk_enc;
+    }
+    friend inline bool operator<(const SproutPaymentAddress& a, const SproutPaymentAddress& b) {
+        return (a.a_pk < b.a_pk ||
+                (a.a_pk == b.a_pk && a.pk_enc < b.pk_enc));
+    }
+};
+
+
 //! Sapling functions. 
 class SaplingPaymentAddress {
 public:

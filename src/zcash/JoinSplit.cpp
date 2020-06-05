@@ -246,24 +246,6 @@ uint256 JoinSplit<NumInputs, NumOutputs>::h_sig(
     return output;
 }
 
-SproutNote JSOutput::note(const uint252& phi, const uint256& r, size_t i, const uint256& h_sig) const {
-    uint256 rho = PRF_rho(phi, i, h_sig);
-
-    return SproutNote(addr.a_pk, value, rho, r);
-}
-
-JSOutput::JSOutput() : addr(uint256(), uint256()), value(0) {
-    SproutSpendingKey a_sk = SproutSpendingKey::random();
-    addr = a_sk.address();
-}
-
-JSInput::JSInput() : witness(SproutMerkleTree().witness()),
-                     key(SproutSpendingKey::random()) {
-    note = SproutNote(key.address().a_pk, 0, random_uint256(), random_uint256());
-    SproutMerkleTree dummy_tree;
-    dummy_tree.append(note.cm());
-    witness = dummy_tree.witness();
-}
 
 template class JoinSplit<ZC_NUM_JS_INPUTS,
                          ZC_NUM_JS_OUTPUTS>;

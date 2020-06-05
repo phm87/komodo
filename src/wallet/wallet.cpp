@@ -934,7 +934,7 @@ int CWallet::VerifyAndSetInitialWitness(const CBlockIndex* pindex, bool witnessO
   for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
     nWitnessTxIncrement += 1;
 
-    if (wtxItem.second.mapSproutNoteData.empty() && wtxItem.second.mapSaplingNoteData.empty())
+    if (wtxItem.second.mapSaplingNoteData.empty())
       continue;
 
     if (wtxItem.second.GetDepthInMainChain() > 0) {

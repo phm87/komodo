@@ -75,11 +75,6 @@ CWalletTx GetValidReceive(const libzcash::SproutSpendingKey& sk, CAmount value, 
     return GetValidReceive(*params, sk, value, randomInputs, version);
 }
 
-libzcash::SproutNote GetNote(const libzcash::SproutSpendingKey& sk,
-                       const CTransaction& tx, size_t js, size_t n) {
-    return GetNote(*params, sk, tx, js, n);
-}
-
 CWalletTx GetValidSpend(const libzcash::SproutSpendingKey& sk,
                         const libzcash::SproutNote& note, CAmount value) {
     return GetValidSpend(*params, sk, note, value);

@@ -236,82 +236,19 @@ public:
     std::string ToString() const;
 };
 
-class SproutNoteData
+class SaplingNoteData
 {
 public:
-    libzcash::SproutPaymentAddress address;
-
-    /**
-     * Cached note nullifier. May not be set if the wallet was not unlocked when
-     * this was SproutNoteData was created. If not set, we always assume that the
-     * note has not been spent.
-     *
-     * It's okay to cache the nullifier in the wallet, because we are storing
-     * the spending key there too, which could be used to derive this.
-     * If the wallet is encrypted, this means that someone with access to the
-     * locked wallet cannot spend notes, but can connect received notes to the
-     * transactions they are spent in. This is the same security semantics as
-     * for transparent addresses.
-     */
-    boost::optional<uint256> nullifier;
-
-    /**
-     * Cached incremental witnesses for spendable Notes.
-     * Beginning of the list is the most recent witness.
-     */
-    std::list<SproutWitness> witnesses;
-
     /**
      * Block height corresponding to the most current witness.
      *
-     * When we first create a SproutNoteData in CWallet::FindMySproutNotes, this is set to
+     * When we first create a SaplingNoteData in CWallet::FindMySaplingNotes, this is set to
      * -1 as a placeholder. The next time CWallet::ChainTip is called, we can
      * determine what height the witness cache for this note is valid for (even
      * if no witnesses were cached), and so can set the correct value in
      * CWallet::BuildWitnessCache and CWallet::DecrementNoteWitnesses.
      */
-    int witnessHeight;
 
-      //In Memory Only
-    bool witnessRootValidated;
-
-    SproutNoteData() : address(), nullifier(), witnessHeight {-1}, witnessRootValidated {false} { }
-    SproutNoteData(libzcash::SproutPaymentAddress a) :
-            address {a}, nullifier(), witnessHeight {-1}, witnessRootValidated {false} { }
-    SproutNoteData(libzcash::SproutPaymentAddress a, uint256 n) :
-            address {a}, nullifier {n}, witnessHeight {-1}, witnessRootValidated {false} { }
-
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(address);
-        READWRITE(nullifier);
-        READWRITE(witnesses);
-        READWRITE(witnessHeight);
-    }
-
-    friend bool operator<(const SproutNoteData& a, const SproutNoteData& b) {
-        return (a.address < b.address ||
-                (a.address == b.address && a.nullifier < b.nullifier));
-    }
-
-    friend bool operator==(const SproutNoteData& a, const SproutNoteData& b) {
-        return (a.address == b.address && a.nullifier == b.nullifier);
-    }
-
-    friend bool operator!=(const SproutNoteData& a, const SproutNoteData& b) {
-        return !(a == b);
-    }
-};
-
-class SaplingNoteData
-{
-public:
-    /**
-     * We initialize the height to -1 for the same reason as we do in SproutNoteData.
-     * See the comment in that class for a full description.
-     */
     SaplingNoteData() : witnessHeight {-1}, nullifier() { }
     SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk) : ivk {ivk}, witnessHeight {-1}, nullifier() { }
     SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk, uint256 n) : ivk {ivk}, witnessHeight {-1}, nullifier(n) { }
@@ -347,17 +284,10 @@ public:
     }
 };
 
+
+// NOTE: this sprout structure is serialized into wallet.dat, removing it would change wallet.dat format on disk :(
 typedef std::map<JSOutPoint, SproutNoteData> mapSproutNoteData_t;
 typedef std::map<SaplingOutPoint, SaplingNoteData> mapSaplingNoteData_t;
-
-/** Decrypted note, its location in a transaction, and number of confirmations. */
-struct CSproutNotePlaintextEntry
-{
-    JSOutPoint jsop;
-    libzcash::SproutPaymentAddress address;
-    libzcash::SproutNotePlaintext plaintext;
-    int confirmations;
-};
 
 /** Sapling note, its location in a transaction, and number of confirmations. */
 struct SaplingNoteEntry
@@ -824,7 +754,6 @@ public:
 
 protected:
 
-    int SproutWitnessMinimumHeight(const uint256& nullifier, int nWitnessHeight, int nMinimumHeight);
     int SaplingWitnessMinimumHeight(const uint256& nullifier, int nWitnessHeight, int nMinimumHeight);
 
     /**
@@ -848,11 +777,11 @@ protected:
         try {
             for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
                 auto wtx = wtxItem.second;
-                // We skip transactions for which mapSproutNoteData and mapSaplingNoteData
-                // are empty. This covers transactions that have no Sprout or Sapling data
+                // We skip transactions for which mapSaplingNoteData
+                // is empty. This covers transactions that have no Sapling data
                 // (i.e. are purely transparent), as well as shielding and unshielding
                 // transactions in which we only have transparent addresses involved.
-                if (!(wtx.mapSproutNoteData.empty() && wtx.mapSaplingNoteData.empty())) {
+                if (!(wtx.mapSaplingNoteData.empty())) {
                     if (!walletdb.WriteTx(wtxItem.first, wtx)) {
                         LogPrintf("SetBestChain(): Failed to write CWalletTx, aborting atomic write\n");
                         walletdb.TxnAbort();
@@ -1319,8 +1248,7 @@ public:
     bool LoadCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
     
     /* Find notes filtered by payment address, min depth, ability to spend */
-    void GetFilteredNotes(std::vector<CSproutNotePlaintextEntry>& sproutEntries,
-                          std::vector<SaplingNoteEntry>& saplingEntries,
+    void GetFilteredNotes(std::vector<SaplingNoteEntry>& saplingEntries,
                           std::string address,
                           int minDepth=1,
                           bool ignoreSpent=true,
@@ -1328,8 +1256,7 @@ public:
 
     /* Find notes filtered by payment addresses, min depth, max depth, if they are spent,
        if a spending key is required, and if they are locked */
-    void GetFilteredNotes(std::vector<CSproutNotePlaintextEntry>& sproutEntries,
-                          std::vector<SaplingNoteEntry>& saplingEntries,
+    void GetFilteredNotes(std::vector<SaplingNoteEntry>& saplingEntries,
                           std::set<libzcash::PaymentAddress>& filterAddresses,
                           int minDepth=1,
                           int maxDepth=INT_MAX,

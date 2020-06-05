@@ -3123,7 +3123,7 @@ UniValue getalldata(const UniValue& params, bool fHelp,const CPubKey&)
       if (wtx.GetDepthInMainChain() < 0)
           continue;
 
-      if (wtx.mapSaplingNoteData.size() == 0 && wtx.mapSproutNoteData.size() == 0 && !wtx.IsTrusted())
+      if (wtx.mapSaplingNoteData.size() == 0 && !wtx.IsTrusted())
           continue;
 
       //Assign Immature
@@ -3309,7 +3309,7 @@ UniValue getalldata(const UniValue& params, bool fHelp,const CPubKey&)
             if (!CheckFinalTx(wtx))
                 continue;
 
-            if (wtx.mapSaplingNoteData.size() == 0 && wtx.mapSproutNoteData.size() == 0 && !wtx.IsTrusted())
+            if (wtx.mapSaplingNoteData.size() == 0 && !wtx.IsTrusted())
                 continue;
 
             //Excude transactions with less confirmations than required

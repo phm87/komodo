@@ -99,6 +99,7 @@ public:
     }
 
     std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
+    std::string operator()(const libzcash::SproutPaymentAddress& zaddr) const { return {}; }
 };
 
 class ViewingKeyEncoder : public boost::static_visitor<std::string>

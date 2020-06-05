@@ -1042,10 +1042,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (mapArgs.count("-developerencryptwallet")) {
 			fprintf(stderr,"%s wallet encryption error\n", __FUNCTION__);
             return InitError(_("Wallet encryption requires -experimentalfeatures."));
-        }
-        else if (mapArgs.count("-paymentdisclosure")) {
-			fprintf(stderr,"%s payment disclosure error\n", __FUNCTION__);
-            return InitError(_("Payment disclosure requires -experimentalfeatures."));
+        //TODO: make this non experimental
         } else if (mapArgs.count("-zmergetoaddress")) {
 			fprintf(stderr,"%s zmerge error\n", __FUNCTION__);
             return InitError(_("RPC method z_mergetoaddress requires -experimentalfeatures."));

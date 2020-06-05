@@ -1,3 +1,5 @@
+// Copyright (c) 2019-2020 The Hush developers
+
 #include "Note.hpp"
 #include "prf.h"
 #include "crypto/sha256.h"
@@ -11,6 +13,7 @@
 
 using namespace libzcash;
 
+/*
 SproutNote::SproutNote() {
     a_pk = random_uint256();
     rho = random_uint256();
@@ -39,6 +42,7 @@ uint256 SproutNote::cm() const {
 uint256 SproutNote::nullifier(const SproutSpendingKey& a_sk) const {
     return PRF_nf(a_sk, rho);
 }
+*/
 
 // Construct and populate Sapling note for a given payment address and value.
 SaplingNote::SaplingNote(const SaplingPaymentAddress& address, const uint64_t value) : BaseNote(value) {

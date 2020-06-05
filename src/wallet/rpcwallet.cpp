@@ -8309,9 +8309,6 @@ extern UniValue z_importviewingkey(const UniValue& params, bool fHelp, const CPu
 extern UniValue z_exportwallet(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue z_importwallet(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
-extern UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp, const CPubKey& mypk); // in rpcdisclosure.cpp
-extern UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp, const CPubKey& mypk);
-
 static const CRPCCommand commands[] =
 { //  category              name                        actor (function)           okSafeMode
     //  --------------------- ------------------------    -----------------------    ----------
@@ -8380,10 +8377,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_getinfo",                &z_getinfo,                true  },
     { "wallet",             "z_listsentbyaddress",      &z_listsentbyaddress,      true  },
     { "wallet",             "z_listreceivedbyaddress",  &z_listreceivedbyaddress,  true  },
-    { "wallet",             "z_getnotescount",          &z_getnotescount,          false },
-    // TODO: rearrange into another category
-    { "disclosure",         "z_getpaymentdisclosure",   &z_getpaymentdisclosure,   true  },
-    { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }
+    { "wallet",             "z_getnotescount",          &z_getnotescount,          false }
 };
 
 

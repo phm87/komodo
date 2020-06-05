@@ -321,20 +321,6 @@ std::string EncodeViewingKey(const libzcash::ViewingKey& vk)
 libzcash::ViewingKey DecodeViewingKey(const std::string& str)
 {
     std::vector<unsigned char> data;
-    if (DecodeBase58Check(str, data)) {
-        const std::vector<unsigned char>& vk_prefix = Params().Base58Prefix(CChainParams::ZCVIEWING_KEY);
-        if ((data.size() == libzcash::SerializedSproutViewingKeySize + vk_prefix.size()) &&
-            std::equal(vk_prefix.begin(), vk_prefix.end(), data.begin())) {
-            CSerializeData serialized(data.begin() + vk_prefix.size(), data.end());
-            CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
-            libzcash::SproutViewingKey ret;
-            ss >> ret;
-            memory_cleanse(serialized.data(), serialized.size());
-            memory_cleanse(data.data(), data.size());
-            return ret;
-        }
-    }
-    data.clear();
     auto bech = bech32::Decode(str);
     if(bech.first == Params().Bech32HRP(CChainParams::SAPLING_INCOMING_VIEWING_KEY) &&
        bech.second.size() == ConvertedSaplingIncomingViewingKeySize) {

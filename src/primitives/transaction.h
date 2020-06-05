@@ -159,6 +159,183 @@ public:
     }
 };
 
+template <typename Stream>
+class SproutProofSerializer : public boost::static_visitor<>
+{
+    Stream& s;
+    bool useGroth;
+
+public:
+    SproutProofSerializer(Stream& s, bool useGroth) : s(s), useGroth(useGroth) {}
+
+    void operator()(const libzcash::PHGRProof& proof) const
+    {
+        if (useGroth) {
+            throw std::ios_base::failure("Invalid Sprout proof for transaction format (expected GrothProof, found PHGRProof)");
+        }
+        ::Serialize(s, proof);
+    }
+
+    void operator()(const libzcash::GrothProof& proof) const
+    {
+        if (!useGroth) {
+            throw std::ios_base::failure("Invalid Sprout proof for transaction format (expected PHGRProof, found GrothProof)");
+        }
+        ::Serialize(s, proof);
+    }
+};
+
+template<typename Stream, typename T>
+inline void SerReadWriteSproutProof(Stream& s, const T& proof, bool useGroth, CSerActionSerialize ser_action)
+{
+    auto ps = SproutProofSerializer<Stream>(s, useGroth);
+    boost::apply_visitor(ps, proof);
+}
+
+template<typename Stream, typename T>
+inline void SerReadWriteSproutProof(Stream& s, T& proof, bool useGroth, CSerActionUnserialize ser_action)
+{
+    if (useGroth) {
+        libzcash::GrothProof grothProof;
+        ::Unserialize(s, grothProof);
+        proof = grothProof;
+    } else {
+        libzcash::PHGRProof pghrProof;
+        ::Unserialize(s, pghrProof);
+        proof = pghrProof;
+    }
+}
+
+class JSDescription
+{
+public:
+    // These values 'enter from' and 'exit to' the value
+    // pool, respectively.
+    CAmount vpub_old;
+    CAmount vpub_new;
+
+    // JoinSplits are always anchored to a root in the note
+    // commitment tree at some point in the blockchain
+    // history or in the history of the current
+    // transaction.
+    uint256 anchor;
+
+    // Nullifiers are used to prevent double-spends. They
+    // are derived from the secrets placed in the note
+    // and the secret spend-authority key known by the
+    // spender.
+    std::array<uint256, ZC_NUM_JS_INPUTS> nullifiers;
+
+    // Note commitments are introduced into the commitment
+    // tree, blinding the public about the values and
+    // destinations involved in the JoinSplit. The presence of
+    // a commitment in the note commitment tree is required
+    // to spend it.
+    std::array<uint256, ZC_NUM_JS_OUTPUTS> commitments;
+
+    // Ephemeral key
+    uint256 ephemeralKey;
+
+    // Ciphertexts
+    // These contain trapdoors, values and other information
+    // that the recipient needs, including a memo field. It
+    // is encrypted using the scheme implemented in crypto/NoteEncryption.cpp
+    std::array<ZCNoteEncryption::Ciphertext, ZC_NUM_JS_OUTPUTS> ciphertexts = {{ {{0}} }};
+
+    // Random seed
+    uint256 randomSeed;
+
+    // MACs
+    // The verification of the JoinSplit requires these MACs
+    // to be provided as an input.
+    std::array<uint256, ZC_NUM_JS_INPUTS> macs;
+
+    // JoinSplit proof
+    // This is a zk-SNARK which ensures that this JoinSplit is valid.
+    libzcash::SproutProof proof;
+
+    JSDescription(): vpub_old(0), vpub_new(0) { }
+
+    JSDescription(
+            ZCJoinSplit& params,
+            const uint256& joinSplitPubKey,
+            const uint256& rt,
+            const std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            const std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            CAmount vpub_old,
+            CAmount vpub_new,
+            bool computeProof = true, // Set to false in some tests
+            uint256 *esk = nullptr // payment disclosure
+    );
+
+    static JSDescription Randomized(
+            ZCJoinSplit& params,
+            const uint256& joinSplitPubKey,
+            const uint256& rt,
+            std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            std::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
+            std::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
+            CAmount vpub_old,
+            CAmount vpub_new,
+            bool computeProof = true, // Set to false in some tests
+            uint256 *esk = nullptr, // payment disclosure
+            std::function<int(int)> gen = GetRandInt
+    );
+
+    // Verifies that the JoinSplit proof is correct.
+    bool Verify(
+        ZCJoinSplit& params,
+        libzcash::ProofVerifier& verifier,
+        const uint256& joinSplitPubKey
+    ) const;
+
+    // Returns the calculated h_sig
+    uint256 h_sig(ZCJoinSplit& params, const uint256& joinSplitPubKey) const;
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        // nVersion is set by CTransaction and CMutableTransaction to
+        // (tx.fOverwintered << 31) | tx.nVersion
+        bool fOverwintered = s.GetVersion() >> 31;
+        int32_t txVersion = s.GetVersion() & 0x7FFFFFFF;
+        bool useGroth = fOverwintered && txVersion >= SAPLING_TX_VERSION;
+
+        READWRITE(vpub_old);
+        READWRITE(vpub_new);
+        READWRITE(anchor);
+        READWRITE(nullifiers);
+        READWRITE(commitments);
+        READWRITE(ephemeralKey);
+        READWRITE(randomSeed);
+        READWRITE(macs);
+        ::SerReadWriteSproutProof(s, proof, useGroth, ser_action);
+        READWRITE(ciphertexts);
+    }
+
+    friend bool operator==(const JSDescription& a, const JSDescription& b)
+    {
+        return (
+            a.vpub_old == b.vpub_old &&
+            a.vpub_new == b.vpub_new &&
+            a.anchor == b.anchor &&
+            a.nullifiers == b.nullifiers &&
+            a.commitments == b.commitments &&
+            a.ephemeralKey == b.ephemeralKey &&
+            a.ciphertexts == b.ciphertexts &&
+            a.randomSeed == b.randomSeed &&
+            a.macs == b.macs &&
+            a.proof == b.proof
+            );
+    }
+
+    friend bool operator!=(const JSDescription& a, const JSDescription& b)
+    {
+        return !(a == b);
+    }
+};
 
 class BaseOutPoint
 {

@@ -248,18 +248,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no unspent notes found for zaddr from address.");
     }
 
-    // At least one of z_sprout_inputs_ and z_sapling_inputs_ must be empty by design
-    assert(z_sprout_inputs_.empty() || z_sapling_inputs_.empty());
-
     CAmount t_inputs_total = 0;
     for (SendManyInputUTXO & t : t_inputs_) {
         t_inputs_total += std::get<2>(t);
     }
 
     CAmount z_inputs_total = 0;
-    for (SendManyInputJSOP & t : z_sprout_inputs_) {
-        z_inputs_total += std::get<2>(t);
-    }
     for (auto t : z_sapling_inputs_) {
         z_inputs_total += t.note.value();
     }
@@ -687,20 +681,10 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
 
 bool AsyncRPCOperation_sendmany::find_unspent_notes() {
-    std::vector<CSproutNotePlaintextEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, fromaddress_, mindepth_);
-    }
-
-    // If using the TransactionBuilder, we only want Sapling notes.
-    // If not using it, we only want Sprout notes.
-    // TODO: Refactor `GetFilteredNotes()` so we only fetch what we need.
-    if (isUsingBuilder_) {
-        sproutEntries.clear();
-    } else {
-        saplingEntries.clear();
+        pwalletMain->GetFilteredNotes(saplingEntries, fromaddress_, mindepth_);
     }
 
     for (auto entry : saplingEntries) {

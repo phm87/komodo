@@ -57,7 +57,6 @@ public:
                                      boost::optional<TransactionBuilder> builder,
                                      CMutableTransaction contextualTx,
                                      std::vector<MergeToAddressInputUTXO> utxoInputs,
-                                     std::vector<MergeToAddressInputSproutNote> sproutNoteInputs,
                                      std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs,
                                      MergeToAddressRecipient recipient,
                                      CAmount fee = MERGE_TO_ADDRESS_OPERATION_DEFAULT_MINERS_FEE,
@@ -93,9 +92,6 @@ private:
     
     uint256 joinSplitPubKey_;
     unsigned char joinSplitPrivKey_[crypto_sign_SECRETKEYBYTES];
-    
-    // The key is the result string from calling JSOutPoint::ToString()
-    std::unordered_map<std::string, MergeToAddressWitnessAnchorData> jsopWitnessAnchorMap;
     
     std::vector<MergeToAddressInputUTXO> utxoInputs_;
     std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs_;

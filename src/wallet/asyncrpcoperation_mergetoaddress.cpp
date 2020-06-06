@@ -74,32 +74,22 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
                                                                    boost::optional<TransactionBuilder> builder,
                                                                    CMutableTransaction contextualTx,
                                                                    std::vector<MergeToAddressInputUTXO> utxoInputs,
-                                                                   std::vector<MergeToAddressInputSproutNote> sproutNoteInputs,
                                                                    std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs,
                                                                    MergeToAddressRecipient recipient,
                                                                    CAmount fee,
                                                                    UniValue contextInfo) :
-tx_(contextualTx), utxoInputs_(utxoInputs), sproutNoteInputs_(sproutNoteInputs),
-saplingNoteInputs_(saplingNoteInputs), recipient_(recipient), fee_(fee), contextinfo_(contextInfo)
+tx_(contextualTx), utxoInputs_(utxoInputs), saplingNoteInputs_(saplingNoteInputs), recipient_(recipient), fee_(fee), contextinfo_(contextInfo)
 {
     if (fee < 0 || fee > MAX_MONEY) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Fee is out of range");
     }
 
-    if (utxoInputs.empty() && sproutNoteInputs.empty() && saplingNoteInputs.empty()) {
+    if (utxoInputs.empty() && saplingNoteInputs.empty()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "No inputs");
     }
 
     if (std::get<0>(recipient).size() == 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Recipient parameter missing");
-    }
-
-    if (sproutNoteInputs.size() > 0 && saplingNoteInputs.size() > 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress");
-    }
-
-    if (sproutNoteInputs.size() > 0 && builder) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Sprout notes are not supported by the TransactionBuilder");
     }
 
     isUsingBuilder_ = false;
@@ -215,7 +205,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 {
     assert(isToTaddr_ != isToZaddr_);
 
-    bool isPureTaddrOnlyTx = (sproutNoteInputs_.empty() && saplingNoteInputs_.empty() && isToTaddr_);
+    bool isPureTaddrOnlyTx = (saplingNoteInputs_.empty() && isToTaddr_);
     CAmount minersFee = fee_;
 
     size_t numInputs = utxoInputs_.size();
@@ -240,9 +230,6 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
     }
 
     CAmount z_inputs_total = 0;
-    for (const MergeToAddressInputSproutNote& t : sproutNoteInputs_) {
-        z_inputs_total += std::get<2>(t);
-    }
 
     for (const MergeToAddressInputSaplingNote& t : saplingNoteInputs_) {
         z_inputs_total += std::get<2>(t);
@@ -293,7 +280,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
     /**
      * SCENARIO #0
      *
-     * Sprout not involved, so we just use the TransactionBuilder and we're done.
+     * Only sapling involved, so we just use the TransactionBuilder and we're done.
      *
      * This is based on code from AsyncRPCOperation_sendmany::main_impl() and should be refactored.
      */

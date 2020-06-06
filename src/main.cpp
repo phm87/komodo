@@ -1368,6 +1368,7 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
     if (!CheckTransactionWithoutProofVerification(tiptime,tx, state)) {
         return false;
     }
+    return true;
 }
 
 int32_t komodo_isnotaryvout(char *coinaddr,uint32_t tiptime) // from ac_private chains only

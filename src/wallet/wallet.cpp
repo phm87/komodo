@@ -2334,57 +2334,6 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
                                     std::vector<boost::optional<SproutWitness>>& witnesses,
                                     uint256 &final_anchor)
 {
-    witnesses.resize(commitments.size());
-    CBlockIndex* pindex = chainActive.Genesis();
-    SproutMerkleTree tree;
-
-    while (pindex) {
-        CBlock block;
-        ReadBlockFromDisk(block, pindex,1);
-
-        BOOST_FOREACH(const CTransaction& tx, block.vtx)
-        {
-            BOOST_FOREACH(const JSDescription& jsdesc, tx.vjoinsplit)
-            {
-                BOOST_FOREACH(const uint256 &note_commitment, jsdesc.commitments)
-                {
-                    tree.append(note_commitment);
-
-                    BOOST_FOREACH(boost::optional<SproutWitness>& wit, witnesses) {
-                        if (wit) {
-                            wit->append(note_commitment);
-                        }
-                    }
-
-                    size_t i = 0;
-                    BOOST_FOREACH(uint256& commitment, commitments) {
-                        if (note_commitment == commitment) {
-                            witnesses.at(i) = tree.witness();
-                        }
-                        i++;
-                    }
-                }
-            }
-        }
-
-        uint256 current_anchor = tree.root();
-
-        // Consistency check: we should be able to find the current tree
-        // in our CCoins view.
-        SproutMerkleTree dummy_tree;
-        assert(pcoinsTip->GetSproutAnchorAt(current_anchor, dummy_tree));
-
-        pindex = chainActive.Next(pindex);
-    }
-
-    // TODO: #93; Select a root via some heuristic.
-    final_anchor = tree.root();
-
-    BOOST_FOREACH(boost::optional<SproutWitness>& wit, witnesses) {
-        if (wit) {
-            assert(final_anchor == wit->root());
-        }
-    }
 }
 
 /**
@@ -2697,11 +2646,11 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
                 }
             }
 
-            SproutMerkleTree sproutTree;
+            //SproutMerkleTree sproutTree;
             SaplingMerkleTree saplingTree;
             // This should never fail: we should always be able to get the tree
             // state on the path to the tip of our chain
-            assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, sproutTree));
+            //assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, sproutTree));
             if (pindex->pprev) {
                 if (NetworkUpgradeActive(pindex->pprev->GetHeight(), Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
                     assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, saplingTree));

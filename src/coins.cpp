@@ -1,5 +1,5 @@
 // Copyright (c) 2012-2014 The Bitcoin Core developers
-// Copyright (c) 2019      The Hush developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -65,7 +65,6 @@ bool CCoins::Spend(uint32_t nPos)
     Cleanup();
     return true;
 }
-bool CCoinsView::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
 bool CCoinsView::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
 bool CCoinsView::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
@@ -85,7 +84,6 @@ bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 
-bool CCoinsViewBacked::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return base->GetSproutAnchorAt(rt, tree); }
 bool CCoinsViewBacked::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return base->GetSaplingAnchorAt(rt, tree); }
 bool CCoinsViewBacked::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return base->GetNullifier(nullifier, type); }
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
@@ -137,30 +135,6 @@ CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const
     }
     cachedCoinsUsage += ret->second.coins.DynamicMemoryUsage();
     return ret;
-}
-
-
-bool CCoinsViewCache::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
-    CAnchorsSproutMap::const_iterator it = cacheSproutAnchors.find(rt);
-    if (it != cacheSproutAnchors.end()) {
-        if (it->second.entered) {
-            tree = it->second.tree;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    if (!base->GetSproutAnchorAt(rt, tree)) {
-        return false;
-    }
-
-    CAnchorsSproutMap::iterator ret = cacheSproutAnchors.insert(std::make_pair(rt, CAnchorsSproutCacheEntry())).first;
-    ret->second.entered = true;
-    ret->second.tree = tree;
-    cachedCoinsUsage += ret->second.tree.DynamicMemoryUsage();
-
-    return true;
 }
 
 bool CCoinsViewCache::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
@@ -271,7 +245,6 @@ void CCoinsViewCache::BringBestAnchorIntoCache(
     SproutMerkleTree &tree
 )
 {
-    assert(GetSproutAnchorAt(currentRoot, tree));
 }
 
 template<>
@@ -550,9 +523,9 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
 bool CCoinsViewCache::Flush() {
     bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashSproutAnchor, hashSaplingAnchor, cacheSproutAnchors, cacheSaplingAnchors, cacheSproutNullifiers, cacheSaplingNullifiers);
     cacheCoins.clear();
-    cacheSproutAnchors.clear();
+    //cacheSproutAnchors.clear();
     cacheSaplingAnchors.clear();
-    cacheSproutNullifiers.clear();
+    //cacheSproutNullifiers.clear();
     cacheSaplingNullifiers.clear();
     cachedCoinsUsage = 0;
     return fOk;

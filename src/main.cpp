@@ -3493,13 +3493,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     // This should never fail: we should always be able to get the root
     // that is on the tip of our chain
-    assert(view.GetSproutAnchorAt(old_sprout_tree_root, sprout_tree));
+    //assert(view.GetSproutAnchorAt(old_sprout_tree_root, sprout_tree));
 
-    {
+    //{
         // Consistency check: the root of the tree we're given should
         // match what we asked for.
-        assert(sprout_tree.root() == old_sprout_tree_root);
-    }
+        //assert(sprout_tree.root() == old_sprout_tree_root);
+    //}
 
     SaplingMerkleTree sapling_tree;
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
@@ -3636,6 +3636,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
         UpdateCoins(tx, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->GetHeight());
 
+        /*
         BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
             BOOST_FOREACH(const uint256 &note_commitment, joinsplit.commitments) {
                 // Insert the note commitments into our temporary tree.
@@ -3643,6 +3644,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 sprout_tree.append(note_commitment);
             }
         }
+        */
 
         BOOST_FOREACH(const OutputDescription &outputDescription, tx.vShieldedOutput) {
             sapling_tree.append(outputDescription.cm);
@@ -3652,7 +3654,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
 
-    view.PushAnchor(sprout_tree);
+    //view.PushAnchor(sprout_tree);
     view.PushAnchor(sapling_tree);
     if (!fJustCheck) {
         pindex->hashFinalSproutRoot = sprout_tree.root();

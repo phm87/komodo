@@ -140,9 +140,6 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     } else {
         LogPrint("zrpc", "%s: z_sendmany initialized\n", getId());
     }
-
-    // Enable payment disclosure if requested
-    paymentDisclosureMode = false;
 }
 
 AsyncRPCOperation_sendmany::~AsyncRPCOperation_sendmany() {

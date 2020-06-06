@@ -288,7 +288,7 @@ int printMiningStatus(bool mining)
             } else if (IsInitialBlockDownload()) {
                 std::cout << _("Mining is paused while downloading blocks.") << std::endl;
             } else {
-                std::cout << _("Mining is paused (a JoinSplit may be in progress).") << std::endl;
+                std::cout << _("Mining is paused, enhance your calm") << std::endl;
             }
         }
         lines++;

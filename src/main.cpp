@@ -1367,15 +1367,6 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
 
     if (!CheckTransactionWithoutProofVerification(tiptime,tx, state)) {
         return false;
-    } else {
-        // Ensure that zk-SNARKs v|| y
-        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-            if (!joinsplit.Verify(*pzcashParams, verifier, tx.joinSplitPubKey)) {
-                return state.DoS(100, error("CheckTransaction(): joinsplit does not verify"),
-                                 REJECT_INVALID, "bad-txns-joinsplit-verification-failed");
-            }
-        }
-        return true;
     }
 }
 

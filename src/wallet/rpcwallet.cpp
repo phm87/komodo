@@ -5135,7 +5135,6 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp, const CPubKey& myp
 #define MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT 10
 #define MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT 90
 
-#define JOINSPLIT_SIZE GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)
 #define OUTPUTDESCRIPTION_SIZE GetSerializeSize(OutputDescription(), SER_NETWORK, PROTOCOL_VERSION)
 #define SPENDDESCRIPTION_SIZE GetSerializeSize(SpendDescription(), SER_NETWORK, PROTOCOL_VERSION)
 
@@ -5154,7 +5153,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
     if (fHelp || params.size() < 2 || params.size() > 7)
         throw runtime_error(
             "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
-            + strDisabledMsg +
             "\nMerge multiple UTXOs and notes into a single UTXO or note.  Coinbase UTXOs are ignored; use `z_shieldcoinbase`"
             "\nto combine those into a single note."
             "\n\nThis is an asynchronous operation, and UTXOs selected for merging will be locked.  If there is an error, they"
@@ -5198,13 +5196,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
             "  \"opid\": xxx          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("z_mergetoaddress", "'[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"]' ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf")
-            + HelpExampleRpc("z_mergetoaddress", "[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"], \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
+            + HelpExampleCli("z_mergetoaddress", "'[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"]' zs1aW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf")
+            + HelpExampleRpc("z_mergetoaddress", "[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"], \"zs1aW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
         );
-
-    if (!fEnableMergeToAddress) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_mergetoaddress is disabled.");
-    }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 

@@ -4781,7 +4781,6 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
  * These notes are decrypted and added to the output parameter vector, outEntries.
  */
 void CWallet::GetFilteredNotes(
-    std::vector<CSproutNotePlaintextEntry>& sproutEntries,
     std::vector<SaplingNoteEntry>& saplingEntries,
     std::string address,
     int minDepth,
@@ -4794,7 +4793,7 @@ void CWallet::GetFilteredNotes(
         filterAddresses.insert(DecodePaymentAddress(address));
     }
 
-    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
+    GetFilteredNotes(saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
 }
 
 /**
@@ -4803,7 +4802,6 @@ void CWallet::GetFilteredNotes(
  * These notes are decrypted and added to the output parameter vector, outEntries.
  */
 void CWallet::GetFilteredNotes(
-    std::vector<CSproutNotePlaintextEntry>& sproutEntries,
     std::vector<SaplingNoteEntry>& saplingEntries,
     std::set<PaymentAddress>& filterAddresses,
     int minDepth,

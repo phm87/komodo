@@ -101,7 +101,7 @@ extern int32_t KOMODO_SNAPSHOT_INTERVAL;
 
 extern void komodo_init(int32_t height);
 
-ZCJoinSplit* pzcashParams = NULL;
+//ZCJoinSplit* pzcashParams = NULL;
 
 #ifdef ENABLE_WALLET
 CWallet* pwalletMain = NULL;
@@ -305,8 +305,8 @@ void Shutdown()
     delete pwalletMain;
     pwalletMain = NULL;
 #endif
-    delete pzcashParams;
-    pzcashParams = NULL;
+    //delete pzcashParams;
+    //pzcashParams = NULL;
     globalVerifyHandle.reset();
     ECC_Stop();
     LogPrintf("%s: done\n", __func__);

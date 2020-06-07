@@ -1,3 +1,5 @@
+// Copyright (c) 2019-2020 The Hush developers
+
 #ifndef ZC_INCREMENTALMERKLETREE_H_
 #define ZC_INCREMENTALMERKLETREE_H_
 

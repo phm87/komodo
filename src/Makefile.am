@@ -427,7 +427,6 @@ libbitcoin_common_a_SOURCES = \
   metrics.cpp \
   primitives/block.cpp \
   primitives/transaction.cpp \
-  primitives/nonce.cpp \
   protocol.cpp \
   pubkey.cpp \
   scheduler.cpp \
@@ -652,7 +651,6 @@ libzcashconsensus_la_SOURCES = \
   crypto/sha512.cpp \
   hash.cpp \
   primitives/transaction.cpp \
-  primitives/nonce.cpp \
   pubkey.cpp \
   script/zcashconsensus.cpp \
   script/interpreter.cpp \

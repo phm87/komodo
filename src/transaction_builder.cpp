@@ -12,6 +12,7 @@
 #include <boost/variant.hpp>
 #include <boost/optional/optional_io.hpp>
 #include <librustzcash.h>
+#include "zcash/Note.hpp"
 
 SpendDescriptionInfo::SpendDescriptionInfo(
     libzcash::SaplingExpandedSpendingKey expsk,

@@ -13,37 +13,6 @@
 
 using namespace libzcash;
 
-/*
-SproutNote::SproutNote() {
-    a_pk = random_uint256();
-    rho = random_uint256();
-    r = random_uint256();
-}
-
-uint256 SproutNote::cm() const {
-    unsigned char discriminant = 0xb0;
-
-    CSHA256 hasher;
-    hasher.Write(&discriminant, 1);
-    hasher.Write(a_pk.begin(), 32);
-
-    auto value_vec = convertIntToVectorLE(value_);
-
-    hasher.Write(&value_vec[0], value_vec.size());
-    hasher.Write(rho.begin(), 32);
-    hasher.Write(r.begin(), 32);
-
-    uint256 result;
-    hasher.Finalize(result.begin());
-
-    return result;
-}
-
-uint256 SproutNote::nullifier(const SproutSpendingKey& a_sk) const {
-    return PRF_nf(a_sk, rho);
-}
-*/
-
 // Construct and populate Sapling note for a given payment address and value.
 SaplingNote::SaplingNote(const SaplingPaymentAddress& address, const uint64_t value) : BaseNote(value) {
     d = address.d;

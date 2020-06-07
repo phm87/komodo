@@ -1,3 +1,5 @@
+# Copyright 2019-2020 The Hush developers
+
 DIST_SUBDIRS = secp256k1 univalue cryptoconditions
 
 AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS) $(SAN_LDFLAGS) $(HARDENED_LDFLAGS)
@@ -186,7 +188,6 @@ BITCOIN_CORE_H = \
   prevector.h \
   primitives/block.h \
   primitives/transaction.h \
-  primitives/nonce.h \
   protocol.h \
   pubkey.h \
   random.h \
@@ -486,7 +487,7 @@ libbitcoin_cli_a_SOURCES = \
 nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
 #
 
-# bitcoind binary #
+# komodod binary #
 komodod_SOURCES = bitcoind.cpp
 komodod_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 komodod_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -545,7 +546,7 @@ if TARGET_DARWIN
 komodod_LDFLAGS += -static-libgcc
 endif
 
-# bitcoin-cli binary #
+# komodo-cli binary #
 komodo_cli_SOURCES = bitcoin-cli.cpp
 komodo_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
 komodo_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -593,7 +594,7 @@ wallet_utility_LDADD = \
   $(LIBCRYPTOCONDITIONS)
 endif
 
-# zcash-tx binary #
+# komodo-tx binary #
 komodo_tx_SOURCES = komodo-tx.cpp
 komodo_tx_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 komodo_tx_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -603,7 +604,6 @@ if TARGET_WINDOWS
 komodo_tx_SOURCES += bitcoin-tx-res.rc
 endif
 
-# FIXME: Is libzcash needed for hush-tx ?
 komodo_tx_LDADD = \
   $(LIBUNIVALUE) \
   $(LIBBITCOIN_COMMON) \
@@ -615,7 +615,6 @@ komodo_tx_LDADD = \
   $(LIBCRYPTOCONDITIONS)
 
 komodo_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
-#
 
 # zcash protocol primitives #
 libzcash_a_SOURCES = \

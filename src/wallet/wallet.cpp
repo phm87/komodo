@@ -346,6 +346,14 @@ bool CWallet::LoadSaplingPaymentAddress(
     return CCryptoKeyStore::AddSaplingIncomingViewingKey(ivk, addr);
 }
 
+bool CWallet::AddCScript(const CScript& redeemScript)
+{
+    if (!CCryptoKeyStore::AddCScript(redeemScript))
+        return false;
+    if (!fFileBacked)
+        return true;
+    return CWalletDB(strWalletFile).WriteCScript(Hash160(redeemScript), redeemScript);
+}
 
 bool CWallet::LoadCScript(const CScript& redeemScript)
 {

@@ -38,6 +38,7 @@
 #include "zcbenchmarks.h"
 #include "script/interpreter.h"
 #include "zcash/zip32.h"
+#include "zcash/Note.hpp"
 #include "notaries_staked.h"
 
 #include "utiltime.h"

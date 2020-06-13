@@ -54,13 +54,19 @@
 // Hush Block 166250 will happen at roughly:
 // Wed Jan 29 08:14:12 2020 Eastern # 1580303652
 // Wed Jan 29 13:14:12 2020 GMT     # 1580303652
-const uint32_t nHushHardforkHeight = 166250;
+const uint32_t nHushHardforkHeight  = 166250;
+// $ ./contrib/block_time.pl 255555
+// Hush Block 255555 will happen at roughly:
+// Sat Jul 11 21:41:12 2020 Eastern # 1594518072
+// Sun Jul 12 01:41:12 2020 GMT     # 1594518072
+const uint32_t nHushHardforkHeight2 = 255555;
 
 // No coins/code are currently using timestamp activated fork
-const uint32_t nHushHardforkTimestamp = 1580303652; // Jan 29nd 1pm GMT
+const uint32_t nHushHardforkTimestamp  = 1580303652; // Jan 29nd 1pm GMT
+const uint32_t nHushHardforkTimestamp2 = 1594425600; // Jul 11th 12a GMT
 
-static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, nHushHardforkTimestamp, 1751328000};
-static const int32_t  KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS]    = {1,2,nHushHardforkHeight, 5*nHushHardforkHeight};
+static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, nHushHardforkTimestamp, nHushHardforkTimestamp2, nHushHardforkTimestamp2*5};
+static const int32_t  KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS]    = {1,2,nHushHardforkHeight, nHushHardforkHeight2, 5*nHushHardforkHeight2};
 
 // Era array of pubkeys. Add extra seasons to bottom as requried, after adding appropriate info above. 
 static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =

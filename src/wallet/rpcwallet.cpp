@@ -8228,6 +8228,8 @@ extern UniValue z_exportviewingkey(const UniValue& params, bool fHelp, const CPu
 extern UniValue z_importviewingkey(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue z_exportwallet(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue z_importwallet(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue rescan(const UniValue& params, bool fHelp, const CPubKey& mypk);
+
 
 static const CRPCCommand commands[] =
 { //  category              name                        actor (function)           okSafeMode
@@ -8266,6 +8268,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "listunspent",              &listunspent,              false },
     { "wallet",             "lockunspent",              &lockunspent,              true  },
     { "wallet",             "move",                     &movecmd,                  false },
+    { "wallet",             "rescan",                   &rescan,                   false },
     { "wallet",             "sendfrom",                 &sendfrom,                 false },
     { "wallet",             "sendmany",                 &sendmany,                 false },
     { "wallet",             "sendtoaddress",            &sendtoaddress,            false },

@@ -149,6 +149,43 @@ UniValue convertpassphrase(const UniValue& params, bool fHelp, const CPubKey& my
     return ret;
 }
 
+UniValue rescan(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    //LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "rescan \"height\"\n"
+            "\nRescan all transactions from genesis or given block height.\n"
+            "\nArguments:\n"
+            "1. \"height\"    (integer, optional) The block height to rescan from\n"
+            "\nExamples:\n"
+            "\nRescan from block height 555\n"
+            + HelpExampleCli("rescan", "\"555\"") +
+            "\nRescan from genesis block\n"
+            + HelpExampleCli("rescan","")
+        );
+
+    // Height to rescan from
+    int nRescanHeight = 0;
+    if (params.size() > 0)
+        nRescanHeight = params[0].get_int();
+    if (nRescanHeight < 0 || nRescanHeight > chainActive.Height()) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    }
+
+    LogPrintf("Rescanning from height=%d\n", nRescanHeight);
+    //pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight],true);
+    bool update = false;
+    pwalletMain->ScanForWalletTransactions(chainActive.Genesis(),update);
+    //TODO: can we return something more useful?
+    return NullUniValue;
+}
+
+
 UniValue importprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))

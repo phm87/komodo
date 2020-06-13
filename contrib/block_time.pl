@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright 2019 The Hush developers
+# Copyright 2019-2020 The Hush developers
 # Released under the GPLv3
 use warnings;
 use strict;

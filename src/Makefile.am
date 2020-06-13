@@ -340,7 +340,7 @@ libbitcoin_proton_a_SOURCES = \
   amqp/amqppublishnotifier.cpp
 endif
 
-# wallet: zcashd, but only linked when wallet enabled
+# wallet: komodod, but only linked when wallet enabled
 libbitcoin_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_wallet_a_SOURCES = \
@@ -352,6 +352,7 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/asyncrpcoperation_shieldcoinbase.cpp \
   wallet/crypter.cpp \
   wallet/db.cpp \
+  zcash/Note.cpp \
   transaction_builder.cpp \
   wallet/rpcdump.cpp \
   cc/CCtokens.cpp \

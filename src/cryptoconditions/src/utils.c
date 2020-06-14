@@ -1,3 +1,4 @@
+// Copyright (c) 2019-2020 The Hush developers
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
@@ -216,7 +217,7 @@ void hashFingerprintContents(asn_TYPE_descriptor_t *asnType, void *fp, uint8_t *
     ASN_STRUCT_FREE(*asnType, fp);
     if (rc.encoded < 1) {
         fprintf(stderr, "Encoding fingerprint failed\n");
-        return 0;
+        return;
     }
     sha256(buf, rc.encoded, out);
 }
@@ -299,5 +300,3 @@ int jsonGetHexOptional(const cJSON *params, char *key, char *err, unsigned char 
     }
     return checkDecodeHex(item, key, err, data, size);
 }
-
-

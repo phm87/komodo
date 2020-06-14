@@ -1,4 +1,4 @@
-// Copyright (c) 2019      The Hush developers
+// Copyright (c) 2019-2020      The Hush developers
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
@@ -42,12 +42,12 @@
 // KMD Notary Seasons 
 // 1: May 1st 2018 1530921600
 // 2: July 15th 2019 1563148800 -> estimated height 1444000
-// 3: 3rd season ending isnt known, so use very far times in future.
+// 3: 3rd season
     // 1751328000 = dummy timestamp, 1 July 2025!
     // 7113400 = 5x current KMD blockheight. 
-// to add 4th season, change NUM_KMD_SEASONS to 4, and add timestamp and height of activation to these arrays. 
+// to add seasons, change NUM_KMD_SEASONS, and add timestamp and height of activation to these arrays. 
 
-#define NUM_KMD_SEASONS 5
+#define NUM_KMD_SEASONS 6
 #define NUM_KMD_NOTARIES 64
 
 // $ ./contrib/block_time.pl 166250
@@ -64,9 +64,10 @@ const uint32_t nHushHardforkHeight2 = 255555;
 // No coins/code are currently using timestamp activated fork
 const uint32_t nHushHardforkTimestamp  = 1580303652; // Jan 29nd 1pm GMT
 const uint32_t nHushHardforkTimestamp2 = 1594425600; // Jul 11th 12a GMT
+extern const uint32_t z2zForkHeight;
 
-static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, nHushHardforkTimestamp, nHushHardforkTimestamp2, nHushHardforkTimestamp2*5};
-static const int32_t  KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS]    = {1,2,nHushHardforkHeight, nHushHardforkHeight2, 5*nHushHardforkHeight2};
+static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, nHushHardforkTimestamp, nHushHardforkTimestamp2, nHushHardforkTimestamp2*5, nHushHardforkTimestamp2*6};
+static const int32_t  KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS]    = {1,2,nHushHardforkHeight, nHushHardforkHeight2, (int)z2zForkHeight, 5*nHushHardforkHeight2};
 
 // Era array of pubkeys. Add extra seasons to bottom as requried, after adding appropriate info above. 
 static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =

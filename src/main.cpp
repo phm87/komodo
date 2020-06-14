@@ -115,7 +115,7 @@ bool fAlerts = DEFAULT_ALERTS;
  */
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
-unsigned int z2zForkHeight = GetArg("-z2zforkheight",340000);
+const uint32_t z2zForkHeight = GetArg("-z2zforkheight",340000);
 
 unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
@@ -1735,9 +1735,9 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, int dosLevel)
 {
     AssertLockHeld(cs_main);
-    uint32_t z2zTransitionWindow = 10;
-    uint32_t z2zTransitionStart  = z2zForkHeight - z2zTransitionWindow;
-    uint32_t nHeight             = chainActive.Height();
+    const uint32_t z2zTransitionWindow = 10;
+    const uint32_t z2zTransitionStart  = z2zForkHeight - z2zTransitionWindow;
+    const uint32_t nHeight             = chainActive.Height();
 
     // This only applies to HUSH3, other chains can start off z2z via ac_private=1
     if(ishush3) {

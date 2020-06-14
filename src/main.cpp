@@ -114,6 +114,8 @@ bool fAlerts = DEFAULT_ALERTS;
 /* If the tip is older than this (in seconds), the node is considered to be in initial block download.
  */
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
+bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+unsigned int z2zForkHeight = GetArg("-z2zforkheight",340000);
 
 unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
@@ -1583,11 +1585,11 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
         if ( counter++ < 10 )
             fprintf(stderr,"found taddr in private chain: z_z.%d z_t.%d t_z.%d vinsize.%d\n",z_z,z_t,t_z,(int32_t)tx.vin.size());
         if ( z_t == 0 || z_z != 0 || t_z != 0 || tx.vin.size() != 0 )
-            return state.DoS(100, error("CheckTransaction(): this is a private chain, only sprout -> taddr allowed until deadline"),REJECT_INVALID, "bad-txns-acprivacy-chain");
+            return state.DoS(100, error("CheckTransaction(): this is a private chain, sending to taddrs not allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
     }
     if ( ASSETCHAINS_TXPOW != 0 )
     {
-        // genesis coinbase 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+        // BTC genesis coinbase 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
         uint256 txid = tx.GetHash();
         if ( ((ASSETCHAINS_TXPOW & 2) != 0 && iscoinbase != 0) || ((ASSETCHAINS_TXPOW & 1) != 0 && iscoinbase == 0) )
         {
@@ -1733,6 +1735,23 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, int dosLevel)
 {
     AssertLockHeld(cs_main);
+    uint32_t z2zTransitionWindow = 10;
+    uint32_t z2zTransitionStart  = z2zForkHeight - z2zTransitionWindow;
+    uint32_t nHeight             = chainActive.Height();
+
+    // This only applies to HUSH3, other chains can start off z2z via ac_private=1
+    if(ishush3) {
+        if((nHeight >= z2zTransitionStart) || (nHeight <= z2zForkHeight)) {
+            // During the z2z transition window, only coinbase tx's as part of blocks are allowed
+            // Theory: We want an empty mempool at our fork block height, and the only way to assure that
+            // is to have an empty mempool for a few previous blocks, to take care of potential re-orgs
+            // and edge cases. This empty mempool assures there will be no transactions involving taddrs
+            // stuck in the mempool, when the z2z rule takes effect.
+            // Thanks to jl777 for helping design this
+            fprintf(stderr,"%s: rejecting all tx's during z2z transition window at height=%d\n", __func__,nHeight);
+            return false;
+        }
+    }
     if (pfMissingInputs)
         *pfMissingInputs = false;
     uint32_t tiptime;
@@ -3341,6 +3360,18 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         return(false);
     //fprintf(stderr,"connectblock ht.%d\n",(int32_t)pindex->GetHeight());
     AssertLockHeld(cs_main);
+
+    bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+    if(!ASSETCHAINS_PRIVATE && ishush3) {
+        unsigned int nHeight       = pindex->GetHeight();
+        if(nHeight >= z2zForkHeight) {
+            // At startup, HUSH3 doesn't know a block height yet and so we must wait until
+            // connecting a block
+            fprintf(stderr, "%s: Going full z2z at height %d!\n",__func__,nHeight);
+            ASSETCHAINS_PRIVATE = 1;
+        }
+    }
+
     bool fExpensiveChecks = true;
     if (fCheckpointsEnabled) {
         CBlockIndex *pindexLastCheckpoint = Checkpoints::GetLastCheckpoint(chainparams.Checkpoints());
@@ -6087,7 +6118,7 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
     // Create new
     CBlockIndex* pindexNew = new CBlockIndex();
     if (!pindexNew)
-        throw runtime_error("LoadBlockIndex(): new CBlockIndex failed");
+        throw runtime_error("InsertBlockIndex(): new CBlockIndex failed");
     mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
     pindexNew->phashBlock = &((*mi).first);
     //fprintf(stderr,"inserted to block index %s\n",hash.ToString().c_str());
@@ -6303,6 +6334,13 @@ bool static LoadBlockIndexDB()
         return true;
 
     chainActive.SetTip(it->second);
+
+    // Try to detect if we are z2z based on height of blocks on disk
+    // This helps to set it correctly on startup before a new block is connected
+    if(ishush3 && chainActive.Height() >= z2zForkHeight) {
+        LogPrintf("%s: enabled ac_private=1 at height=%d\n", __func__, chainActive.Height());
+        ASSETCHAINS_PRIVATE = 1;
+    }
 
     // Set hashFinalSproutRoot for the end of best chain
     it->second->hashFinalSproutRoot = pcoinsTip->GetBestAnchor(SPROUT);

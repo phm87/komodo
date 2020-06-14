@@ -582,7 +582,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-metricsui", _("Set to 1 for a persistent metrics screen, 0 for sequential metrics output (default: 1 if running in a console, 0 otherwise)"));
         strUsage += HelpMessageOpt("-metricsrefreshtime", strprintf(_("Number of seconds between metrics refreshes (default: %u if running in a console, %u otherwise)"), 1, 600));
     }
-    strUsage += HelpMessageGroup(_("Komodo Asset Chain options:"));
+    strUsage += HelpMessageGroup(_("Hush Smart Chain options:"));
     strUsage += HelpMessageOpt("-ac_algo", _("Choose PoW mining algorithm, default is Equihash"));
     strUsage += HelpMessageOpt("-ac_blocktime", _("Block time in seconds, default is 60"));
     strUsage += HelpMessageOpt("-ac_cc", _("Cryptoconditions, default 0"));

@@ -4590,6 +4590,15 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 #define CTXIN_SPEND_DUST_SIZE   148
 #define CTXOUT_REGULAR_SIZE     34
 
+void random_hex(char str[], int len)
+{
+  char hex[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+  for(int i=0;i<len;i++) {
+    str[i] = hex[GetRandInt(16)];
+  }
+  str[len]=0;
+}
+
 UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -4725,13 +4734,13 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
    // SIETCH: Sprinkle our cave with some magic privacy zdust
    // End goal is to have this be as large as possible without slowing xtns down too much
    // A value of 7 will provide much stronger linkability privacy versus pre-Sietch operations
-
 	unsigned int DEFAULT_MIN_ZOUTS=7;
+	unsigned int ABSOLUTE_MIN_ZOUTS=3;
 	unsigned int MAX_ZOUTS=25;
 	unsigned int MIN_ZOUTS=GetArg("--sietch-min-zouts", DEFAULT_MIN_ZOUTS);
 
-    if((MIN_ZOUTS<2) || (MIN_ZOUTS>MAX_ZOUTS)) {
-        fprintf(stderr,"%s: Sietch min zouts must be >=2 and <= 25, setting to default value of %d\n", __FUNCTION__, DEFAULT_MIN_ZOUTS );
+    if((MIN_ZOUTS<ABSOLUTE_MIN_ZOUTS) || (MIN_ZOUTS>MAX_ZOUTS)) {
+        fprintf(stderr,"%s: Sietch min zouts must be >=%d and <= %d, setting to default value of %d\n", __FUNCTION__, ABSOLUTE_MIN_ZOUTS, MAX_ZOUTS, DEFAULT_MIN_ZOUTS );
         MIN_ZOUTS=DEFAULT_MIN_ZOUTS;
     }
 
@@ -4739,8 +4748,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
         // OK, we identify this xtn as needing privacy zdust, we must decide how much, non-deterministically
 		int nAmount = 0;
         int decider = 1 + GetRandInt(100); // random int between 1 and 100
-		string memo = "f600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-
+        char *str;
+        random_hex(str,512);
+        string memo = string(str);
         string zdust1, zdust2;
 
         // Which zaddr we send to is non-deterministically chosen from two zpools...

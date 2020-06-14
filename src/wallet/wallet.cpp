@@ -1907,7 +1907,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                                     // std::cerr << __FUNCTION__ << " tx." << tx.GetHash().ToString() << " passed wallet filter! whitelistaddress." << EncodeDestination(dest) << std::endl;
                                     LogPrintf("tx.%s passed wallet filter! whitelistaddress.%s\n", tx.GetHash().ToString(),EncodeDestination(dest));
                                     pthread_mutex_lock(&utxocache_mutex);
-                                    komodo_updateutxocache(0, DecodeDestination(NotaryAddress), &txin, tx.vin[i].prevout.n);
+                                    komodo_updateutxocache(0, dest, &txin, tx.vin[i].prevout.n);
                                     pthread_mutex_unlock(&utxocache_mutex);
                                     break;
                                 }

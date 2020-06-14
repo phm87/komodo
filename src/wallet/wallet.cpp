@@ -65,6 +65,7 @@ CBlockIndex *komodo_chainactive(int32_t height);
 extern std::string DONATION_PUBKEY;
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int tx_height( const uint256 &hash );
+void komodo_statefname(char *fname,char *symbol,char *str);
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
@@ -1748,99 +1749,6 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
     return !unchangedSproutFlag || !unchangedSaplingFlag;
 }
 
-/**
- * Add a transaction to the wallet, or update it.
- * pblock is optional, but should be provided if the transaction is known to be in a block.
- * If fUpdate is true, existing transactions will be updated.
- */
-bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
-{
-    {
-        AssertLockHeld(cs_wallet);
-        if ( tx.IsCoinBase() && tx.vout[0].nValue == 0 )
-            return false;
-        bool fExisted = mapWallet.count(tx.GetHash()) != 0;
-        if (fExisted && !fUpdate) return false;
-        auto sproutNoteData = FindMySproutNotes(tx);
-        auto saplingNoteDataAndAddressesToAdd = FindMySaplingNotes(tx);
-        auto saplingNoteData = saplingNoteDataAndAddressesToAdd.first;
-        auto addressesToAdd = saplingNoteDataAndAddressesToAdd.second;
-        for (const auto &addressToAdd : addressesToAdd) {
-            if (!AddSaplingIncomingViewingKey(addressToAdd.second, addressToAdd.first)) {
-                return false;
-            }
-        }
-        if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
-        {
-            /**
-             * New implementation of wallet filter code.
-             *
-             * If any vout of tx is belongs to wallet (IsMine(tx) == true) and tx
-             * is not from us, mean, if every vin not belongs to our wallet
-             * (IsFromMe(tx) == false), then tx need to be checked through wallet
-             * filter. If tx haven't any vin from trusted / whitelisted address it
-             * shouldn't be added into wallet.
-            */
-
-            if (!mapMultiArgs["-whitelistaddress"].empty())
-            {
-                if (IsMine(tx) && !tx.IsCoinBase() && !IsFromMe(tx))
-                {
-                    bool fIsFromWhiteList = false;
-                    BOOST_FOREACH(const CTxIn& txin, tx.vin)
-                    {
-                        if (fIsFromWhiteList) break;
-                        uint256 hashBlock; CTransaction prevTx; CTxDestination dest;
-                        if (GetTransaction(txin.prevout.hash, prevTx, hashBlock, true) && ExtractDestination(prevTx.vout[txin.prevout.n].scriptPubKey,dest))
-                        {
-                            BOOST_FOREACH(const std::string& strWhiteListAddress, mapMultiArgs["-whitelistaddress"])
-                            {
-                                if (EncodeDestination(dest) == strWhiteListAddress)
-                                {
-                                    fIsFromWhiteList = true;
-                                    // std::cerr << __FUNCTION__ << " tx." << tx.GetHash().ToString() << " passed wallet filter! whitelistaddress." << EncodeDestination(dest) << std::endl;
-                                    LogPrintf("tx.%s passed wallet filter! whitelistaddress.%s\n", tx.GetHash().ToString(),EncodeDestination(dest));
-                                    pthread_mutex_lock(&utxocache_mutex);
-                                    komodo_updateutxocache(0, DecodeDestination(NotaryAddress), &txin, tx.vin[i].prevout.n);
-                                    pthread_mutex_unlock(&utxocache_mutex);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (!fIsFromWhiteList)
-                    {
-                        // std::cerr << __FUNCTION__ << " tx." << tx.GetHash().ToString() << " is NOT passed wallet filter!" << std::endl;
-                        LogPrintf("tx.%s is NOT passed wallet filter!\n", tx.GetHash().ToString());
-                        return false;
-                    }
-                }
-            }
-
-            CWalletTx wtx(this,tx);
-
-            if (sproutNoteData.size() > 0) {
-                wtx.SetSproutNoteData(sproutNoteData);
-            }
-
-            if (saplingNoteData.size() > 0) {
-                wtx.SetSaplingNoteData(saplingNoteData);
-            }
-
-            // Get merkle branch if transaction was found in a block
-            if (pblock)
-                wtx.SetMerkleBranch(*pblock);
-
-            // Do not flush the wallet here for performance reasons
-            // this is safe, as in case of a crash, we rescan the necessary blocks on startup through our SetBestChain-mechanism
-            CWalletDB walletdb(strWalletFile, "r+", false);
-
-            return AddToWallet(wtx, false, &walletdb);
-        }
-    }
-    return false;
-}
-
 bool komodo_cmputxocacheitems(const struct komodo_utxocacheitem& utxoin, const struct komodo_utxocacheitem& utxoout)
 {
     return(utxoin.txid == utxoout.txid && utxoin.vout == utxoout.vout && utxoin.scriptPubKey == utxoout.scriptPubKey);
@@ -1945,6 +1853,101 @@ void komodo_loadwalletfilter()
     else
         fprintf(stderr, "Wallet Filter is Disabled.\n");
  }
+
+/**
+ * Add a transaction to the wallet, or update it.
+ * pblock is optional, but should be provided if the transaction is known to be in a block.
+ * If fUpdate is true, existing transactions will be updated.
+ */
+bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
+{
+    {
+        AssertLockHeld(cs_wallet);
+        if ( tx.IsCoinBase() && tx.vout[0].nValue == 0 )
+            return false;
+        bool fExisted = mapWallet.count(tx.GetHash()) != 0;
+        if (fExisted && !fUpdate) return false;
+        auto sproutNoteData = FindMySproutNotes(tx);
+        auto saplingNoteDataAndAddressesToAdd = FindMySaplingNotes(tx);
+        auto saplingNoteData = saplingNoteDataAndAddressesToAdd.first;
+        auto addressesToAdd = saplingNoteDataAndAddressesToAdd.second;
+        for (const auto &addressToAdd : addressesToAdd) {
+            if (!AddSaplingIncomingViewingKey(addressToAdd.second, addressToAdd.first)) {
+                return false;
+            }
+        }
+        if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
+        {
+            /**
+             * New implementation of wallet filter code.
+             *
+             * If any vout of tx is belongs to wallet (IsMine(tx) == true) and tx
+             * is not from us, mean, if every vin not belongs to our wallet
+             * (IsFromMe(tx) == false), then tx need to be checked through wallet
+             * filter. If tx haven't any vin from trusted / whitelisted address it
+             * shouldn't be added into wallet.
+            */
+
+            if (!mapMultiArgs["-whitelistaddress"].empty())
+            {
+                if (IsMine(tx) && !tx.IsCoinBase() && !IsFromMe(tx))
+                {
+                    bool fIsFromWhiteList = false;
+                    BOOST_FOREACH(const CTxIn& txin, tx.vin)
+                    {
+                        if (fIsFromWhiteList) break;
+                        uint256 hashBlock; CTransaction prevTx; CTxDestination dest;
+                        if (GetTransaction(txin.prevout.hash, prevTx, hashBlock, true) && ExtractDestination(prevTx.vout[txin.prevout.n].scriptPubKey,dest))
+                        {
+                            BOOST_FOREACH(const std::string& strWhiteListAddress, mapMultiArgs["-whitelistaddress"])
+                            {
+                                if (EncodeDestination(dest) == strWhiteListAddress)
+                                {
+                                    fIsFromWhiteList = true;
+                                    // std::cerr << __FUNCTION__ << " tx." << tx.GetHash().ToString() << " passed wallet filter! whitelistaddress." << EncodeDestination(dest) << std::endl;
+                                    LogPrintf("tx.%s passed wallet filter! whitelistaddress.%s\n", tx.GetHash().ToString(),EncodeDestination(dest));
+                                    pthread_mutex_lock(&utxocache_mutex);
+                                    komodo_updateutxocache(0, DecodeDestination(NotaryAddress), &txin, tx.vin[i].prevout.n);
+                                    pthread_mutex_unlock(&utxocache_mutex);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (!fIsFromWhiteList)
+                    {
+                        // std::cerr << __FUNCTION__ << " tx." << tx.GetHash().ToString() << " is NOT passed wallet filter!" << std::endl;
+                        LogPrintf("tx.%s is NOT passed wallet filter!\n", tx.GetHash().ToString());
+                        return false;
+                    }
+                }
+            }
+
+            CWalletTx wtx(this,tx);
+
+            if (sproutNoteData.size() > 0) {
+                wtx.SetSproutNoteData(sproutNoteData);
+            }
+
+            if (saplingNoteData.size() > 0) {
+                wtx.SetSaplingNoteData(saplingNoteData);
+            }
+
+            // Get merkle branch if transaction was found in a block
+            if (pblock)
+                wtx.SetMerkleBranch(*pblock);
+
+            // Do not flush the wallet here for performance reasons
+            // this is safe, as in case of a crash, we rescan the necessary blocks on startup through our SetBestChain-mechanism
+            CWalletDB walletdb(strWalletFile, "r+", false);
+
+            return AddToWallet(wtx, false, &walletdb);
+        }
+    }
+    return false;
+}
+
+
 
 void CWallet::SyncTransaction(const CTransaction& tx, const CBlock* pblock)
 {

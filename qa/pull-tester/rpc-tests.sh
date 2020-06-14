@@ -64,8 +64,6 @@ testScripts=(
     'decodescript.py'
     'blockchain.py'
     'disablewallet.py'
-    'zcjoinsplit.py'
-    'zcjoinsplitdoublespend.py'
     'ivk_import_export.py'
     'zkey_import_export.py'
     'getblocktemplate.py'

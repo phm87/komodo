@@ -1,3 +1,4 @@
+// Copyright © 2019-2020 The Hush Developers
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
@@ -33,6 +34,9 @@
 #ifdef BUILD_ROGUE
 #define EVAL_ROGUE 17
 std::string MYCCLIBNAME = (char *)"rogue";
+
+extern const uint32_t z2zForkHeight;
+
 
 
 #elif BUILD_CUSTOMCC

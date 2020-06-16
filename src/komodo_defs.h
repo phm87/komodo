@@ -55,11 +55,9 @@
 // Wed Jan 29 08:14:12 2020 Eastern # 1580303652
 // Wed Jan 29 13:14:12 2020 GMT     # 1580303652
 const uint32_t nHushHardforkHeight  = 166250;
-// $ ./contrib/block_time.pl 255555
-// Hush Block 255555 will happen at roughly:
-// Sat Jul 11 21:41:12 2020 Eastern # 1594518072
-// Sun Jul 12 01:41:12 2020 GMT     # 1594518072
-const uint32_t nHushHardforkHeight2 = 255555;
+// $ ./contrib/block_time.pl 245555
+// Hush Block 245555 will happen at roughly... now
+const uint32_t nHushHardforkHeight2 = 245055;
 
 // No coins/code are currently using timestamp activated fork
 const uint32_t nHushHardforkTimestamp  = 1580303652; // Jan 29nd 1pm GMT

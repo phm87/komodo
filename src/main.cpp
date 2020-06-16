@@ -115,7 +115,7 @@ bool fAlerts = DEFAULT_ALERTS;
  */
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
-const uint32_t z2zForkHeight = GetArg("-z2zforkheight",340000);
+const uint32_t 340000 = GetArg("-z2zforkheight",340000);
 
 unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
@@ -1736,12 +1736,12 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 {
     AssertLockHeld(cs_main);
     const uint32_t z2zTransitionWindow = 10;
-    const uint32_t z2zTransitionStart  = z2zForkHeight - z2zTransitionWindow;
+    const uint32_t z2zTransitionStart  = 340000 - z2zTransitionWindow;
     const uint32_t nHeight             = chainActive.Height();
 
     // This only applies to HUSH3, other chains can start off z2z via ac_private=1
     if(ishush3) {
-        if((nHeight >= z2zTransitionStart) || (nHeight <= z2zForkHeight)) {
+        if((nHeight >= z2zTransitionStart) || (nHeight <= 340000)) {
             // During the z2z transition window, only coinbase tx's as part of blocks are allowed
             // Theory: We want an empty mempool at our fork block height, and the only way to assure that
             // is to have an empty mempool for a few previous blocks, to take care of potential re-orgs
@@ -3364,7 +3364,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
     if(!ASSETCHAINS_PRIVATE && ishush3) {
         unsigned int nHeight       = pindex->GetHeight();
-        if(nHeight >= z2zForkHeight) {
+        if(nHeight >= 340000) {
             // At startup, HUSH3 doesn't know a block height yet and so we must wait until
             // connecting a block
             fprintf(stderr, "%s: Going full z2z at height %d!\n",__func__,nHeight);
@@ -6337,7 +6337,7 @@ bool static LoadBlockIndexDB()
 
     // Try to detect if we are z2z based on height of blocks on disk
     // This helps to set it correctly on startup before a new block is connected
-    if(ishush3 && chainActive.Height() >= z2zForkHeight) {
+    if(ishush3 && chainActive.Height() >= 340000) {
         LogPrintf("%s: enabled ac_private=1 at height=%d\n", __func__, chainActive.Height());
         ASSETCHAINS_PRIVATE = 1;
     }

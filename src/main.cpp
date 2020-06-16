@@ -115,7 +115,6 @@ bool fAlerts = DEFAULT_ALERTS;
  */
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
-const uint32_t 340000 = GetArg("-z2zforkheight",340000);
 
 unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];

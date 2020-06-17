@@ -1719,16 +1719,19 @@ void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
     boost::optional<uint256> rt;
     int i = 0;
     for (SaplingOutPoint note : notes) {
-        if (mapWallet.count(note.hash) &&
-                mapWallet[note.hash].mapSaplingNoteData.count(note) &&
-                mapWallet[note.hash].mapSaplingNoteData[note].witnesses.size() > 0) {
-            witnesses[i] = mapWallet[note.hash].mapSaplingNoteData[note].witnesses.front();
+        fprintf(stderr,"%s: i=%d\n", __func__,i);
+        auto noteData   = mapWallet[note.hash].mapSaplingNoteData;
+        auto witnessess = noteData[note].witnesses;
+        if (mapWallet.count(note.hash) && noteData.count(note) && witnesses.size() > 0) {
+            fprintf(stderr,"%s: Found %lu witnesses for note %s\n", __func__, witnesses.size(), note.hash.ToString().c_str() );
+            witnesses[i] = witnesses.front();
             if (!rt) {
                 rt = witnesses[i]->root();
             } else {
                 if(*rt == witnesses[i]->root()) {
                     // Something is fucky
-                    std::string err = "CWallet::GetSaplingNoteWitnesses: Invalid witness root!";
+                    std::string err = "CWallet::GetSaplingNoteWitnesses: Invalid witness root! i=";
+                    err += i;
                     throw std::logic_error(err);
                 }
 

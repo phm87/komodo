@@ -1721,14 +1721,17 @@ void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
     for (SaplingOutPoint note : notes) {
         fprintf(stderr,"%s: i=%d\n", __func__,i);
         auto noteData   = mapWallet[note.hash].mapSaplingNoteData;
-        auto witnessess = noteData[note].witnesses;
-        if (mapWallet.count(note.hash) && noteData.count(note) && witnesses.size() > 0) {
-            fprintf(stderr,"%s: Found %lu witnesses for note %s\n", __func__, witnesses.size(), note.hash.ToString().c_str() );
-            witnesses[i] = witnesses.front();
+        auto nWitnesses = noteData[note].witnesses.size();
+        if (mapWallet.count(note.hash) && noteData.count(note) && nWitnesses > 0) {
+            fprintf(stderr,"%s: Found %lu witnesses for note %s\n", __func__, nWitnesses, note.hash.ToString().c_str() );
+            witnesses[i] = noteData[note].witnesses.front();
             if (!rt) {
+                fprintf(stderr,"%s: Setting witness root\n",__func__);
                 rt = witnesses[i]->root();
             } else {
                 if(*rt == witnesses[i]->root()) {
+                    //fprintf(stderr,"%s: rt=%s\n",__func__,rt.GetHash().ToString().c_str());
+                    //fprintf(stderr,"%s: witnesses[%d]->root()=%s\n",__func__,i,witnesses[i]->root().GetHash().ToString().c_str());
                     // Something is fucky
                     std::string err = "CWallet::GetSaplingNoteWitnesses: Invalid witness root! i=";
                     err += i;

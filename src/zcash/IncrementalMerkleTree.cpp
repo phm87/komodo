@@ -1018,7 +1018,7 @@ size_t IncrementalMerkleTree<Depth, Hash>::next_depth(size_t skip) const {
 template<size_t Depth, typename Hash>
 Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
                                               std::deque<Hash> filler_hashes) const {
-    fprintf(stderr,"%s: depth=%d\n",__func__,depth);
+    //fprintf(stderr,"%s: depth=%d\n",__func__,depth);
     PathFiller<Depth, Hash> filler(filler_hashes);
 
     Hash combine_left =  left  ? *left  : filler.next(0);

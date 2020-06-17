@@ -545,7 +545,7 @@ public:
     size_t DynamicMemoryUsage() const;
 
     /** 
-     * Amount of bitcoins coming in to a transaction
+     * Amount of HUSH coming in to a transaction
      * Note that lightweight clients may not know anything besides the hash of previous transactions,
      * so may not be able to calculate this.
      *
@@ -557,7 +557,7 @@ public:
     //! Check whether all prevouts of the transaction are present in the UTXO set represented by this view
     bool HaveInputs(const CTransaction& tx) const;
 
-    //! Check whether all joinsplit requirements (anchors/nullifiers) are satisfied
+    //! Check whether all shielded requirements (anchors/nullifiers) are satisfied
     bool HaveShieldedRequirements(const CTransaction& tx) const;
 
     //! Return priority of tx at height nHeight

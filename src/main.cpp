@@ -1907,7 +1907,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             if (!view.HaveShieldedRequirements(tx))
             {
                 //fprintf(stderr,"accept failure.2\n");
-                return state.Invalid(error("AcceptToMemoryPool: joinsplit requirements not met"),REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
+                return state.Invalid(error("AcceptToMemoryPool: shielded requirements not met"),REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
             }
             
             // Bring the best block into scope
@@ -2728,9 +2728,9 @@ namespace Consensus {
         if (!inputs.HaveInputs(tx))
             return state.Invalid(error("CheckInputs(): %s inputs unavailable", tx.GetHash().ToString()));
 
-        // are the JoinSplit's requirements met?
+        // are the shielded requirements met?
         if (!inputs.HaveShieldedRequirements(tx))
-            return state.Invalid(error("CheckInputs(): %s JoinSplit requirements not met", tx.GetHash().ToString()));
+            return state.Invalid(error("CheckInputs(): %s shielded requirements not met", tx.GetHash().ToString()));
 
         CAmount nValueIn = 0;
         CAmount nFees = 0;
@@ -3464,7 +3464,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // Before the genesis block, there was an empty tree
             SproutMerkleTree tree;
             pindex->hashSproutAnchor = tree.root();
-            // The genesis block contained no JoinSplits
+            // The genesis block contained no JoinSplits, lulz
             pindex->hashFinalSproutRoot = pindex->hashSproutAnchor;
         }
         return true;
@@ -3557,10 +3557,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
             }
-            // are the JoinSplit's requirements met?
+            // are the shielded requirements met?
             if (!view.HaveShieldedRequirements(tx))
-                return state.DoS(100, error("ConnectBlock(): JoinSplit requirements not met"),
-                                 REJECT_INVALID, "bad-txns-joinsplit-requirements-not-met");
+                return state.DoS(100, error("ConnectBlock(): shielded requirements not met"), REJECT_INVALID, "bad-txns-joinsplit-requirements-not-met");
 
             if (fAddressIndex || fSpentIndex)
             {
@@ -6403,7 +6402,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
     CBlockIndex* pindexFailure = NULL;
     int nGoodTransactions = 0;
     CValidationState state;
-    // No need to verify JoinSplits twice
+    // No need to verify shielded req's twice
     auto verifier = libzcash::ProofVerifier::Disabled();
     //fprintf(stderr,"start VerifyDB %u\n",(uint32_t)time(NULL));
     for (CBlockIndex* pindex = chainActive.Tip(); pindex && pindex->pprev; pindex = pindex->pprev)

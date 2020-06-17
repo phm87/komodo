@@ -1578,6 +1578,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
         else if ( joinsplit.vpub_new != 0 && joinsplit.vpub_old == 0 )
             z_t++;
     }
+
     if ( ASSETCHAINS_PRIVATE != 0 && invalid_private_taddr != 0 )
     {
         static uint32_t counter;
@@ -3657,23 +3658,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             }
         }
 
-        //if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        //    komodo_earned_interest(pindex->GetHeight(),sum);
         CTxUndo undoDummy;
         if (i > 0) {
             blockundo.vtxundo.push_back(CTxUndo());
         }
         UpdateCoins(tx, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->GetHeight());
 
-        /*
-        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-            BOOST_FOREACH(const uint256 &note_commitment, joinsplit.commitments) {
-                // Insert the note commitments into our temporary tree.
-
-                sprout_tree.append(note_commitment);
-            }
-        }
-        */
 
         BOOST_FOREACH(const OutputDescription &outputDescription, tx.vShieldedOutput) {
             sapling_tree.append(outputDescription.cm);

@@ -1719,22 +1719,24 @@ void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
     boost::optional<uint256> rt;
     int i = 0;
     for (SaplingOutPoint note : notes) {
-        fprintf(stderr,"%s: i=%d\n", __func__,i);
+        //fprintf(stderr,"%s: i=%d\n", __func__,i);
         auto noteData   = mapWallet[note.hash].mapSaplingNoteData;
         auto nWitnesses = noteData[note].witnesses.size();
         if (mapWallet.count(note.hash) && noteData.count(note) && nWitnesses > 0) {
             fprintf(stderr,"%s: Found %lu witnesses for note %s\n", __func__, nWitnesses, note.hash.ToString().c_str() );
             witnesses[i] = noteData[note].witnesses.front();
             if (!rt) {
-                fprintf(stderr,"%s: Setting witness root\n",__func__);
+                //fprintf(stderr,"%s: Setting witness root\n",__func__);
                 rt = witnesses[i]->root();
             } else {
                 if(*rt == witnesses[i]->root()) {
                     //fprintf(stderr,"%s: rt=%s\n",__func__,rt.GetHash().ToString().c_str());
                     //fprintf(stderr,"%s: witnesses[%d]->root()=%s\n",__func__,i,witnesses[i]->root().GetHash().ToString().c_str());
                     // Something is fucky
-                    std::string err = std::string("CWallet::GetSaplingNoteWitnesses: Invalid witness root! rt=") + rt.get().ToString();
-                    throw std::logic_error(err);
+                    std::string err = string("CWallet::GetSaplingNoteWitnesses: Invalid witness root! rt=") + rt.get().ToString();
+                    err            += string("\n!= witness[i]->root()=") + witnesses[i]->root().ToString();
+                    //throw std::logic_error(err);
+                    fprintf(stderr,"%s: IGNORING %s\n", __func__,err.c_str());
                 }
 
             }
@@ -1744,6 +1746,7 @@ void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
     // All returned witnesses have the same anchor
     if (rt) {
         final_anchor = *rt;
+        //fprintf(stderr,"%s: final_anchor=%s\n", __func__, rt.get().ToString().c_str() );
     }
 }
 

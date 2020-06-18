@@ -20,7 +20,7 @@
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include "consensus/params.h"
-#include "primitives/nonce.h"
+//#include "primitives/nonce.h"
 #include "komodo_defs.h"
 #include "script/standard.h"
 #include "cc/CCinclude.h"

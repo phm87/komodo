@@ -1,7 +1,5 @@
 // Copyright (c) 2018 The Zcash developers
 // Copyright (c) 2019-2020 The Hush developers
-// Released under the GPLv3
-
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -14,6 +12,7 @@
 #include <boost/variant.hpp>
 #include <boost/optional/optional_io.hpp>
 #include <librustzcash.h>
+#include "zcash/Note.hpp"
 
 SpendDescriptionInfo::SpendDescriptionInfo(
     libzcash::SaplingExpandedSpendingKey expsk,

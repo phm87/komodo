@@ -44,6 +44,7 @@
 #include "zcash/Zcash.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Proof.hpp"
+#include "zcash/Note.hpp"
 
 extern uint32_t ASSETCHAINS_MAGIC;
 extern std::string ASSETCHAINS_SELFIMPORT;

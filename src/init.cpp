@@ -101,7 +101,7 @@ extern int32_t KOMODO_SNAPSHOT_INTERVAL;
 
 extern void komodo_init(int32_t height);
 
-ZCJoinSplit* pzcashParams = NULL;
+//ZCJoinSplit* pzcashParams = NULL;
 
 #ifdef ENABLE_WALLET
 CWallet* pwalletMain = NULL;
@@ -305,8 +305,8 @@ void Shutdown()
     delete pwalletMain;
     pwalletMain = NULL;
 #endif
-    delete pzcashParams;
-    pzcashParams = NULL;
+    //delete pzcashParams;
+    //pzcashParams = NULL;
     globalVerifyHandle.reset();
     ECC_Stop();
     LogPrintf("%s: done\n", __func__);
@@ -399,6 +399,7 @@ std::string HelpMessage(HelpMessageMode mode)
 #ifndef _WIN32
     strUsage += HelpMessageOpt("-pid=<file>", strprintf(_("Specify pid file (default: %s)"), "komodod.pid"));
 #endif
+    strUsage += HelpMessageOpt("-txexpirynotify=<cmd>", _("Execute command when transaction expires (%s in cmd is replaced by transaction id)"));
     strUsage += HelpMessageOpt("-prune=<n>", strprintf(_("Reduce storage requirements by pruning (deleting) old blocks. This mode disables wallet support and is incompatible with -txindex. "
             "Warning: Reverting this setting requires re-downloading the entire blockchain. "
             "(default: 0 = disable pruning blocks, >%u = target size in MiB to use for block files)"), MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024));
@@ -581,7 +582,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-metricsui", _("Set to 1 for a persistent metrics screen, 0 for sequential metrics output (default: 1 if running in a console, 0 otherwise)"));
         strUsage += HelpMessageOpt("-metricsrefreshtime", strprintf(_("Number of seconds between metrics refreshes (default: %u if running in a console, %u otherwise)"), 1, 600));
     }
-    strUsage += HelpMessageGroup(_("Komodo Asset Chain options:"));
+    strUsage += HelpMessageGroup(_("Hush Smart Chain options:"));
     strUsage += HelpMessageOpt("-ac_algo", _("Choose PoW mining algorithm, default is Equihash"));
     strUsage += HelpMessageOpt("-ac_blocktime", _("Block time in seconds, default is 60"));
     strUsage += HelpMessageOpt("-ac_cc", _("Cryptoconditions, default 0"));
@@ -615,6 +616,14 @@ static void BlockNotifyCallback(const uint256& hashNewTip)
     std::string strCmd = GetArg("-blocknotify", "");
 
     boost::replace_all(strCmd, "%s", hashNewTip.GetHex());
+    boost::thread t(runCommand, strCmd); // thread runs free
+}
+
+static void TxExpiryNotifyCallback(const uint256& txid)
+{
+    std::string strCmd = GetArg("-txexpirynotify", "");
+
+    boost::replace_all(strCmd, "%s", txid.GetHex());
     boost::thread t(runCommand, strCmd); // thread runs free
 }
 
@@ -1033,10 +1042,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (mapArgs.count("-developerencryptwallet")) {
 			fprintf(stderr,"%s wallet encryption error\n", __FUNCTION__);
             return InitError(_("Wallet encryption requires -experimentalfeatures."));
-        }
-        else if (mapArgs.count("-paymentdisclosure")) {
-			fprintf(stderr,"%s payment disclosure error\n", __FUNCTION__);
-            return InitError(_("Payment disclosure requires -experimentalfeatures."));
+        //TODO: make this non experimental
         } else if (mapArgs.count("-zmergetoaddress")) {
 			fprintf(stderr,"%s zmerge error\n", __FUNCTION__);
             return InitError(_("RPC method z_mergetoaddress requires -experimentalfeatures."));
@@ -2114,6 +2120,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (mapArgs.count("-blocknotify"))
         uiInterface.NotifyBlockTip.connect(BlockNotifyCallback);
+     if (mapArgs.count("-txexpirynotify"))
+        uiInterface.NotifyTxExpiration.connect(TxExpiryNotifyCallback);
     if ( KOMODO_REWIND >= 0 )
     {
         uiInterface.InitMessage(_("Activating best chain..."));

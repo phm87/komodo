@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -138,7 +139,8 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             while (pindex && pindex != pindexFork) {
                 // Get the Sprout commitment tree as of the start of this block.
                 SproutMerkleTree oldSproutTree;
-                assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, oldSproutTree));
+                //TODO: how important is oldSproutTree  ?
+                //assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, oldSproutTree));
 
                 // Get the Sapling commitment tree as of the start of this block.
                 // We can get this from the `hashFinalSaplingRoot` of the last block

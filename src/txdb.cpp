@@ -67,18 +67,6 @@ CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(Get
 }
 
 
-bool CCoinsViewDB::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
-    if (rt == SproutMerkleTree::empty_root()) {
-        SproutMerkleTree new_tree;
-        tree = new_tree;
-        return true;
-    }
-
-    bool read = db.Read(make_pair(DB_SPROUT_ANCHOR, rt), tree);
-
-    return read;
-}
-
 bool CCoinsViewDB::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
     if (rt == SaplingMerkleTree::empty_root()) {
         SaplingMerkleTree new_tree;

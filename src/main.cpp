@@ -114,6 +114,7 @@ bool fAlerts = DEFAULT_ALERTS;
 /* If the tip is older than this (in seconds), the node is considered to be in initial block download.
  */
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
+bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
 
 unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
@@ -1224,9 +1225,9 @@ bool ContextualCheckTransaction(int32_t slowflag,const CBlock *block, CBlockInde
         if (IsExpiredTx(tx, nHeight)) {
             // Don't increase banscore if the transaction only just expired
             int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? (dosLevel > 10 ? dosLevel : 10) : 0;
-            string strHex = EncodeHexTx(tx);
+            //string strHex = EncodeHexTx(tx);
             //fprintf(stderr, "transaction exipred.%s\n",strHex.c_str());
-            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction %s is expired, expiry block %i vs current block %i\n txhex.%s",tx.GetHash().ToString(),tx.nExpiryHeight,nHeight,strHex), REJECT_INVALID, "tx-overwinter-expired");
+            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction %s is expired, expiry block %i vs current block %i\n",tx.GetHash().ToString(),tx.nExpiryHeight,nHeight), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
 
@@ -1327,7 +1328,7 @@ bool ContextualCheckTransaction(int32_t slowflag,const CBlock *block, CBlockInde
         ))
         {
             librustzcash_sapling_verification_ctx_free(ctx);
-            fprintf(stderr,"%s: Invalid sapling binding sig! tx=%s valueBalance=%li, bindingSig.size=%d\n", __func__, tx.GetHash().ToString().c_str(), tx.valueBalance, tx.bindingSig.size() );
+            fprintf(stderr,"%s: Invalid sapling binding sig! tx=%s valueBalance=%li, bindingSig.size=%li\n", __func__, tx.GetHash().ToString().c_str(), tx.valueBalance, tx.bindingSig.size() );
             return state.DoS(100, error("ContextualCheckTransaction(): Sapling binding signature invalid"),
                                   REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid");
         }
@@ -1367,16 +1368,8 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
 
     if (!CheckTransactionWithoutProofVerification(tiptime,tx, state)) {
         return false;
-    } else {
-        // Ensure that zk-SNARKs v|| y
-        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-            if (!joinsplit.Verify(*pzcashParams, verifier, tx.joinSplitPubKey)) {
-                return state.DoS(100, error("CheckTransaction(): joinsplit does not verify"),
-                                 REJECT_INVALID, "bad-txns-joinsplit-verification-failed");
-            }
-        }
-        return true;
     }
+    return true;
 }
 
 int32_t komodo_isnotaryvout(char *coinaddr,uint32_t tiptime) // from ac_private chains only
@@ -1585,17 +1578,18 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
         else if ( joinsplit.vpub_new != 0 && joinsplit.vpub_old == 0 )
             z_t++;
     }
+
     if ( ASSETCHAINS_PRIVATE != 0 && invalid_private_taddr != 0 )
     {
         static uint32_t counter;
         if ( counter++ < 10 )
             fprintf(stderr,"found taddr in private chain: z_z.%d z_t.%d t_z.%d vinsize.%d\n",z_z,z_t,t_z,(int32_t)tx.vin.size());
         if ( z_t == 0 || z_z != 0 || t_z != 0 || tx.vin.size() != 0 )
-            return state.DoS(100, error("CheckTransaction(): this is a private chain, only sprout -> taddr allowed until deadline"),REJECT_INVALID, "bad-txns-acprivacy-chain");
+            return state.DoS(100, error("CheckTransaction(): this is a private chain, sending to taddrs not allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
     }
     if ( ASSETCHAINS_TXPOW != 0 )
     {
-        // genesis coinbase 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+        // BTC genesis coinbase 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
         uint256 txid = tx.GetHash();
         if ( ((ASSETCHAINS_TXPOW & 2) != 0 && iscoinbase != 0) || ((ASSETCHAINS_TXPOW & 1) != 0 && iscoinbase == 0) )
         {
@@ -1741,6 +1735,23 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, int dosLevel)
 {
     AssertLockHeld(cs_main);
+    const uint32_t z2zTransitionWindow = 10;
+    const uint32_t z2zTransitionStart  = 340000 - z2zTransitionWindow;
+    const uint32_t nHeight             = chainActive.Height();
+
+    // This only applies to HUSH3, other chains can start off z2z via ac_private=1
+    if(ishush3) {
+        if((nHeight >= z2zTransitionStart) || (nHeight <= 340000)) {
+            // During the z2z transition window, only coinbase tx's as part of blocks are allowed
+            // Theory: We want an empty mempool at our fork block height, and the only way to assure that
+            // is to have an empty mempool for a few previous blocks, to take care of potential re-orgs
+            // and edge cases. This empty mempool assures there will be no transactions involving taddrs
+            // stuck in the mempool, when the z2z rule takes effect.
+            // Thanks to jl777 for helping design this
+            fprintf(stderr,"%s: rejecting all tx's during z2z transition window at height=%d\n", __func__,nHeight);
+            return false;
+        }
+    }
     if (pfMissingInputs)
         *pfMissingInputs = false;
     uint32_t tiptime;
@@ -1894,10 +1905,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             }
             
             // are the joinsplit's requirements met?
-            if (!view.HaveJoinSplitRequirements(tx))
+            if (!view.HaveShieldedRequirements(tx))
             {
                 //fprintf(stderr,"accept failure.2\n");
-                return state.Invalid(error("AcceptToMemoryPool: joinsplit requirements not met"),REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
+                return state.Invalid(error("AcceptToMemoryPool: shielded requirements not met"),REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
             }
             
             // Bring the best block into scope
@@ -2718,9 +2729,9 @@ namespace Consensus {
         if (!inputs.HaveInputs(tx))
             return state.Invalid(error("CheckInputs(): %s inputs unavailable", tx.GetHash().ToString()));
 
-        // are the JoinSplit's requirements met?
-        if (!inputs.HaveJoinSplitRequirements(tx))
-            return state.Invalid(error("CheckInputs(): %s JoinSplit requirements not met", tx.GetHash().ToString()));
+        // are the shielded requirements met?
+        if (!inputs.HaveShieldedRequirements(tx))
+            return state.Invalid(error("CheckInputs(): %s shielded requirements not met", tx.GetHash().ToString()));
 
         CAmount nValueIn = 0;
         CAmount nFees = 0;
@@ -3349,6 +3360,18 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         return(false);
     //fprintf(stderr,"connectblock ht.%d\n",(int32_t)pindex->GetHeight());
     AssertLockHeld(cs_main);
+
+    bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+    if(!ASSETCHAINS_PRIVATE && ishush3) {
+        unsigned int nHeight       = pindex->GetHeight();
+        if(nHeight >= 340000) {
+            // At startup, HUSH3 doesn't know a block height yet and so we must wait until
+            // connecting a block
+            fprintf(stderr, "%s: Going full z2z at height %d!\n",__func__,nHeight);
+            ASSETCHAINS_PRIVATE = 1;
+        }
+    }
+
     bool fExpensiveChecks = true;
     if (fCheckpointsEnabled) {
         CBlockIndex *pindexLastCheckpoint = Checkpoints::GetLastCheckpoint(chainparams.Checkpoints());
@@ -3442,7 +3465,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // Before the genesis block, there was an empty tree
             SproutMerkleTree tree;
             pindex->hashSproutAnchor = tree.root();
-            // The genesis block contained no JoinSplits
+            // The genesis block contained no JoinSplits, lulz
             pindex->hashFinalSproutRoot = pindex->hashSproutAnchor;
         }
         return true;
@@ -3501,13 +3524,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     // This should never fail: we should always be able to get the root
     // that is on the tip of our chain
-    assert(view.GetSproutAnchorAt(old_sprout_tree_root, sprout_tree));
+    //assert(view.GetSproutAnchorAt(old_sprout_tree_root, sprout_tree));
 
-    {
+    //{
         // Consistency check: the root of the tree we're given should
         // match what we asked for.
-        assert(sprout_tree.root() == old_sprout_tree_root);
-    }
+        //assert(sprout_tree.root() == old_sprout_tree_root);
+    //}
 
     SaplingMerkleTree sapling_tree;
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
@@ -3535,10 +3558,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
             }
-            // are the JoinSplit's requirements met?
-            if (!view.HaveJoinSplitRequirements(tx))
-                return state.DoS(100, error("ConnectBlock(): JoinSplit requirements not met"),
-                                 REJECT_INVALID, "bad-txns-joinsplit-requirements-not-met");
+            // are the shielded requirements met?
+            if (!view.HaveShieldedRequirements(tx))
+                return state.DoS(100, error("ConnectBlock(): shielded requirements not met"), REJECT_INVALID, "bad-txns-joinsplit-requirements-not-met");
 
             if (fAddressIndex || fSpentIndex)
             {
@@ -3636,21 +3658,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             }
         }
 
-        //if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        //    komodo_earned_interest(pindex->GetHeight(),sum);
         CTxUndo undoDummy;
         if (i > 0) {
             blockundo.vtxundo.push_back(CTxUndo());
         }
         UpdateCoins(tx, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->GetHeight());
 
-        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-            BOOST_FOREACH(const uint256 &note_commitment, joinsplit.commitments) {
-                // Insert the note commitments into our temporary tree.
-
-                sprout_tree.append(note_commitment);
-            }
-        }
 
         BOOST_FOREACH(const OutputDescription &outputDescription, tx.vShieldedOutput) {
             sapling_tree.append(outputDescription.cm);
@@ -3660,7 +3673,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
 
-    view.PushAnchor(sprout_tree);
+    //view.PushAnchor(sprout_tree);
     view.PushAnchor(sapling_tree);
     if (!fJustCheck) {
         pindex->hashFinalSproutRoot = sprout_tree.root();
@@ -4210,7 +4223,11 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     mempool.removeForBlock(pblock->vtx, pindexNew->GetHeight(), txConflicted, !IsInitialBlockDownload());
 
     // Remove transactions that expire at new block height from mempool
-    mempool.removeExpired(pindexNew->GetHeight());
+    auto ids = mempool.removeExpired(pindexNew->GetHeight());
+
+       for (auto id : ids) {
+        uiInterface.NotifyTxExpiration(id);
+    }
 
     // Update chainActive & related variables.
     UpdateTip(pindexNew);
@@ -6089,7 +6106,7 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
     // Create new
     CBlockIndex* pindexNew = new CBlockIndex();
     if (!pindexNew)
-        throw runtime_error("LoadBlockIndex(): new CBlockIndex failed");
+        throw runtime_error("InsertBlockIndex(): new CBlockIndex failed");
     mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
     pindexNew->phashBlock = &((*mi).first);
     //fprintf(stderr,"inserted to block index %s\n",hash.ToString().c_str());
@@ -6306,6 +6323,13 @@ bool static LoadBlockIndexDB()
 
     chainActive.SetTip(it->second);
 
+    // Try to detect if we are z2z based on height of blocks on disk
+    // This helps to set it correctly on startup before a new block is connected
+    if(ishush3 && chainActive.Height() >= 340000) {
+        LogPrintf("%s: enabled ac_private=1 at height=%d\n", __func__, chainActive.Height());
+        ASSETCHAINS_PRIVATE = 1;
+    }
+
     // Set hashFinalSproutRoot for the end of best chain
     it->second->hashFinalSproutRoot = pcoinsTip->GetBestAnchor(SPROUT);
 
@@ -6368,7 +6392,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
     CBlockIndex* pindexFailure = NULL;
     int nGoodTransactions = 0;
     CValidationState state;
-    // No need to verify JoinSplits twice
+    // No need to verify shielded req's twice
     auto verifier = libzcash::ProofVerifier::Disabled();
     //fprintf(stderr,"start VerifyDB %u\n",(uint32_t)time(NULL));
     for (CBlockIndex* pindex = chainActive.Tip(); pindex && pindex->pprev; pindex = pindex->pprev)

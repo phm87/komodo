@@ -38,6 +38,7 @@
 #include "zcbenchmarks.h"
 #include "script/interpreter.h"
 #include "zcash/zip32.h"
+#include "zcash/Note.hpp"
 #include "notaries_staked.h"
 
 #include "utiltime.h"
@@ -70,7 +71,6 @@ using namespace libzcash;
 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern std::string ASSETCHAINS_OVERRIDE_PUBKEY;
-const std::string ADDR_TYPE_SPROUT = "sprout";
 const std::string ADDR_TYPE_SAPLING = "sapling";
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 extern int32_t KOMODO_INSYNC;
@@ -3123,7 +3123,7 @@ UniValue getalldata(const UniValue& params, bool fHelp,const CPubKey&)
       if (wtx.GetDepthInMainChain() < 0)
           continue;
 
-      if (wtx.mapSaplingNoteData.size() == 0 && wtx.mapSproutNoteData.size() == 0 && !wtx.IsTrusted())
+      if (wtx.mapSaplingNoteData.size() == 0 && !wtx.IsTrusted())
           continue;
 
       //Assign Immature
@@ -3309,7 +3309,7 @@ UniValue getalldata(const UniValue& params, bool fHelp,const CPubKey&)
             if (!CheckFinalTx(wtx))
                 continue;
 
-            if (wtx.mapSaplingNoteData.size() == 0 && wtx.mapSproutNoteData.size() == 0 && !wtx.IsTrusted())
+            if (wtx.mapSaplingNoteData.size() == 0 && !wtx.IsTrusted())
                 continue;
 
             //Excude transactions with less confirmations than required
@@ -3787,9 +3787,8 @@ UniValue z_listunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
     UniValue results(UniValue::VARR);
 
     if (zaddrs.size() > 0) {
-        std::vector<CSproutNotePlaintextEntry> sproutEntries;
         std::vector<SaplingNoteEntry> saplingEntries;
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
+        pwalletMain->GetFilteredNotes(saplingEntries, zaddrs, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
         std::set<std::pair<PaymentAddress, uint256>> nullifierSet = pwalletMain->GetNullifiersForAddresses(zaddrs);
 
         for (auto & entry : saplingEntries) {
@@ -4047,10 +4046,9 @@ CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ign
 
 CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspendable=true) {
     CAmount balance = 0;
-    std::vector<CSproutNotePlaintextEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, address, minDepth, true, ignoreUnspendable);
+    pwalletMain->GetFilteredNotes(saplingEntries, address, minDepth, true, ignoreUnspendable);
     for (auto & entry : saplingEntries) {
         balance += CAmount(entry.note.value());
     }
@@ -4102,16 +4100,14 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp, const CPubK
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr.");
     }
 
-    // Visitor to support Sprout and Sapling addrs
     if (!boost::apply_visitor(PaymentAddressBelongsToWallet(pwalletMain), zaddr) &&
         !boost::apply_visitor(IncomingViewingKeyBelongsToWallet(pwalletMain), zaddr)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
     }
 
     UniValue result(UniValue::VARR);
-    std::vector<CSproutNotePlaintextEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, fromaddress, nMinDepth, false, false);
+    pwalletMain->GetFilteredNotes(saplingEntries, fromaddress, nMinDepth, false, false);
 
     std::set<std::pair<PaymentAddress, uint256>> nullifierSet;
     auto hasSpendingKey = boost::apply_visitor(HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr);
@@ -4213,6 +4209,42 @@ UniValue z_getbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
     return ValueFromAmount(nBalance);
 }
 
+UniValue z_getnotescount(const UniValue& params, bool fHelp,const CPubKey& mypk)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_getnotescount\n"
+            "\nArguments:\n"
+            "1. minconf      (numeric, optional, default=1) Only include notes in transactions confirmed at least this many times.\n"
+            "\nReturns the number of sapling notes available in the wallet.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"sapling\"     (numeric) the number of sapling notes in the wallet\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_getnotescount", "0")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    int nMinDepth = 1;
+    if (params.size() > 0)
+        nMinDepth = params[0].get_int();
+
+    int sapling = 0;
+    for (auto& wtx : pwalletMain->mapWallet) {
+        if (wtx.second.GetDepthInMainChain() >= nMinDepth) {
+            sapling += wtx.second.mapSaplingNoteData.size();
+        }
+    }
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("sapling", sapling));
+
+    return ret;
+}
 
 UniValue z_gettotalbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
@@ -4232,7 +4264,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp, const CPubKey& my
             "\nResult:\n"
             "{\n"
             "  \"transparent\": xxxxx,     (numeric) the total balance of transparent funds\n"
-            "  \"private\": xxxxx,         (numeric) the total balance of private funds (in both Sprout and Sapling addresses)\n"
+            "  \"private\": xxxxx,         (numeric) the total balance of private funds\n"
             "  \"total\": xxxxx,           (numeric) the total balance of both transparent and private funds\n"
             "}\n"
             "\nExamples:\n"
@@ -4352,7 +4384,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp, const CPubKey& my
         // Fetch the note that is being spent
         auto res = pwalletMain->mapSaplingNullifiersToNotes.find(spend.nullifier);
         if (res == pwalletMain->mapSaplingNullifiersToNotes.end()) {
-			fprintf(stderr,"Could not find spending note %s", uint256_str(str, spend.nullifier));
+            if(fZdebug) {
+			    fprintf(stderr,"Could not find spending note %s\n", uint256_str(str, spend.nullifier));
+            }
             continue;
         }
         auto op        = res->second;
@@ -4406,8 +4440,10 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp, const CPubKey& my
                 pa = recovered->second;
                 isOutgoing = true;
             } else {
-                // Unreadable
-			    fprintf(stderr,"Could not recover Sapling note!");
+                // Unreadable or unconfirmed?
+                if(fZdebug) {
+			        fprintf(stderr,"Could not recover Sapling note!\n");
+                }
                 continue;
             }
         }
@@ -4610,14 +4646,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key not found.");
         }
 
-        // Remember whether this is a Sprout or Sapling address
+        // Remember whether this is a Sapling address
         fromSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
     }
-    // This logic will need to be updated if we add a new shielded pool
-    bool fromSprout = !(fromTaddr || fromSapling);
-
-    if (fromSprout)
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot send from a Sprout zaddr, only Sapling zaddrs supported.");
 
     UniValue outputs = params[1].get_array();
 
@@ -4627,15 +4658,11 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
     // Keep track of addresses to spot duplicates
     set<std::string> setAddress;
 
-    // Track whether we see any Sprout addresses
-    bool noSproutAddrs = !fromSprout;
-
     // Recipients
     std::vector<SendManyRecipient> taddrRecipients;
     std::vector<SendManyRecipient> zaddrRecipients;
     CAmount nTotalOut = 0;
 
-    bool containsSproutOutput = false;
     bool containsSaplingOutput = false;
 
     for (const UniValue& o : outputs.getValues()) {
@@ -4656,35 +4683,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
             auto res = DecodePaymentAddress(address);
             if (IsValidPaymentAddress(res, branchId)) {
                 isZaddr = true;
-
-                bool toSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
-                bool toSprout = !toSapling;
-                noSproutAddrs = noSproutAddrs && toSapling;
-
-                containsSproutOutput |= toSprout;
-                containsSaplingOutput |= toSapling;
-
-                // Sending to both Sprout and Sapling is currently unsupported using z_sendmany
-                if (containsSproutOutput && containsSaplingOutput) {
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Cannot send to both Sprout and Sapling addresses using z_sendmany");
-                }
-                if ( GetTime() > KOMODO_SAPLING_DEADLINE )
-                {
-                    if ( fromSprout || toSprout )
-                        throw JSONRPCError(RPC_INVALID_PARAMETER,"Sprout usage has expired");
-                }
-                if ( toSapling && ASSETCHAINS_SYMBOL[0] == 0 )
-                    throw JSONRPCError(RPC_INVALID_PARAMETER,"Sprout usage will expire soon");
-
-                // If we are sending from a shielded address, all recipient
-                // shielded addresses must be of the same type.
-                if ((fromSprout && toSapling) || (fromSapling && toSprout)) {
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                                       "Cannot send between Sprout and Sapling addresses using z_sendmany");
-                }
             } else {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
             }
@@ -4875,9 +4873,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     // Builder (used if Sapling addresses are involved)
     boost::optional<TransactionBuilder> builder;
-    if (noSproutAddrs) {
-        builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
-    }
+    builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
 
     // Contextual transaction we will build on
     // (used if no Sapling addresses are involved)
@@ -5140,7 +5136,6 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp, const CPubKey& myp
 #define MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT 10
 #define MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT 90
 
-#define JOINSPLIT_SIZE GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)
 #define OUTPUTDESCRIPTION_SIZE GetSerializeSize(OutputDescription(), SER_NETWORK, PROTOCOL_VERSION)
 #define SPENDDESCRIPTION_SIZE GetSerializeSize(SpendDescription(), SER_NETWORK, PROTOCOL_VERSION)
 
@@ -5150,16 +5145,15 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
         return NullUniValue;
 
     string enableArg = "zmergetoaddress";
-    auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-" + enableArg, true);
-    std::string strDisabledMsg = "";
-    if (!fEnableMergeToAddress) {
-        strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg);
-    }
+    //auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-" + enableArg, true);
+    //std::string strDisabledMsg = "";
+    //if (!fEnableMergeToAddress) {
+    //    strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg);
+    //}
 
     if (fHelp || params.size() < 2 || params.size() > 7)
         throw runtime_error(
             "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
-            + strDisabledMsg +
             "\nMerge multiple UTXOs and notes into a single UTXO or note.  Coinbase UTXOs are ignored; use `z_shieldcoinbase`"
             "\nto combine those into a single note."
             "\n\nThis is an asynchronous operation, and UTXOs selected for merging will be locked.  If there is an error, they"
@@ -5203,20 +5197,15 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
             "  \"opid\": xxx          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("z_mergetoaddress", "'[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"]' ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf")
-            + HelpExampleRpc("z_mergetoaddress", "[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"], \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
+            + HelpExampleCli("z_mergetoaddress", "'[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"]' zs1aW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf")
+            + HelpExampleRpc("z_mergetoaddress", "[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"], \"zs1aW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
         );
-
-    if (!fEnableMergeToAddress) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_mergetoaddress is disabled.");
-    }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     THROW_IF_SYNCING(KOMODO_INSYNC);
 
     bool useAnyUTXO = false;
-    bool useAnySprout = false;
     bool useAnySapling = false;
     std::set<CTxDestination> taddrs = {};
     std::set<libzcash::PaymentAddress> zaddrs = {};
@@ -5237,8 +5226,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
 
         if (address == "ANY_TADDR") {
             useAnyUTXO = true;
-        } else if (address == "ANY_SPROUT") {
-            useAnySprout = true;
         } else if (address == "ANY_SAPLING") {
             useAnySapling = true;
         } else {
@@ -5263,8 +5250,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
     if (useAnyUTXO && taddrs.size() > 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot specify specific t-addrs when using \"ANY_TADDR\"");
     }
-    if ((useAnySprout || useAnySapling) && zaddrs.size() > 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot specify specific z-addrs when using \"ANY_SPROUT\" or \"ANY_SAPLING\"");
+    if ((useAnySapling) && zaddrs.size() > 0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot specify specific z-addrs when using \"ANY_SAPLING\"");
     }
 
     const int nextBlockHeight = chainActive.Height() + 1;
@@ -5273,7 +5260,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
 
     // Validate the destination address
     auto destaddress = params[1].get_str();
-    bool isToSproutZaddr = false;
     bool isToSaplingZaddr = false;
     CTxDestination taddr = DecodeDestination(destaddress);
     if (!IsValidDestination(taddr)) {
@@ -5286,7 +5272,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
                 }
             } else {
-                isToSproutZaddr = true;
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Only Sapling zaddrs allowed!");
             }
         } else {
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
@@ -5311,14 +5297,12 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
         }
     }
 
-    int sproutNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT;
     int saplingNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT;
     if (params.size() > 4) {
         int nNoteLimit = params[4].get_int();
         if (nNoteLimit < 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of notes cannot be negative");
         }
-        sproutNoteLimit = nNoteLimit;
         saplingNoteLimit = nNoteLimit;
     }
 
@@ -5335,7 +5319,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
     std::string memo;
     if (params.size() > 6) {
         memo = params[6].get_str();
-        if (!(isToSproutZaddr || isToSaplingZaddr)) {
+        if (!isToSaplingZaddr) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Memo can not be used with a taddr.  It can only be used with a zaddr.");
         } else if (!IsHex(memo)) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected memo data in hexadecimal format.");
@@ -5349,7 +5333,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
 
     // Prepare to get UTXOs and notes
     std::vector<MergeToAddressInputUTXO> utxoInputs;
-    std::vector<MergeToAddressInputSproutNote> sproutNoteInputs;
     std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs;
     CAmount mergedUTXOValue = 0;
     CAmount mergedNoteValue = 0;
@@ -5363,9 +5346,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
 
     unsigned int max_tx_size = saplingActive ? MAX_TX_SIZE_AFTER_SAPLING : MAX_TX_SIZE_BEFORE_SAPLING;
     size_t estimatedTxSize = 200;  // tx overhead + wiggle room
-    if (isToSproutZaddr) {
-        estimatedTxSize += JOINSPLIT_SIZE;
-    } else if (isToSaplingZaddr) {
+
+    if (isToSaplingZaddr) {
         estimatedTxSize += OUTPUTDESCRIPTION_SIZE;
     }
 
@@ -5423,57 +5405,10 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
         }
     }
 
-    if (useAnySprout || useAnySapling || zaddrs.size() > 0) {
+    if (useAnySapling || zaddrs.size() > 0) {
         // Get available notes
-        std::vector<CSproutNotePlaintextEntry> sproutEntries;
-        //std::vector<SaplingNoteEntry> saplingEntries;
-        //pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs);
-        std::vector<SaplingNoteEntry> saplingEntries,skipsapling;
-        pwalletMain->GetFilteredNotes(sproutEntries, useAnySprout == 0 ? saplingEntries : skipsapling, zaddrs);
-        // If Sapling is not active, do not allow sending from a sapling addresses.
-        if (!saplingActive && saplingEntries.size() > 0) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
-        }
-        // Sending from both Sprout and Sapling is currently unsupported using z_mergetoaddress
-        if (sproutEntries.size() > 0 && saplingEntries.size() > 0) {
-            throw JSONRPCError(
-                               RPC_INVALID_PARAMETER,
-                               "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress");
-        }
-        // If sending between shielded addresses, they must be the same type
-        if ((saplingEntries.size() > 0 && isToSproutZaddr) || (sproutEntries.size() > 0 && isToSaplingZaddr)) {
-            throw JSONRPCError(
-                               RPC_INVALID_PARAMETER,
-                               "Cannot send between Sprout and Sapling addresses using z_mergetoaddress");
-        }
-
-        // Find unspent notes and update estimated size
-        for (const CSproutNotePlaintextEntry& entry : sproutEntries) {
-            noteCounter++;
-            CAmount nValue = entry.plaintext.value();
-
-            if (!maxedOutNotesFlag) {
-                // If we haven't added any notes yet and the merge is to a
-                // z-address, we have already accounted for the first JoinSplit.
-                size_t increase = (sproutNoteInputs.empty() && !isToSproutZaddr) || (sproutNoteInputs.size() % 2 == 0) ? JOINSPLIT_SIZE : 0;
-                if (estimatedTxSize + increase >= max_tx_size ||
-                    (sproutNoteLimit > 0 && noteCounter > sproutNoteLimit))
-                {
-                    maxedOutNotesFlag = true;
-                } else {
-                    estimatedTxSize += increase;
-                    auto zaddr = entry.address;
-                    SproutSpendingKey zkey;
-                    pwalletMain->GetSproutSpendingKey(zaddr, zkey);
-                    sproutNoteInputs.emplace_back(entry.jsop, entry.plaintext.note(zaddr), nValue, zkey);
-                    mergedNoteValue += nValue;
-                }
-            }
-
-            if (maxedOutNotesFlag) {
-                remainingNoteValue += nValue;
-            }
-        }
+        std::vector<SaplingNoteEntry> saplingEntries;
+        pwalletMain->GetFilteredNotes(saplingEntries, zaddrs);
 
         for (const SaplingNoteEntry& entry : saplingEntries) {
             noteCounter++;
@@ -5502,7 +5437,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
     }
 
     size_t numUtxos = utxoInputs.size();
-    size_t numNotes = sproutNoteInputs.size() + saplingNoteInputs.size();
+    size_t numNotes = saplingNoteInputs.size();
 
     //fprintf(stderr, "num utxos.%li\n", numUtxos);
     if (numUtxos < 2 && numNotes == 0) {
@@ -5540,22 +5475,19 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& myp
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
                                                                               Params().GetConsensus(),
                                                                               nextBlockHeight);
-    bool isSproutShielded = sproutNoteInputs.size() > 0 || isToSproutZaddr;
-    if (contextualTx.nVersion == 1 && isSproutShielded) {
-        contextualTx.nVersion = 2; // Tx format should support vjoinsplit
-    }
 
     // Builder (used if Sapling addresses are involved)
     boost::optional<TransactionBuilder> builder;
     if (isToSaplingZaddr || saplingNoteInputs.size() > 0) {
         builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
-    } else 
+    } else {
         contextualTx.nExpiryHeight = 0; // set non z-tx to have no expiry height.
+    }
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(
-                                                 new AsyncRPCOperation_mergetoaddress(builder, contextualTx, utxoInputs, sproutNoteInputs, saplingNoteInputs, recipient, nFee, contextInfo) );
+                                                 new AsyncRPCOperation_mergetoaddress(builder, contextualTx, utxoInputs, saplingNoteInputs, recipient, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
 
@@ -8296,9 +8228,8 @@ extern UniValue z_exportviewingkey(const UniValue& params, bool fHelp, const CPu
 extern UniValue z_importviewingkey(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue z_exportwallet(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue z_importwallet(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue rescan(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
-extern UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp, const CPubKey& mypk); // in rpcdisclosure.cpp
-extern UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
 static const CRPCCommand commands[] =
 { //  category              name                        actor (function)           okSafeMode
@@ -8337,6 +8268,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "listunspent",              &listunspent,              false },
     { "wallet",             "lockunspent",              &lockunspent,              true  },
     { "wallet",             "move",                     &movecmd,                  false },
+    { "wallet",             "rescan",                   &rescan,                   false },
     { "wallet",             "sendfrom",                 &sendfrom,                 false },
     { "wallet",             "sendmany",                 &sendmany,                 false },
     { "wallet",             "sendtoaddress",            &sendtoaddress,            false },
@@ -8368,9 +8300,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_getinfo",                &z_getinfo,                true  },
     { "wallet",             "z_listsentbyaddress",      &z_listsentbyaddress,      true  },
     { "wallet",             "z_listreceivedbyaddress",  &z_listreceivedbyaddress,  true  },
-    // TODO: rearrange into another category
-    { "disclosure",         "z_getpaymentdisclosure",   &z_getpaymentdisclosure,   true  },
-    { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }
+    { "wallet",             "z_getnotescount",          &z_getnotescount,          false }
 };
 
 

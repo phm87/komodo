@@ -95,15 +95,22 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
         // an anchor at height N-10 for each SpendDescription
         // Consider, should notes be sorted?
         pwalletMain->GetFilteredNotes(saplingEntries, "", 11);
+
+        if(saplingEntries.size() == 0) {
+            LogPrint("zrpcunsafe", "%s: Nothing to consolidate, done.\n",opid);
+            return true;
+        }
+
         if (fConsolidationMapUsed) {
             const vector<string>& v = mapMultiArgs["-consolidatesaplingaddress"];
             for(int i = 0; i < v.size(); i++) {
                 auto zAddress = DecodePaymentAddress(v[i]);
                 if (boost::get<libzcash::SaplingPaymentAddress>(&zAddress) != nullptr) {
                     libzcash::SaplingPaymentAddress saplingAddress = boost::get<libzcash::SaplingPaymentAddress>(zAddress);
-                    addresses.insert(saplingAddress );
+                    addresses.insert(saplingAddress);
                 } else {
-                    //TODO: how to handle invalid zaddrs?
+                    LogPrint("zrpcunsafe", "%s: Invalid zaddr, exiting\n", opid);
+                    return false;
                 }
             }
         } else {

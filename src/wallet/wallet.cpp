@@ -1733,8 +1733,7 @@ void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
                     //fprintf(stderr,"%s: rt=%s\n",__func__,rt.GetHash().ToString().c_str());
                     //fprintf(stderr,"%s: witnesses[%d]->root()=%s\n",__func__,i,witnesses[i]->root().GetHash().ToString().c_str());
                     // Something is fucky
-                    std::string err = "CWallet::GetSaplingNoteWitnesses: Invalid witness root! i=";
-                    err += i;
+                    std::string err = "CWallet::GetSaplingNoteWitnesses: Invalid witness root!";
                     throw std::logic_error(err);
                 }
 

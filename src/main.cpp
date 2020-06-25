@@ -3350,6 +3350,8 @@ static int64_t nTimeTotal = 0;
 bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false);
 bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBlockIndex *pindexNew, const CDiskBlockPos& pos);
 
+int32_t nFirstHalvingHeight = 340000;
+
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
     CDiskBlockPos blockPos;
@@ -3362,14 +3364,19 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     AssertLockHeld(cs_main);
 
     bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+
+    // At startup, HUSH3 doesn't know a block height yet and so we must wait until
+    // connecting a block to set our private/blocktime flags, which are height-dependent
     if(!ASSETCHAINS_PRIVATE && ishush3) {
         unsigned int nHeight       = pindex->GetHeight();
-        if(nHeight >= 340000) {
-            // At startup, HUSH3 doesn't know a block height yet and so we must wait until
-            // connecting a block
-            fprintf(stderr, "%s: Going full z2z at height %d!\n",__func__,nHeight);
+        if(nHeight >= nFirstHalvingHeight) {
+            fprintf(stderr, "%s: Going full z2z at height %d!\n",__func__,pindex->GetHeight());
             ASSETCHAINS_PRIVATE = 1;
         }
+    }
+    if (ishush3 && (ASSETCHAINS_BLOCKTIME != 75) && (chainActive.Height() >= nFirstHalvingHeight)) {
+        LogPrintf("%s: Blocktime halving to 75s at height %d!\n",__func__,pindex->GetHeight());
+        ASSETCHAINS_BLOCKTIME = 75;
     }
 
     bool fExpensiveChecks = true;
@@ -3966,6 +3973,13 @@ void static UpdateTip(CBlockIndex *pindexNew) {
     } else {
         int32_t longestchain = komodo_longestchain();
         progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;
+    }
+
+    if(ishush3) {
+        if (ASSETCHAINS_BLOCKTIME != 75 && (chainActive.Height() >= nFirstHalvingHeight)) {
+            LogPrintf("%s: Blocktime halving to 75s at height %d!\n",__func__,chainActive.Height());
+            ASSETCHAINS_BLOCKTIME = 75;
+        }
     }
 
     LogPrintf("%s: new best=%s  height=%d  log2_work=%.8g  tx=%lu  date=%s progress=%f  cache=%.1fMiB(%utx)\n", __func__,

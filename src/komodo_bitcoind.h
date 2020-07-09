@@ -1535,8 +1535,8 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         //fprintf(stderr,"blocktime.%u -> ",blocktime);
         if ( blocktime < prevtime+3 )
             blocktime = prevtime+3;
-        if ( blocktime < GetAdjustedTime()-60 )
-            blocktime = GetAdjustedTime()+30;
+        if ( blocktime < GetTime()-60 )
+            blocktime = GetTime()+30;
         //fprintf(stderr,"blocktime.%u txtime.%u\n",blocktime,txtime);
     }
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )

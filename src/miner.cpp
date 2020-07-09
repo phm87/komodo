@@ -1,8 +1,8 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019      The Hush developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -126,8 +126,8 @@ extern int8_t ASSETCHAINS_ADAPTIVEPOW;
 void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
     if ( ASSETCHAINS_ADAPTIVEPOW <= 0 )
-        pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-    else pblock->nTime = std::max((int64_t)(pindexPrev->nTime+1), GetAdjustedTime());
+        pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetTime());
+    else pblock->nTime = std::max((int64_t)(pindexPrev->nTime+1), GetTime());
 
     // Updating time can change work required on testnet:
     if (ASSETCHAINS_ADAPTIVEPOW > 0 || consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != boost::none)
@@ -239,7 +239,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         bool sapling = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING);
 
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
-        uint32_t proposedTime = GetAdjustedTime();
+        uint32_t proposedTime = GetTime();
         voutsum = GetBlockSubsidy(nHeight,consensusParams) + 10000*COIN; // approx fees
 
         if (proposedTime == nMedianTimePast)
@@ -248,12 +248,12 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             // forward as quickly as possible
             for (int i; i < 100; i++)
             {
-                proposedTime = GetAdjustedTime();
+                proposedTime = GetTime();
                 if (proposedTime == nMedianTimePast)
                     MilliSleep(10);
             }
         }
-        pblock->nTime = GetAdjustedTime();
+        pblock->nTime = GetTime();
         // Now we have the block time + height, we can get the active notaries.
         int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
         if ( ASSETCHAINS_NOTARY_PAY[0] != 0 )
@@ -603,8 +603,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
         if ( ASSETCHAINS_ADAPTIVEPOW <= 0 )
-            blocktime = 1 + std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-        else blocktime = 1 + std::max((int64_t)(pindexPrev->nTime+1), GetAdjustedTime());
+            blocktime = 1 + std::max(pindexPrev->GetMedianTimePast()+1, GetTime());
+        else blocktime = 1 + std::max((int64_t)(pindexPrev->nTime+1), GetTime());
         //pblock->nTime = blocktime + 1;
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
 
@@ -624,8 +624,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         //fprintf(stderr,"mine ht.%d with %.8f\n",nHeight,(double)txNew.vout[0].nValue/COIN);
         txNew.nExpiryHeight = 0;
         if ( ASSETCHAINS_ADAPTIVEPOW <= 0 )
-            txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-        else txNew.nLockTime = std::max((int64_t)(pindexPrev->nTime+1), GetAdjustedTime());
+            txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1, GetTime());
+        else txNew.nLockTime = std::max((int64_t)(pindexPrev->nTime+1), GetTime());
 
 
         if ( ASSETCHAINS_SYMBOL[0] == 0 && IS_KOMODO_NOTARY != 0 && My_notaryid >= 0 )
@@ -1368,10 +1368,10 @@ void static BitcoinMiner()
                           //  MilliSleep(30);
                         return false;
                     }
-                    if ( IS_KOMODO_NOTARY != 0 && B.nTime > GetAdjustedTime() )
+                    if ( IS_KOMODO_NOTARY != 0 && B.nTime > GetTime() )
                     {
-                        //fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
-                        while ( GetAdjustedTime() < B.nTime-2 )
+                        //fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetTime()));
+                        while ( GetTime() < B.nTime-2 )
                         {
                             sleep(1);
                             if ( chainActive.LastTip()->GetHeight() >= Mining_height )

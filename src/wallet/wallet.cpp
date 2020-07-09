@@ -472,12 +472,13 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
                        boost::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added)
 {
     if (added) {
-           // Prevent witness cache building && consolidation transactions
+        bool initialDownloadCheck = IsInitialBlockDownload();
+        // Prevent witness cache building && consolidation transactions
         // from being created when node is syncing after launch,
         // and also when node wakes up from suspension/hibernation and incoming blocks are old.
-        bool initialDownloadCheck = IsInitialBlockDownload();
+        // 144 blocks = 3hrs @ 75s blocktime
         if (!initialDownloadCheck &&
-            pblock->GetBlockTime() > GetAdjustedTime() - 8640) //Last 144 blocks 2.4 * 60 * 60
+            pblock->GetBlockTime() > GetTime() - 144*ASSETCHAINS_BLOCKTIME)
         {
             BuildWitnessCache(pindex, false);
             RunSaplingConsolidation(pindex->GetHeight());
@@ -1373,10 +1374,9 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         bool fInsertedNew = ret.second;
         if (fInsertedNew)
         {
-            wtx.nTimeReceived = GetAdjustedTime();
-            wtx.nOrderPos = IncOrderPosNext(pwalletdb);
-
-            wtx.nTimeSmart = wtx.nTimeReceived;
+            wtx.nTimeReceived = GetTime();
+            wtx.nOrderPos     = IncOrderPosNext(pwalletdb);
+            wtx.nTimeSmart    = wtx.nTimeReceived;
             if (!wtxIn.hashBlock.IsNull())
             {
                 if (mapBlockIndex.count(wtxIn.hashBlock))
@@ -1385,7 +1385,6 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
                     int64_t latestEntry = 0;
                     {
                         // Tolerate times up to the last timestamp in the wallet not more than 5 minutes into the future
-                        // TODO: this is 2 blocktimes, which will become 150?
                         int64_t latestTolerated = latestNow + 300;
                         std::list<CAccountingEntry> acentries;
                         TxItems txOrdered = OrderedTxItems(acentries);

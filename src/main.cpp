@@ -115,6 +115,7 @@ bool fAlerts = DEFAULT_ALERTS;
  */
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+int32_t nFirstHalvingHeight = 340000;
 
 unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
@@ -3227,6 +3228,15 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
     // move best block pointer to prevout block
     view.SetBestBlock(pindex->pprev->GetBlockHash());
 
+    // If disconnecting a block brings us back before our blocktime halving height, go back
+    // to our original blocktime so our DAA has the correct target for that height
+    int nHeight = pindex->pprev->GetHeight();
+    if (ishush3 && (ASSETCHAINS_BLOCKTIME != 150) && (nHeight < nFirstHalvingHeight)) {
+        LogPrintf("%s: Setting blocktime to 150s at height %d!\n",__func__,nHeight);
+        ASSETCHAINS_BLOCKTIME = 150;
+    }
+
+
     if (pfClean) {
         *pfClean = fClean;
         return true;
@@ -3350,7 +3360,6 @@ static int64_t nTimeTotal = 0;
 bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false);
 bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBlockIndex *pindexNew, const CDiskBlockPos& pos);
 
-int32_t nFirstHalvingHeight = 340000;
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {

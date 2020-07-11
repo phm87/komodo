@@ -544,6 +544,14 @@ int32_t MAX_BLOCK_SIZE(int32_t height)
     else return(2000000);
 }
 
+// Change the Hush blocktime at run-time(!)
+void hush_changeblocktime()
+{
+    pCurrentParams->consensus.nMaxFutureBlockTime = 7 * ASSETCHAINS_BLOCKTIME;
+    pCurrentParams->consensus.nPowTargetSpacing = ASSETCHAINS_BLOCKTIME;
+    fprintf(stderr,"HUSH blocktime changing to %d seconds\n",ASSETCHAINS_BLOCKTIME);
+}
+
 void komodo_setactivation(int32_t height)
 {
     pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = height;

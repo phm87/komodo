@@ -3234,6 +3234,8 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
     if (ishush3 && (ASSETCHAINS_BLOCKTIME != 150) && (nHeight < nFirstHalvingHeight)) {
         LogPrintf("%s: Setting blocktime to 150s at height %d!\n",__func__,nHeight);
         ASSETCHAINS_BLOCKTIME = 150;
+        Params.GetConsensus().nMaxFutureBlockTime = 7 * ASSETCHAINS_BLOCKTIME;
+        Params.GetConsensus().nPowTargetSpacing   = ASSETCHAINS_BLOCKTIME;
     }
 
 
@@ -3386,6 +3388,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (ishush3 && (ASSETCHAINS_BLOCKTIME != 75) && (chainActive.Height() >= nFirstHalvingHeight)) {
         LogPrintf("%s: Blocktime halving to 75s at height %d!\n",__func__,pindex->GetHeight());
         ASSETCHAINS_BLOCKTIME = 75;
+        Params.GetConsensus().nMaxFutureBlockTime = 7 * ASSETCHAINS_BLOCKTIME;
+        Params.GetConsensus().nPowTargetSpacing   = ASSETCHAINS_BLOCKTIME;
     }
 
     bool fExpensiveChecks = true;
@@ -3988,6 +3992,8 @@ void static UpdateTip(CBlockIndex *pindexNew) {
         if (ASSETCHAINS_BLOCKTIME != 75 && (chainActive.Height() >= nFirstHalvingHeight)) {
             LogPrintf("%s: Blocktime halving to 75s at height %d!\n",__func__,chainActive.Height());
             ASSETCHAINS_BLOCKTIME = 75;
+            Params.GetConsensus().nMaxFutureBlockTime = 7 * ASSETCHAINS_BLOCKTIME;
+            Params.GetConsensus().nPowTargetSpacing   = ASSETCHAINS_BLOCKTIME;
         }
     }
 

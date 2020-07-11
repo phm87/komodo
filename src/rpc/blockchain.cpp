@@ -2003,8 +2003,9 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
         ret.pushKV("shielding_payments", (int64_t)pindex->nChainShieldingPayments);
 
         int64_t nullifierCount = pwalletMain->NullifierCount();
+        //TODO: this is unreliable, is only a cache or subset of total nullifiers
         ret.pushKV("nullifiers", (int64_t)nullifierCount);
-        ret.pushKV("shielded_pool_size", (int64_t)pindex->nChainShieldedOutputs - nullifierCount);
+        ret.pushKV("shielded_pool_size", (int64_t)(pindex->nChainShieldedOutputs - pindex->nChainShieldedSpends));
         ret.pushKV("shielded_outputs", (int64_t)pindex->nChainShieldedOutputs);
     }
 

@@ -4734,7 +4734,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     CAmount sproutValue       = 0;
     CAmount saplingValue      = 0;
     bool isShieldedTx         = false;
-    unsigned int nShieldedSpends=0,nShieldedOutputs=0,nPayments=0, nShieldedOutputsInBlock=0;
+    unsigned int nShieldedSpends=0,nShieldedSpendsInBlock=0,nShieldedOutputs=0,nPayments=0, nShieldedOutputsInBlock=0;
     unsigned int nShieldedTx=0,nFullyShieldedTx=0,nDeshieldingTx=0,nShieldingTx=0;
     unsigned int nShieldedPayments=0,nFullyShieldedPayments=0,nShieldingPayments=0,nDeshieldingPayments=0;
     unsigned int nNotarizations=0;
@@ -4822,8 +4822,9 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             // No shielded payments, add transparent payments minus a change address
             nPayments +=  tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
         }
-        // To calculate the anonset we must track the sum of zouts in every tx, in every block. -- Duke
+        // To calculate the anonset we must track the sum of spends and zouts in every tx, in every block. -- Duke
         nShieldedOutputsInBlock += nShieldedOutputs;
+        nShieldedSpendsInBlock  += nShieldedSpends;
     }
 
     pindexNew->nSproutValue = sproutValue;
@@ -4840,6 +4841,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         pindexNew->nPayments              = nPayments;
         pindexNew->nShieldedTx            = nShieldedTx;
         pindexNew->nShieldedOutputs       = nShieldedOutputsInBlock;
+        pindexNew->nShieldedSpends        = nShieldedSpendsInBlock;
         pindexNew->nFullyShieldedTx       = nFullyShieldedTx;
         pindexNew->nDeshieldingTx         = nDeshieldingTx;
         pindexNew->nShieldingTx           = nShieldingTx;

@@ -723,6 +723,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nPayments              = diskindex.nPayments;
                 pindexNew->nShieldedTx            = diskindex.nShieldedTx;
                 pindexNew->nShieldedOutputs       = diskindex.nShieldedOutputs;
+                pindexNew->nShieldedSpends        = diskindex.nShieldedSpends;
                 pindexNew->nShieldedPayments      = diskindex.nShieldedPayments;
                 pindexNew->nShieldingTx           = diskindex.nShieldingTx;
                 pindexNew->nShieldingPayments     = diskindex.nShieldingPayments;

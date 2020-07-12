@@ -1,5 +1,3 @@
-rust_packages := rust librustzcash
-
 ifeq ($(build_os),darwin)
 	zcash_packages :=  libgmp libsodium utfcpp
 else

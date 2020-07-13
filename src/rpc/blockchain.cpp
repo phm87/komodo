@@ -1904,6 +1904,7 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
             "  \"nullifiers\": xxxxx,                     (numeric) The total number of shielded nullifiers in the chain up to that point.\n"
             "  \"shielded_txcount\": xxxxx,               (numeric) The total number of shielded (containing a zaddr) transactions in the chain up to that point.\n"
             "  \"shielded_outputs\": xxxxx,               (numeric) The total number of shielded outputs in the chain up to that point.\n"
+            "  \"shielded_spends\": xxxxx,                (numeric) The total number of shielded spends in the chain up to that point.\n"
             "  \"shielded_pool_size\": xxxxx,             (numeric) The total number of unspent shielded outputs, i.e. the Shielded Pool or Anonymity Set (anonset).\n"
             "  \"shielding_txcount\": xxxxx,              (numeric) The total number of shielding (containing a zaddr output) transactions in the chain up to that point.\n"
             "  \"deshielding_txcount\": xxxxx,            (numeric) The total number of deshielding (containing a zaddr input) transactions in the chain up to that point.\n"
@@ -2007,6 +2008,7 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
         ret.pushKV("nullifiers", (int64_t)nullifierCount);
         ret.pushKV("shielded_pool_size", (int64_t)(pindex->nChainShieldedOutputs - pindex->nChainShieldedSpends));
         ret.pushKV("shielded_outputs", (int64_t)pindex->nChainShieldedOutputs);
+        ret.pushKV("shielded_spends", (int64_t)pindex->nChainShieldedSpends);
     }
 
     if (blockcount > 0) {

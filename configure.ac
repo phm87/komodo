@@ -686,7 +686,7 @@ if test x$use_pkgconfig = xyes; then
   )
 else
   # BUG: Fix this:
-  echo 'BUG: configure does not yet check for the following dependencies if pkg-config is not on the system: libcrypto++, libgmp'
+  echo 'BUG: configure does not yet check for the following dependencies if pkg-config is not on the system: libcrypto++, gmp'
 
   AC_CHECK_HEADER([openssl/crypto.h],,AC_MSG_ERROR(libcrypto headers missing))
   AC_CHECK_LIB([crypto],      [main],CRYPTO_LIBS=-lcrypto, AC_MSG_ERROR(libcrypto missing))
@@ -951,7 +951,7 @@ echo "  werror        = $enable_werror"
 echo 
 echo "  target os     = $TARGET_OS"
 echo "  build os      = $BUILD_OS"
-echo 
+echo
 echo "  CC            = $CC"
 echo "  CFLAGS        = $CFLAGS"
 echo "  CPPFLAGS      = $CPPFLAGS"

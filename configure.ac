@@ -941,7 +941,7 @@ case $host in
    ;;
 esac
 
-echo
+echo 
 echo "Options used to compile and link:"
 echo "  with wallet   = $enable_wallet"
 echo "  with zmq      = $use_zmq"

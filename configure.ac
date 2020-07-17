@@ -328,11 +328,11 @@ case $host in
 
 dnl       AC_CHECK_PROG([BREW],brew, brew)
 dnl       if test x$BREW = xbrew; then
-         dnl These Homebrew packages may be keg-only, meaning that they won't be found
-         dnl in expected paths because they may conflict with system files. Ask
-         dnl Homebrew where each one is located, then adjust paths accordingly.
-         dnl It's safe to add these paths even if the functionality is disabled by
-         dnl the user (--without-wallet for example).
+        dnl These Homebrew packages may be keg-only, meaning that they won't be found
+        dnl in expected paths because they may conflict with system files. Ask
+        dnl Homebrew where each one is located, then adjust paths accordingly.
+        dnl It's safe to add these paths even if the functionality is disabled by
+        dnl the user (--without-wallet for example).
 
 dnl         openssl_prefix=`$BREW --prefix openssl 2>/dev/null`
 dnl         bdb_prefix=`$BREW --prefix berkeley-db4 2>/dev/null`
@@ -948,10 +948,10 @@ echo "  with zmq      = $use_zmq"
 echo "  with test     = $use_tests"
 echo "  debug enabled = $enable_debug"
 echo "  werror        = $enable_werror"
-echo
+echo 
 echo "  target os     = $TARGET_OS"
 echo "  build os      = $BUILD_OS"
-echo
+echo 
 echo "  CC            = $CC"
 echo "  CFLAGS        = $CFLAGS"
 echo "  CPPFLAGS      = $CPPFLAGS"
@@ -959,4 +959,4 @@ echo "  CXX           = $CXX"
 echo "  CXXFLAGS      = $CXXFLAGS"
 echo "  LDFLAGS       = $LDFLAGS"
 echo "  ARFLAGS       = $ARFLAGS"
-echo
+echo 

@@ -4734,7 +4734,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     CAmount sproutValue       = 0;
     CAmount saplingValue      = 0;
     bool isShieldedTx         = false;
-    unsigned int nShieldedSpends=0,nShieldedSpendsInBlock=0,nShieldedOutputs=0,nPayments=0, nShieldedOutputsInBlock=0;
+    unsigned int nShieldedSpends=0,nShieldedSpendsInBlock=0,nShieldedOutputs=0,nPayments=0,nShieldedOutputsInBlock=0;
     unsigned int nShieldedTx=0,nFullyShieldedTx=0,nDeshieldingTx=0,nShieldingTx=0;
     unsigned int nShieldedPayments=0,nFullyShieldedPayments=0,nShieldingPayments=0,nDeshieldingPayments=0;
     unsigned int nNotarizations=0;
@@ -4825,6 +4825,9 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         // To calculate the anonset we must track the sum of spends and zouts in every tx, in every block. -- Duke
         nShieldedOutputsInBlock += nShieldedOutputs;
         nShieldedSpendsInBlock  += nShieldedSpends;
+        if (fZdebug) {
+            fprintf(stderr,"%s: tx=%s has zspends=%d zouts=%d\n", __FUNCTION__, tx.GetHash().ToString().c_str(), nShieldedSpendsInBlock, nShieldedOutputsInBlock );
+        }
     }
 
     pindexNew->nSproutValue = sproutValue;
@@ -4864,12 +4867,15 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             queue.pop_front();
             pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
 
+            // Update -zindex stats
             if (fZindex) {
-                if (fZdebug)
-                    fprintf(stderr,"%s: setting blockchain zstats with zouts=%d\n", __FUNCTION__, nShieldedOutputsInBlock );
+                if (fZdebug) {
+                    fprintf(stderr,"%s: setting blockchain zstats with zspends=%d, zouts=%d\n", __FUNCTION__, nShieldedSpendsInBlock, nShieldedOutputsInBlock );
+                }
                 pindex->nChainNotarizations         = (pindex->pprev ? pindex->pprev->nChainNotarizations         : 0) + pindex->nNotarizations;
                 pindex->nChainShieldedTx            = (pindex->pprev ? pindex->pprev->nChainShieldedTx            : 0) + pindex->nShieldedTx;
                 pindex->nChainShieldedOutputs       = (pindex->pprev ? pindex->pprev->nChainShieldedOutputs       : 0) + pindex->nShieldedOutputs;
+                pindex->nChainShieldedSpends        = (pindex->pprev ? pindex->pprev->nChainShieldedSpends        : 0) + pindex->nShieldedSpends;
                 pindex->nChainFullyShieldedTx       = (pindex->pprev ? pindex->pprev->nChainFullyShieldedTx       : 0) + pindex->nFullyShieldedTx;
                 pindex->nChainShieldingTx           = (pindex->pprev ? pindex->pprev->nChainShieldingTx           : 0) + pindex->nShieldingTx;
                 pindex->nChainDeshieldingTx         = (pindex->pprev ? pindex->pprev->nChainDeshieldingTx         : 0) + pindex->nDeshieldingTx;

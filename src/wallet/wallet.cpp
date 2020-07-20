@@ -2439,11 +2439,10 @@ void CWallet::DeleteTransactions(std::vector<uint256> &removeTxs) {
             return;
         }
     }
-#if defined(__unix__) || defined(_WIN64)
-    // Miodrag: release memory back to the OS
+#if defined(__GLIBC__)
     malloc_trim(0);
 #else
-    //TODO: This doesn't work on Mac
+    // On Mac and Win memory isn't kept back upon vector or list member erase, different garbage collector strategy. No need to force trimming.
 #endif
 }
 

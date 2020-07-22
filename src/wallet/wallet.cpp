@@ -49,7 +49,9 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
+#if defined(__GLIBC__)
 #include <malloc.h>
+#endif
 
 using namespace std;
 using namespace libzcash;

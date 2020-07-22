@@ -156,7 +156,9 @@ src/Makefile.in
 doc/man/Makefile.in
 Makefile.in
 src/libcc.so
+src/libcc.dll
 src/cc/customcc.so
+src/cc/customcc.dll
 src/HUSH3_7776
 REGTEST_7776
 src/cc/librogue.so

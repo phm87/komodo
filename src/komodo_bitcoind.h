@@ -20,10 +20,11 @@
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include "consensus/params.h"
-#include "primitives/nonce.h"
+//#include "primitives/nonce.h"
 #include "komodo_defs.h"
 #include "script/standard.h"
 #include "cc/CCinclude.h"
+#include "sietch.h"
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
@@ -70,6 +71,7 @@ int tx_height( const uint256 &hash ){
     uint256 hashBlock;
     if (!GetTransaction(hash, tx, hashBlock, true)) {
         fprintf(stderr,"tx hash %s does not exist!\n", hash.ToString().c_str() );
+        return nHeight;
     }
 
     BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
@@ -78,6 +80,7 @@ int tx_height( const uint256 &hash ){
         //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
     } else {
         // Unconfirmed xtns
+        fprintf(stderr,"tx %s is unconfirmed\n", hash.ToString().c_str() );
         //fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
     }
     return nHeight;
@@ -1532,8 +1535,8 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         //fprintf(stderr,"blocktime.%u -> ",blocktime);
         if ( blocktime < prevtime+3 )
             blocktime = prevtime+3;
-        if ( blocktime < GetAdjustedTime()-60 )
-            blocktime = GetAdjustedTime()+30;
+        if ( blocktime < GetTime()-60 )
+            blocktime = GetTime()+30;
         //fprintf(stderr,"blocktime.%u txtime.%u\n",blocktime,txtime);
     }
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )

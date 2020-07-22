@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright 2019 The Hush developers
+# Copyright 2019-2020 The Hush developers
 # Released under the GPLv3
 use warnings;
 use strict;
@@ -8,6 +8,11 @@ use strict;
 my $block      = shift || die "Usage: $0 123";
 my $hush       = "./src/hush-cli";
 my $blockcount = qx{$hush getblockcount};
+
+unless ($blockcount = int($blockcount)) {
+    print "Invalid response from hush-cli\n";
+    exit 1;
+}
 
 if ($block <= $blockcount) {
 	die "That block has already happened!";

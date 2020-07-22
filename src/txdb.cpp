@@ -67,18 +67,6 @@ CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(Get
 }
 
 
-bool CCoinsViewDB::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
-    if (rt == SproutMerkleTree::empty_root()) {
-        SproutMerkleTree new_tree;
-        tree = new_tree;
-        return true;
-    }
-
-    bool read = db.Read(make_pair(DB_SPROUT_ANCHOR, rt), tree);
-
-    return read;
-}
-
 bool CCoinsViewDB::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
     if (rt == SaplingMerkleTree::empty_root()) {
         SaplingMerkleTree new_tree;
@@ -199,10 +187,10 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         mapCoins.erase(itOld);
     }
 
-    ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry, SproutMerkleTree>(batch, mapSproutAnchors, DB_SPROUT_ANCHOR);
+    //::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry, SproutMerkleTree>(batch, mapSproutAnchors, DB_SPROUT_ANCHOR);
     ::BatchWriteAnchors<CAnchorsSaplingMap, CAnchorsSaplingMap::iterator, CAnchorsSaplingCacheEntry, SaplingMerkleTree>(batch, mapSaplingAnchors, DB_SAPLING_ANCHOR);
 
-    ::BatchWriteNullifiers(batch, mapSproutNullifiers, DB_NULLIFIER);
+    //::BatchWriteNullifiers(batch, mapSproutNullifiers, DB_NULLIFIER);
     ::BatchWriteNullifiers(batch, mapSaplingNullifiers, DB_SAPLING_NULLIFIER);
 
     if (!hashBlock.IsNull())
@@ -735,6 +723,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nPayments              = diskindex.nPayments;
                 pindexNew->nShieldedTx            = diskindex.nShieldedTx;
                 pindexNew->nShieldedOutputs       = diskindex.nShieldedOutputs;
+                pindexNew->nShieldedSpends        = diskindex.nShieldedSpends;
                 pindexNew->nShieldedPayments      = diskindex.nShieldedPayments;
                 pindexNew->nShieldingTx           = diskindex.nShieldingTx;
                 pindexNew->nShieldingPayments     = diskindex.nShieldingPayments;

@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019      The Hush developers
+// Copyright (c) 2019-2020  The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -124,26 +124,6 @@ bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
     return true;
 }
 
-bool CWalletDB::WriteCryptedZKey(const libzcash::SproutPaymentAddress & addr,
-                                 const libzcash::ReceivingKey &rk,
-                                 const std::vector<unsigned char>& vchCryptedSecret,
-                                 const CKeyMetadata &keyMeta)
-{
-    const bool fEraseUnencryptedKey = true;
-    nWalletDBUpdated++;
-
-    if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
-        return false;
-
-    if (!Write(std::make_pair(std::string("czkey"), addr), std::make_pair(rk, vchCryptedSecret), false))
-        return false;
-    if (fEraseUnencryptedKey)
-    {
-        Erase(std::make_pair(std::string("zkey"), addr));
-    }
-    return true;
-}
-
 bool CWalletDB::WriteCryptedSaplingZKey(
     const libzcash::SaplingExtendedFullViewingKey &extfvk,
     const std::vector<unsigned char>& vchCryptedSecret,
@@ -172,16 +152,6 @@ bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
     return Write(std::make_pair(std::string("mkey"), nID), kMasterKey, true);
 }
 
-bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key, const CKeyMetadata &keyMeta)
-{
-    nWalletDBUpdated++;
-
-    if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
-        return false;
-
-    // pair is: tuple_key("zkey", paymentaddress) --> secretkey
-    return Write(std::make_pair(std::string("zkey"), addr), key, false);
-}
 bool CWalletDB::WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
                 const libzcash::SaplingExtendedSpendingKey &key,
                 const CKeyMetadata &keyMeta)
@@ -201,18 +171,6 @@ bool CWalletDB::WriteSaplingPaymentAddress(
     nWalletDBUpdated++;
 
     return Write(std::make_pair(std::string("sapzaddr"), addr), ivk, false);
-}
-
-bool CWalletDB::WriteSproutViewingKey(const libzcash::SproutViewingKey &vk)
-{
-    nWalletDBUpdated++;
-    return Write(std::make_pair(std::string("vkey"), vk), '1');
-}
-
-bool CWalletDB::EraseSproutViewingKey(const libzcash::SproutViewingKey &vk)
-{
-    nWalletDBUpdated++;
-    return Erase(std::make_pair(std::string("vkey"), vk));
 }
 
 bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
@@ -552,6 +510,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "vkey")
         {
+            /*
             libzcash::SproutViewingKey vk;
             ssKey >> vk;
             char fYes;
@@ -559,24 +518,27 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             if (fYes == '1')
                 pwallet->LoadSproutViewingKey(vk);
 
-            // Viewing keys have no birthday information for now,
-            // so set the wallet birthday to the beginning of time.
+             Viewing keys have no birthday information for now,
+             so set the wallet birthday to the beginning of time.
             pwallet->nTimeFirstKey = 1;
+            */
         }
         else if (strType == "zkey")
         {
+            /*
             libzcash::SproutPaymentAddress addr;
             ssKey >> addr;
             libzcash::SproutSpendingKey key;
             ssValue >> key;
 
-            if (!pwallet->LoadZKey(key))
-            {
-                strErr = "Error reading wallet database: LoadZKey failed";
-                return false;
-            }
+            //if (!pwallet->LoadZKey(key))
+            //{
+            //    strErr = "Error reading wallet database: LoadZKey failed";
+            //    return false;
+            //}
 
             wss.nZKeys++;
+            */
         }
         else if (strType == "sapzkey")
         {
@@ -691,6 +653,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "czkey")
         {
+            /*
             libzcash::SproutPaymentAddress addr;
             ssKey >> addr;
             // Deserialization of a pair is just one item after another
@@ -707,6 +670,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 return false;
             }
             wss.fIsEncrypted = true;
+            */
         }
         else if (strType == "csapzkey")
         {
@@ -742,13 +706,15 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "zkeymeta")
         {
+            /*
             libzcash::SproutPaymentAddress addr;
             ssKey >> addr;
             CKeyMetadata keyMeta;
             ssValue >> keyMeta;
             wss.nZKeyMeta++;
+            */
 
-            pwallet->LoadZKeyMetadata(addr, keyMeta);
+            // pwallet->LoadZKeyMetadata(addr, keyMeta);
 
             // ignore earliest key creation time as taddr will exist before any zaddr
         }
@@ -1206,6 +1172,12 @@ bool BackupWallet(const CWallet& wallet, const string& strDest)
         MilliSleep(100);
     }
     return false;
+}
+
+bool CWalletDB::Compact(CDBEnv& dbenv, const std::string& strFile)
+{
+  bool fSuccess = dbenv.Compact(strFile);
+  return fSuccess;
 }
 
 //

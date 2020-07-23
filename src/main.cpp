@@ -3232,6 +3232,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
     // If disconnecting a block brings us back before our blocktime halving height, go back
     // to our original blocktime so our DAA has the correct target for that height
     int nHeight = pindex->pprev->GetHeight();
+    nFirstHalvingHeight = GetArg("-z2zheight",340000);
     if (ishush3 && (ASSETCHAINS_BLOCKTIME != 150) && (nHeight < nFirstHalvingHeight)) {
         LogPrintf("%s: Setting blocktime to 150s at height %d!\n",__func__,nHeight);
         ASSETCHAINS_BLOCKTIME      = 150;
@@ -3378,6 +3379,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     // At startup, HUSH3 doesn't know a block height yet and so we must wait until
     // connecting a block to set our private/blocktime flags, which are height-dependent
+    nFirstHalvingHeight = GetArg("-z2zheight",340000);
     if(!ASSETCHAINS_PRIVATE && ishush3) {
         unsigned int nHeight       = pindex->GetHeight();
         if(nHeight >= nFirstHalvingHeight) {
@@ -3987,6 +3989,7 @@ void static UpdateTip(CBlockIndex *pindexNew) {
         progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;
     }
 
+    nFirstHalvingHeight = GetArg("-z2zheight",340000);
     if(ishush3) {
         if (ASSETCHAINS_BLOCKTIME != 75 && (chainActive.Height() >= nFirstHalvingHeight)) {
             LogPrintf("%s: Blocktime halving to 75s at height %d!\n",__func__,chainActive.Height());

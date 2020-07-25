@@ -72,6 +72,7 @@ using namespace libzcash;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern std::string ASSETCHAINS_OVERRIDE_PUBKEY;
 const std::string ADDR_TYPE_SAPLING = "sapling";
+const std::string ADDR_TYPE_DONOTREMEMBER = "donotremember";
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 extern int32_t KOMODO_INSYNC;
 uint32_t komodo_segid32(char *coinaddr);
@@ -81,6 +82,9 @@ CBlockIndex *komodo_getblockindex(uint256 hash);
 extern string randomSietchZaddr();
 extern CAmount fConsolidationTxFee;
 extern bool fZindex;
+extern string randomSietchZaddr();
+extern SendManyRecipient newSietchRecipient(string zaddr);
+extern string newSietchZaddr();
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
@@ -4735,44 +4739,44 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
    // SIETCH: Sprinkle our cave with some magic privacy zdust
    // End goal is to have this be as large as possible without slowing xtns down too much
    // A value of 7 will provide much stronger linkability privacy versus pre-Sietch operations
-
 	unsigned int DEFAULT_MIN_ZOUTS=7;
 	unsigned int MAX_ZOUTS=25;
 	unsigned int MIN_ZOUTS=GetArg("--sietch-min-zouts", DEFAULT_MIN_ZOUTS);
 
-    if((MIN_ZOUTS<2) || (MIN_ZOUTS>MAX_ZOUTS)) {
-        fprintf(stderr,"%s: Sietch min zouts must be >=2 and <= 25, setting to default value of %d\n", __FUNCTION__, DEFAULT_MIN_ZOUTS );
+    if((MIN_ZOUTS<3) || (MIN_ZOUTS>MAX_ZOUTS)) {
+        fprintf(stderr,"%s: Sietch min zouts must be >=3 and <= 25, setting to default value of %d\n", __FUNCTION__, DEFAULT_MIN_ZOUTS );
         MIN_ZOUTS=DEFAULT_MIN_ZOUTS;
     }
 
+    int nAmount = 0;
+    // Dynamic Sietch zaddrs default to OFF
+    bool fSietchDynamic = GetArg("--sietch-dynamic",0);
 	while (zaddrRecipients.size() < MIN_ZOUTS) {
         // OK, we identify this xtn as needing privacy zdust, we must decide how much, non-deterministically
-		int nAmount = 0;
         int decider = 1 + GetRandInt(100); // random int between 1 and 100
-		string memo = "f600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-
         string zdust1, zdust2;
 
         // Which zaddr we send to is non-deterministically chosen from two zpools...
-        zdust1 = randomSietchZaddr();
+        zdust1 = fSietchDynamic ? newSietchZaddr() : randomSietchZaddr();
 
         // And their ordering when given to internals is also non-deterministic, which
         // helps breaks assumptions blockchain analysts may use from z_sendmany internals
         if (decider % 2) {
-	        zaddrRecipients.insert(std::begin(zaddrRecipients), SendManyRecipient(zdust1, nAmount, memo) );
+	        zaddrRecipients.insert(std::begin(zaddrRecipients), newSietchRecipient(zdust1) );
         } else {
-	        zaddrRecipients.push_back( SendManyRecipient(zdust1, nAmount, memo) );
+	        zaddrRecipients.push_back( newSietchRecipient(zdust1) );
         }
         if(fZdebug)
             fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust1.c_str());
 
         //50% chance of adding another zout
         if (decider % 2) {
-            zdust2 = randomSietchZaddr();
+            zdust2 = fSietchDynamic ? newSietchZaddr() : randomSietchZaddr();
+            // 50% chance of adding it to the front or back since all odd numbers are 1 or 3 mod 4
             if(decider % 4 == 3) {
-                zaddrRecipients.push_back( SendManyRecipient(zdust2, nAmount, memo) );
+                zaddrRecipients.push_back(  newSietchRecipient(zdust2)  );
             } else {
-                zaddrRecipients.insert(std::begin(zaddrRecipients), SendManyRecipient(zdust2, nAmount, memo) );
+                zaddrRecipients.insert(std::begin(zaddrRecipients), newSietchRecipient(zdust2) );
             }
             if(fZdebug)
                 fprintf(stderr,"%s: adding %s as zdust receiver\n", __FUNCTION__, zdust2.c_str());

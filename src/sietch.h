@@ -16,6 +16,27 @@
 #ifndef SIETCH_H
 #define SIETCH_H
 
+string newSietchZaddr() {
+    bool addToWallet = false;
+    auto zaddr = EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey(addToWallet));
+    return zaddr;
+}
+
+SendManyRecipient newSietchRecipient(string zaddr) {
+    int nAmount = 0;
+    // Sietch zouts have random data in their memos so they are indistinguishable from
+    // encrypted data being stored in the memo field
+    char hex[] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
+    // memo field is 512 bytes or 1024 hex chars
+    char str[1024];
+    for(int i=0;i<1024;i++) {
+      str[i] = hex[GetRandInt(16)];
+    }
+    str[1024] = 0;
+    return SendManyRecipient( zaddr, nAmount, string(str) );
+}
+
+
 // The network essentially DoS's these addresses and reduces their privacy slightly
 // by making them public, but in return, the rest of the shielded pool benefits
 // and so it's a large benefit for a small cost.

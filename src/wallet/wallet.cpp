@@ -118,7 +118,7 @@ const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
 
 
 // Generate a new Sapling spending key and return its public payment address
-SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
+SaplingPaymentAddress CWallet::GenerateNewSaplingZKey(bool addToWallet)
 {
     AssertLockHeld(cs_wallet); // mapSaplingZKeyMetadata
 
@@ -159,7 +159,7 @@ SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
     mapSaplingZKeyMetadata[ivk] = metadata;
 
     auto addr = xsk.DefaultAddress();
-    if (!AddSaplingZKey(xsk, addr)) {
+    if (addToWallet && !AddSaplingZKey(xsk, addr)) {
         throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): AddSaplingZKey failed");
     }
     // return default sapling payment address.

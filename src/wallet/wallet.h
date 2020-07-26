@@ -1071,7 +1071,8 @@ public:
       * Sapling ZKeys
       */
     //! Generates new Sapling key
-    libzcash::SaplingPaymentAddress GenerateNewSaplingZKey();
+    // Sietch uses addToWallet=false
+    libzcash::SaplingPaymentAddress GenerateNewSaplingZKey(bool addToWallet=true);
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(
         const libzcash::SaplingExtendedSpendingKey &key,

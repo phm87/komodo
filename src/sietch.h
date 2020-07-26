@@ -32,6 +32,7 @@ SendManyRecipient newSietchRecipient(string zaddr) {
     for(int i=0;i<1024;i++) {
       str[i] = hex[GetRandInt(16)];
     }
+    str[1024] = 0;
     return SendManyRecipient( zaddr, nAmount, string(str) );
 }
 

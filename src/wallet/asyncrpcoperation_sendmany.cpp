@@ -473,14 +473,13 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         // Add Sapling outputs
         for (auto r : z_outputs_) {
             auto address = std::get<0>(r);
-            auto value = std::get<1>(r);
+            auto value   = std::get<1>(r);
             auto hexMemo = std::get<2>(r);
-
-            auto addr = DecodePaymentAddress(address);
+            auto addr    = DecodePaymentAddress(address);
             assert(boost::get<libzcash::SaplingPaymentAddress>(&addr) != nullptr);
             auto to = boost::get<libzcash::SaplingPaymentAddress>(addr);
             if(fZdebug)
-                LogPrintf("%s: Adding Sapling output to address %s\n", __FUNCTION__, to.GetHash().ToString().c_str());
+                LogPrintf("%s: Adding Sapling output to address %s\n", __FUNCTION__, address.c_str());
 
             auto memo = get_memo_from_hex_string(hexMemo);
 

@@ -538,6 +538,8 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing hex data for raw transaction");
     }
     std::string rawtxn = rawtxnValue.get_str();
+    if(fZdebug)
+        LogPrintf("%s: Signing raw txid=%s\n", __FUNCTION__, rawtxn.c_str());
 
     UniValue params = UniValue(UniValue::VARR);
     params.push_back(rawtxn);
@@ -549,12 +551,16 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
         // TODO: #1366 Maybe get "errors" and print array vErrors into a string
         throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Failed to sign transaction");
     }
+    if(fZdebug)
+        LogPrintf("%s: Signed raw txid correctly %s\n", __FUNCTION__);
 
     UniValue hexValue = find_value(signResultObject, "hex");
     if (hexValue.isNull()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing hex data for signed transaction");
     }
     std::string signedtxn = hexValue.get_str();
+    if(fZdebug)
+        LogPrintf("%s: Found hex data\n", __FUNCTION__, rawtxn.c_str());
 
     // Send the signed transaction
     if (!testmode) {
@@ -567,6 +573,8 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
         }
 
         std::string txid = sendResultValue.get_str();
+        if(fZdebug)
+            LogPrintf("%s: sendrawtransction on txid=%s completed\n", __FUNCTION__, txid.c_str());
 
         UniValue o(UniValue::VOBJ);
         o.push_back(Pair("txid", txid));
@@ -596,7 +604,8 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
     std::set<CTxDestination> destinations;
     destinations.insert(fromtaddr_);
 
-    //printf("Looking for %s\n", boost::apply_visitor(AddressVisitorString(), fromtaddr_).c_str());
+    if(fZdebug)
+        LogPrintf("%s: Looking for %s\n", boost::apply_visitor(AddressVisitorString(), fromtaddr_).c_str());
 
     vector<COutput> vecOutputs;
 
@@ -660,6 +669,9 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
 
 bool AsyncRPCOperation_sendmany::find_unspent_notes() {
+    if(fZdebug)
+        LogPrintf("%s: For address %s depth=%d\n", __FUNCTION__, fromaddress_.c_str(), mindepth_);
+
     std::vector<SaplingNoteEntry> saplingEntries;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);

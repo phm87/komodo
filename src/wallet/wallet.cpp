@@ -1648,12 +1648,14 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
 {
     LOCK(cs_SpendingKeyStore);
     uint256 hash = tx.GetHash();
+    uint32_t nZouts = tx.vShieldedOutput.size();
+    LogPrintf("%s: zouts=%d in tx=%s\n",__func__,nZouts, hash.ToString().c_str());
 
     mapSaplingNoteData_t noteData;
     SaplingIncomingViewingKeyMap viewingKeysToAdd;
 
     // Protocol Spec: 4.19 Block Chain Scanning (Sapling)
-    for (uint32_t i = 0; i < tx.vShieldedOutput.size(); ++i) {
+    for (uint32_t i = 0; i < nZouts; ++i) {
         const OutputDescription output = tx.vShieldedOutput[i];
         bool found = false;
         for (auto it = mapSaplingFullViewingKeys.begin(); it != mapSaplingFullViewingKeys.end(); ++it) {
@@ -2407,7 +2409,7 @@ for (map<std::pair<int,int>, CWalletTx*>::iterator it = mapSorted.begin(); it !=
   CWalletDB walletdb(strWalletFile, "r+", false);
   for (map<const uint256, CWalletTx*>::iterator it = mapUpdatedTxs.begin(); it != mapUpdatedTxs.end(); ++it) {
     CWalletTx* pwtx = it->second;
-    LogPrint("deletetx","Reorder Tx - Updating Positon to %i for Tx %s\n ", pwtx->nOrderPos, pwtx->GetHash().ToString());
+    LogPrintf("%s: Updating Positon to %i for Tx %s\n ", __func__, pwtx->nOrderPos, pwtx->GetHash().ToString());
     pwtx->WriteToDisk(&walletdb);
     mapWallet[pwtx->GetHash()].nOrderPos = pwtx->nOrderPos;
   }
@@ -2415,7 +2417,7 @@ for (map<std::pair<int,int>, CWalletTx*>::iterator it = mapSorted.begin(); it !=
   //Update Next Wallet Tx Positon
   nOrderPosNext = previousPosition++;
   CWalletDB(strWalletFile).WriteOrderPosNext(nOrderPosNext);
-  LogPrint("deletetx","Reorder Tx - Total Transactions Reordered %i, Next Position %i\n ", mapUpdatedTxs.size(), nOrderPosNext);
+  LogPrint("%s: Total Transactions Reordered %i, Next Position %i\n ", __func__, mapUpdatedTxs.size(), nOrderPosNext);
 
 }
 
@@ -2430,9 +2432,9 @@ void CWallet::DeleteTransactions(std::vector<uint256> &removeTxs) {
     for (int i = 0; i< removeTxs.size(); i++) {
         if (mapWallet.erase(removeTxs[i])) {
             walletdb.EraseTx(removeTxs[i]);
-            LogPrint("deletetx","Delete Tx - Deleting tx %s, %i.\n", removeTxs[i].ToString(),i);
+            LogPrintf("%s: Deleting tx %s, %i.\n", __func__, removeTxs[i].ToString(),i);
         } else {
-            LogPrint("deletetx","Delete Tx - Deleting tx %failed.\n", removeTxs[i].ToString());
+            LogPrintf("%s: Deleting tx %failed.\n", __func__, removeTxs[i].ToString());
             return;
         }
     }

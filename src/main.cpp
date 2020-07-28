@@ -4873,7 +4873,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             // Update -zindex stats
             if (fZindex) {
                 if (fZdebug) {
-                    fprintf(stderr,"%s: setting blockchain zstats with zspends=%d, zouts=%d\n", __FUNCTION__, nShieldedSpendsInBlock, nShieldedOutputsInBlock );
+                    //fprintf(stderr,"%s: setting blockchain zstats with zspends=%d, zouts=%d\n", __FUNCTION__, nShieldedSpendsInBlock, nShieldedOutputsInBlock );
                 }
                 pindex->nChainNotarizations         = (pindex->pprev ? pindex->pprev->nChainNotarizations         : 0) + pindex->nNotarizations;
                 pindex->nChainShieldedTx            = (pindex->pprev ? pindex->pprev->nChainShieldedTx            : 0) + pindex->nShieldedTx;

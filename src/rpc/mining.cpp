@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019      The Hush developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -1021,8 +1021,8 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp, const CPubKey& mypk
             "1. height         (numeric, optional) The block height.  If not provided, defaults to the current height of the chain.\n"
             "\nResult:\n"
             "{\n"
-            "  \"miner\" : x.xxx           (numeric) The mining reward amount in KMD.\n"
-            "  \"ac_pubkey\" : x.xxx       (numeric) The mining reward amount in KMD.\n"
+            "  \"miner\" : x.xxx           (numeric) The mining reward amount in HUSH.\n"
+            "  \"ac_pubkey\" : x.xxx       (numeric) The mining reward amount in HUSH.\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")

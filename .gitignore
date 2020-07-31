@@ -2,6 +2,7 @@
 *.deb
 src/bitcoin
 src/test/test_bitcoin
+src/core
 
 *zcashTest.pk
 *zcashTest.vk

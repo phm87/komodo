@@ -593,11 +593,11 @@ void *chainparams_commandline()
         pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = ASSETCHAINS_OVERWINTER;
 		// Generated at 1575831755 via hush3 contrib/checkpoints.pl by Duke Leto
         if (strcmp(ASSETCHAINS_SYMBOL,"HUSH3") == 0) {
+                // Generated at 1596199654 via hush3 contrib/checkpoints.pl by Duke Leto
                 checkpointData = //(Checkpoints::CCheckpointData)
                 {
                         boost::assign::map_list_of
                                 (0, pCurrentParams->consensus.hashGenesisBlock)
-                                // Generated at 1596199654 via hush3 contrib/checkpoints.pl by Duke Leto
                                 (5000,     uint256S("0x000000018f8543066baa9c5f83e981749da4cb625fad02c187b4a9c4693ebd60"))
                                 (10000,     uint256S("0x00000002d177d1cbfeaf7c27a2a32766ea9063d222cbcc7623dc08355b07a3ad"))
                                 (15000,     uint256S("0x000000008dbfbd5d5e27d819bf2989c5658c3494608bfa1320ad0b090660cd44"))
@@ -651,14 +651,14 @@ void *chainparams_commandline()
                                 (255000,     uint256S("0x00000000b76f444f3f5258a2d20d2639c0bffebb6ee0217caa56fcd0404337d5"))
                                 (260000,     uint256S("0x00000001f2dc5f292d9ee232d463faf1bc59362b9b3432f5bd1f72ffc76716f8"))
                                 (265000,     uint256S("0x00000003c2dc488c16fc1d73b288065e89bfb9e38dd08cc543867b0b7aa26047"))
-                                (270000,     uint256S("0x000000026cc545eed18b508c3368cd20256c012bfa10f5f115b21ad0101c02cb"))
+                                (270000,     uint256S("0x000000026cc545eed18b508c3368cd20256c012bfa10f5f115b21ad0101c02cb")),
                                 (int64_t)  1596129098, // time of last checkpointed block
                                 (int64_t) 527001,      // total txs
-                                (double)  891,        // txs in the last day before block 270407
+                                (double)  891         // txs in the last day before block 270407
                 };
         } else {
             checkpointData = //(Checkpoints::CCheckpointData)
-                    {
+                   {
                             boost::assign::map_list_of
                             (0, pCurrentParams->consensus.hashGenesisBlock),
                             (int64_t)1231006505,
@@ -669,6 +669,7 @@ void *chainparams_commandline()
     }
 
     pCurrentParams->SetCheckpointData(checkpointData);
+    fprintf(stderr,"%s: Set checkpoint data\n", __func__);
 
     ASSETCHAIN_INIT = 1;
     return(0);

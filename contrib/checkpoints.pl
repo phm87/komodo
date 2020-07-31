@@ -9,7 +9,7 @@ use strict;
 my $perday  = 576;
 my $hush    = "./src/hush-cli";
 my $gethash = "$hush getblockhash";
-my $stride  = shift || 1000;
+my $stride  = shift || 5000;
 my $count   = 0;
 my $blocks  = qx{$hush getblockcount};
 if($?) {

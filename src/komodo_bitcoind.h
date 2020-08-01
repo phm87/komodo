@@ -1254,32 +1254,51 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
 
         if (ishush3) {
-            int32_t starting_commission = 125000000, HALVING1 = 340000,  INTERVAL = 840000, TRANSITION = 129, BR_END = 5422111;
+            // TODO: Calculate new BR_END based on 75s block time!!! 2X old BR_END is a rough estimate, not exact!
+            int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),  INTERVAL = 840000, TRANSITION = 129, BR_END = 2*5422111;
             // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it ourselves.
             // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
             // but to tell the AC params, I need to say "11% of 11.25" is 1.25
             // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
+
+
+            if( height > HALVING1) {
+                // Block time going from 150s to 75s (half) means the interval between halvings
+                // must be twice as often, i.e. 840000*2=1680000
+                // With 150s blocks, we have 210,000 blocks per year
+                // With 75s blocks,  we have 420,000 blocks per year
+                INTERVAL = 1680000;
+            }
+
             // Transition period of 128 blocks has BR=FR=0
             if (height < TRANSITION) {
                 commission = 0;
-            } else if (height < HALVING1) {
+            } else if (height < HALVING1) {               // before 1st Halving @ Block 340000 (Nov 2020)
                 commission = starting_commission;
-            } else if (height < HALVING1+1*INTERVAL) {
+            } else if (height < HALVING1+1*INTERVAL) {    // before 2nd Halving @ Block 2020000
                 commission = starting_commission / 2;
-            } else if (height < HALVING1+2*INTERVAL) {
+            } else if (height < HALVING1+2*INTERVAL) {    // before 3rd Halving @ Block 3700000
                 commission = starting_commission / 4;
-            } else if (height < HALVING1+3*INTERVAL) {
+            } else if (height < HALVING1+3*INTERVAL) {    // before 4th Halving @ Block 5380000
                 commission = starting_commission / 8;
-            } else if (height < HALVING1+4*INTERVAL) {
+            } else if (height < HALVING1+4*INTERVAL) {    // before 5th Halving @ Block 7060000
                 commission = starting_commission / 16;
-            } else if (height < HALVING1+5*INTERVAL) {
+            } else if (height < HALVING1+5*INTERVAL) {    // before 6th Halving @ Block 8740000
                 commission = starting_commission / 32;
-            } else if (height < HALVING1+6*INTERVAL) { // Block 5380000
-                // Block reward will go to zero between 7th+8th halvings, ac_end may need adjusting
+            } else if (height < HALVING1+6*INTERVAL) {    // before 7th Halving @ Block 10420000
                 commission = starting_commission / 64;
-            } else if (height < HALVING1+7*INTERVAL) {
-                // Block reward will be zero before this is ever reached
-                commission = starting_commission / 128; // Block 6220000
+            } else if (height < HALVING1+7*INTERVAL) {    // before 8th Halving @ Block 12100000
+                // Block reward will go to zero between 7th+8th halvings, ac_end may need adjusting
+                commission = starting_commission / 128;
+            } else if (height < HALVING1+8*INTERVAL) {    // before 9th Halving @ Block 13780000
+                // BR should be zero before this halving happens
+                commission = starting_commission / 256;
+            }
+            // Explicitly set the last block reward
+            // BR_END is the block with the last non-zero block reward, which overrides
+            // the -ac_end param on HUSH3
+            if(height > BR_END) {
+                commission = 0;
             }
         }
 

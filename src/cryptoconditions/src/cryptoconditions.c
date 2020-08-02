@@ -17,20 +17,17 @@
 #include "asn/Condition.h"
 #include "asn/Fulfillment.h"
 #include "asn/OCTET_STRING.h"
-#include "cryptoconditions.h"
-#include "src/internal.h"
-#include "src/threshold.c"
-#include "src/prefix.c"
-#include "src/preimage.c"
-#include "src/ed25519.c"
-#include "src/secp256k1.c"
-#include "src/anon.c"
-#include "src/eval.c"
-#include "src/json_rpc.c"
+#include "../include/cryptoconditions.h"
 #include <cJSON.h>
-
-#include <stdlib.h>
-
+#include "internal.h"
+#include "threshold.c"
+#include "prefix.c"
+#include "preimage.c"
+#include "ed25519.c"
+#include "secp256k1.c"
+#include "anon.c"
+#include "eval.c"
+#include "json_rpc.c"
 
 struct CCType *CCTypeRegistry[] = {
     &CC_PreimageType,
@@ -65,8 +62,8 @@ void appendUriSubtypes(uint32_t mask, unsigned char *buf) {
 
 
 char *cc_conditionUri(const CC *cond) {
-    unsigned char *fp = cond->type->fingerprint(cond);
-    if (!fp) return NULL;
+    unsigned char *fp = calloc(1, 32);
+    cond->type->fingerprint(cond, fp);
 
     unsigned char *encoded = base64_encode(fp, 32);
 
@@ -119,13 +116,13 @@ uint32_t fromAsnSubtypes(const ConditionTypes_t types) {
 size_t cc_conditionBinary(const CC *cond, unsigned char *buf) {
     Condition_t *asn = calloc(1, sizeof(Condition_t));
     asnCondition(cond, asn);
+    size_t out = 0;
     asn_enc_rval_t rc = der_encode_to_buffer(&asn_DEF_Condition, asn, buf, 1000);
-    if (rc.encoded == -1) {
-        fprintf(stderr, "CONDITION NOT ENCODED\n");
-        return 0;
-    }
+    if (rc.encoded == -1) goto end;
+    out = rc.encoded;
+end:
     ASN_STRUCT_FREE(asn_DEF_Condition, asn);
-    return rc.encoded;
+    return out;
 }
 
 
@@ -147,10 +144,12 @@ void asnCondition(const CC *cond, Condition_t *asn) {
     // This may look a little weird - we dont have a reference here to the correct
     // union choice for the condition type, so we just assign everything to the threshold
     // type. This works out nicely since the union choices have the same binary interface.
+
     CompoundSha256Condition_t *choice = &asn->choice.thresholdSha256;
     choice->cost = cc_getCost(cond);
-    choice->fingerprint.buf = cond->type->fingerprint(cond);
     choice->fingerprint.size = 32;
+    choice->fingerprint.buf = calloc(1, 32);
+    cond->type->fingerprint(cond, choice->fingerprint.buf);
     choice->subtypes = asnSubtypes(cond->type->getSubtypes(cond));
 }
 
@@ -345,5 +344,3 @@ void cc_free(CC *cond) {
         cond->type->free(cond);
     free(cond);
 }
-
-

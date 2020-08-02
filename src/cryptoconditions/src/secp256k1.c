@@ -29,9 +29,9 @@
 #include "asn/Secp256k1Fulfillment.h"
 #include "asn/Secp256k1FingerprintContents.h"
 #include "asn/OCTET_STRING.h"
-#include "include/cJSON.h"
+//#include <cJSON.h>
 #include "include/secp256k1/include/secp256k1.h"
-#include "cryptoconditions.h"
+//#include "../include/cryptoconditions.h"
 #include "internal.h"
 
 
@@ -88,11 +88,10 @@ void initVerify() {
 }
 
 
-static unsigned char *secp256k1Fingerprint(const CC *cond) {
+static void secp256k1Fingerprint(const CC *cond, uint8_t *out) {
     Secp256k1FingerprintContents_t *fp = calloc(1, sizeof(Secp256k1FingerprintContents_t));
-    //fprintf(stderr,"secpfinger %p %p size %d vs %d\n",fp,cond->publicKey,(int32_t)sizeof(Secp256k1FingerprintContents_t),(int32_t)SECP256K1_PK_SIZE);
     OCTET_STRING_fromBuf(&fp->publicKey, cond->publicKey, SECP256K1_PK_SIZE);
-    return hashFingerprintContents(&asn_DEF_Secp256k1FingerprintContents, fp);
+    hashFingerprintContents(&asn_DEF_Secp256k1FingerprintContents, fp, out);
 }
 
 

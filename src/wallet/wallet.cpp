@@ -3426,7 +3426,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                     if ( KOMODO_EXCHANGEWALLET == 0 )
                     {
                         uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
-                        if ( /*ASSETCHAINS_SYMBOL[0] == 0 &&*/ chainActive.LastTip() != 0 && chainActive.LastTip()->GetHeight() >= 60 )
+                        if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_ACTIVEUSERREWARD == 1 ) && chainActive.LastTip() != 0 && chainActive.LastTip()->GetHeight() >= 60 )
                         {
                             if ( pcoin->vout[i].nValue >= 10*COIN )
                             {
@@ -3929,7 +3929,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     //a chance at a free transaction.
                     //But mempool inputs might still be in the mempool, so their age stays 0
                     //fprintf(stderr,"nCredit %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest/COIN);
-                    if ( KOMODO_EXCHANGEWALLET == 0 /*&& ASSETCHAINS_SYMBOL[0] == 0*/ )
+                    if ( KOMODO_EXCHANGEWALLET == 0 && ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_ACTIVEUSERREWARD == 1 ) )
                     {
                         interest2 += pcoin.first->vout[pcoin.second].interest;
                         //fprintf(stderr,"%.8f ",(double)pcoin.first->vout[pcoin.second].interest/COIN);
@@ -3944,7 +3944,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     //fprintf(stderr,"KOMODO_EXCHANGEWALLET disable interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
                     //interest = 0; // interest2 also
                 //}
-                if ( /*ASSETCHAINS_SYMBOL[0] == 0 &&*/ DONATION_PUBKEY.size() == 66 && interest2 > 5000 )
+                if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_ACTIVEUSERREWARD == 1 ) && DONATION_PUBKEY.size() == 66 && interest2 > 5000 )
                 {
                     CScript scriptDonation = CScript() << ParseHex(DONATION_PUBKEY) << OP_CHECKSIG;
                     CTxOut newTxOut(interest2,scriptDonation);

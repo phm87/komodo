@@ -1693,6 +1693,18 @@ void static BitcoinMiner_noeq()
 int32_t gotinvalid;
 extern int32_t getkmdseason(int32_t height);
 
+CAmount getfeemempool() {
+    CAmount txfeeTotal = 0;
+    LOCK(mempool.cs);
+    UniValue o(UniValue::VOBJ);
+    BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx)
+    {
+        // info.push_back(Pair("fee", ValueFromAmount(e.GetFee())));
+        txfeeTotal += e.GetFee();
+    }
+    return txfeeTotal;
+}
+
 #ifdef ENABLE_WALLET
 void static BitcoinMiner(CWallet *pwallet)
 #else
@@ -1929,6 +1941,9 @@ void static BitcoinMiner()
                 crypto_generichash_blake2b_state state;
                 EhInitialiseState(n, k, state);
                 // Wait for big block
+                while (getfeemempool() < 100000000) {
+                    MilliSleep(1);
+                    }
                 // I = the block header minus nonce and solution.
                 CEquihashInput I{*pblock};
                 CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);

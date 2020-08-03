@@ -1928,6 +1928,7 @@ void static BitcoinMiner()
 
                 crypto_generichash_blake2b_state state;
                 EhInitialiseState(n, k, state);
+                // Wait for big block
                 // I = the block header minus nonce and solution.
                 CEquihashInput I{*pblock};
                 CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);

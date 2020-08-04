@@ -589,6 +589,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-ac_decay", _("Percentage of block reward decrease at each halving"));
     strUsage += HelpMessageOpt("-ac_end", _("Block height at which block rewards will end"));
     strUsage += HelpMessageOpt("-ac_eras", _("Block reward eras"));
+    strUsage += HelpMessageOpt("-ac_easymining", _("Easy mining for 64 keys"));
     strUsage += HelpMessageOpt("-ac_founders", _("Number of blocks between founders reward payouts"));
     strUsage += HelpMessageOpt("-ac_halving", _("Number of blocks between each block reward halving"));
     strUsage += HelpMessageOpt("-ac_name", _("Name of asset chain"));

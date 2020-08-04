@@ -1886,6 +1886,7 @@ void komodo_args(char *argv0)
         ASSETCHAINS_CBOPRET = GetArg("-ac_cbopret",0);
         ASSETCHAINS_CBMATURITY = GetArg("-ac_cbmaturity",0);
         ASSETCHAINS_ADAPTIVEPOW = GetArg("-ac_adaptivepow",0);
+	ASSETCHAINS_EASYMINING = GetArg("-ac_easymining",0);
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {

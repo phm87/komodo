@@ -823,7 +823,7 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
         height = komodo_currentheight() + 1;
         //fprintf(stderr,"set height to %d\n",height);
     }
-    if ( height > 34000 && ASSETCHAINS_SYMBOL[0] == 0 ) // 0 -> non-special notary
+    if ( height > 34000 && ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0) ) // 0 -> non-special notary
     {
         special = komodo_chosennotary(&notaryid,height,pubkey33,tiptime);
         for (i=0; i<33; i++)
@@ -888,7 +888,7 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
         if ( ASSETCHAINS_SYMBOL[0] != 0 || height > 792000 )
         {
             //if ( 0 && height > 792000 )
-            if ( Params().NetworkIDString() != "regtest" )
+            if ( Params().NetworkIDString() != "regtest" ) // ?
             {
                 for (i=31; i>=0; i--)
                     fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);

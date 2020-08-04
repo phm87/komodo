@@ -1703,8 +1703,8 @@ CAmount getfeemempool() {
         txfeeTotal += e.GetFee();
     }
     
-    if (txfeeTotal>0)
-        fprintf(stderr,"mempool fee = %.8f\n",(double)txfeeTotal/COIN);
+    if (txfeeTotal>1)
+        fprintf(stderr,"mempool fee = %.8f for block = %d\n",(double)txfeeTotal/COIN, chainActive.LastTip()->GetHeight()+1);
     
     return txfeeTotal;
 }
@@ -1945,7 +1945,7 @@ void static BitcoinMiner()
                 crypto_generichash_blake2b_state state;
                 EhInitialiseState(n, k, state);
                 // Wait for big block
-                while (getfeemempool() < 100000000) {
+                while (getfeemempool() < 100000000000) {
                     MilliSleep(1);
                     }
                 // I = the block header minus nonce and solution.

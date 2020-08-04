@@ -328,7 +328,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             //if ( KOMODO_VALUETOOBIG(txvalue + voutsum) != 0 ) // has been commented from main.cpp ? 
             //    continue;
             //voutsum += txvalue;
-            if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,0) < 0 )
+            if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) && komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,0) < 0 )
             {
                 fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure txid.%s nHeight.%d nTime.%u vs locktime.%u\n",tx.GetHash().ToString().c_str(),nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
                 continue;
@@ -724,7 +724,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1, GetTime());
         else txNew.nLockTime = std::max((int64_t)(pindexPrev->nTime+1), GetTime());        
 
-        if ( ASSETCHAINS_SYMBOL[0] == 0 && IS_KOMODO_NOTARY != 0 && My_notaryid >= 0 )
+        if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) && IS_KOMODO_NOTARY != 0 && My_notaryid >= 0 )
             txNew.vout[0].nValue += 5000;
         pblock->vtx[0] = txNew;
 
@@ -786,7 +786,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             if (scriptPubKeyIn.IsPayToScriptHash() || scriptPubKeyIn.IsPayToCryptoCondition())
             {
                 fprintf(stderr,"CreateNewBlock: attempt to add timelock to pay2sh or pay2cc\n");
-                if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+                if ( ( ASSETCHAINS_SYMBOL[0] == 0  || ASSETCHAINS_EASYMINING != 0 ) ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
                 {
                     LEAVE_CRITICAL_SECTION(cs_main);
                     LEAVE_CRITICAL_SECTION(mempool.cs);
@@ -812,7 +812,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 if ( totalsats == 0 )
                 {
                     fprintf(stderr, "Could not create notary payment, trying again.\n");
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+                    if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
                     {
                         LEAVE_CRITICAL_SECTION(cs_main);
                         LEAVE_CRITICAL_SECTION(mempool.cs);
@@ -850,14 +850,14 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         pblock->hashFinalSaplingRoot   = sapling_tree.root();
 
         // all Verus PoS chains need this data in the block at all times
-        if ( ASSETCHAINS_LWMAPOS || ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 || KOMODO_MININGTHREADS > 0 )
+        if ( ASSETCHAINS_LWMAPOS || ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) || ASSETCHAINS_STAKED == 0 || KOMODO_MININGTHREADS > 0 )
         {
             UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
             pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         }
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
-        if ( ASSETCHAINS_SYMBOL[0] == 0 && IS_KOMODO_NOTARY != 0 && My_notaryid >= 0 )
+        if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) && IS_KOMODO_NOTARY != 0 && My_notaryid >= 0 )
         {
             uint32_t r; CScript opret; void **ptr=0;
             CMutableTransaction txNotary = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
@@ -895,7 +895,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             else
             {
                 fprintf(stderr,"error adding notaryvin, need to create 0.0001 utxos\n");
-                if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+                if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
                 {
                     LEAVE_CRITICAL_SECTION(cs_main);
                     LEAVE_CRITICAL_SECTION(mempool.cs);
@@ -910,7 +910,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             //fprintf(stderr,"check validity\n");
             if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false)) // invokes CC checks
             {
-                if ( ASSETCHAINS_SYMBOL[0] == 0 || (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+                if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) || (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
                 {
                     LEAVE_CRITICAL_SECTION(cs_main);
                     LEAVE_CRITICAL_SECTION(mempool.cs);
@@ -921,7 +921,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             //fprintf(stderr,"valid\n");
         }
     }
-    if ( ASSETCHAINS_SYMBOL[0] == 0 || (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+    if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) || (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
     {
         LEAVE_CRITICAL_SECTION(cs_main);
         LEAVE_CRITICAL_SECTION(mempool.cs);
@@ -1721,7 +1721,7 @@ void static BitcoinMiner()
         if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
             break;
     }
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) )
         komodo_chosennotary(&notaryid,chainActive.Height()+1,NOTARY_PUBKEY33,(uint32_t)chainActive.Tip()->GetMedianTimePast());
     if ( notaryid != My_notaryid )
         My_notaryid = notaryid;
@@ -1732,7 +1732,7 @@ void static BitcoinMiner()
         solver = "default";
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) )
         fprintf(stderr,"notaryid.%d Mining.%s with %s\n",notaryid,ASSETCHAINS_SYMBOL,solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
@@ -1836,7 +1836,7 @@ void static BitcoinMiner()
                 }
             }
             // We cant increment nonce for proof transactions, as it modifes the coinbase, meaning CreateBlock must be called again to get a new valid proof to pass validation. 
-            if ( (ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 && Mining_height > nDecemberHardforkHeight ) || (ASSETCHAINS_STAKED != 0 && komodo_newStakerActive(Mining_height, pblock->nTime) != 0) ) //December 2019 hardfork
+            if ( (( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) && notaryid >= 0 && Mining_height > nDecemberHardforkHeight ) || (ASSETCHAINS_STAKED != 0 && komodo_newStakerActive(Mining_height, pblock->nTime) != 0) ) //December 2019 hardfork
                 nExtraNonce = 0;
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
             //fprintf(stderr,"Running KomodoMiner.%s with %u transactions in block\n",solver.c_str(),(int32_t)pblock->vtx.size());
@@ -1849,7 +1849,7 @@ void static BitcoinMiner()
             savebits = pblock->nBits;
             HASHTarget = arith_uint256().SetCompact(savebits);
             roundrobin_delay = ROUNDROBIN_DELAY;
-            if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )
+            if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) && notaryid >= 0 )
             {
                 j = 65;
                 if ( (Mining_height >= 235300 && Mining_height < 236000) || (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 || Mining_height > 1000000 )
@@ -2119,7 +2119,7 @@ void static BitcoinMiner()
                     } */
                     if (vNodes.empty() && chainparams.MiningRequiresPeers())
                     {
-                        if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height > ASSETCHAINS_MINHEIGHT )
+                        if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) || Mining_height > ASSETCHAINS_MINHEIGHT )
                         {
                             fprintf(stderr,"no nodes, break\n");
                             break;

@@ -1702,7 +1702,10 @@ CAmount getfeemempool() {
         // info.push_back(Pair("fee", ValueFromAmount(e.GetFee())));
         txfeeTotal += e.GetFee();
     }
-    fprintf(stderr,"mempool fee = %.8f\n",(double)txfeeTotal/COIN);
+    
+    if (txfeeTotal>0)
+        fprintf(stderr,"mempool fee = %.8f\n",(double)txfeeTotal/COIN);
+    
     return txfeeTotal;
 }
 

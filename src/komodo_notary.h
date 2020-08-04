@@ -94,14 +94,14 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
     
     if ( timestamp == 0 && ASSETCHAINS_SYMBOL[0] != 0 )
         timestamp = komodo_heightstamp(height);
-    else if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    else if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) )
         timestamp = 0;
 
     // If this chain is not a staked chain, use the normal Komodo logic to determine notaries. This allows KMD to still sync and use its proper pubkeys for dPoW.
     if ( is_STAKED(ASSETCHAINS_SYMBOL) == 0 )
     {
         int32_t kmd_season = 0;
-        if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_EASYMINING != 0 ) )
         {
             // This is KMD, use block heights to determine the KMD notary season.. 
             if ( height >= KOMODO_NOTARIES_HARDCODED )

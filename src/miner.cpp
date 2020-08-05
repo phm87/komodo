@@ -1703,7 +1703,7 @@ CAmount getfeemempool() {
         txfeeTotal += e.GetFee();
     }
     
-    if (txfeeTotal>1)
+    if (txfeeTotal>1000000)
         fprintf(stderr,"mempool fee = %.8f for block = %d\n",(double)txfeeTotal/COIN, chainActive.LastTip()->GetHeight()+1);
     
     return txfeeTotal;

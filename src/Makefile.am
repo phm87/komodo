@@ -1,3 +1,5 @@
+# Copyright 2019-2020 The Hush developers
+
 DIST_SUBDIRS = secp256k1 univalue cryptoconditions
 
 AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS) $(SAN_LDFLAGS) $(HARDENED_LDFLAGS)
@@ -181,14 +183,11 @@ BITCOIN_CORE_H = \
   netbase.h \
   notaries_staked.h \
   noui.h \
-  paymentdisclosure.h \
-  paymentdisclosuredb.h \
   policy/fees.h \
   pow.h \
   prevector.h \
   primitives/block.h \
   primitives/transaction.h \
-  primitives/nonce.h \
   protocol.h \
   pubkey.h \
   random.h \
@@ -303,8 +302,6 @@ libbitcoin_server_a_SOURCES = \
   notaries_staked.cpp \
   noui.cpp \
   notarisationdb.cpp \
-  paymentdisclosure.cpp \
-  paymentdisclosuredb.cpp \
   policy/fees.cpp \
   pow.cpp \
   rest.cpp \
@@ -343,12 +340,10 @@ libbitcoin_proton_a_SOURCES = \
   amqp/amqppublishnotifier.cpp
 endif
 
-# wallet: zcashd, but only linked when wallet enabled
+# wallet: komodod, but only linked when wallet enabled
 libbitcoin_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_wallet_a_SOURCES = \
-  utiltest.cpp \
-  utiltest.h \
   zcbenchmarks.cpp \
   zcbenchmarks.h \
   wallet/asyncrpcoperation_mergetoaddress.cpp \
@@ -357,10 +352,8 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/asyncrpcoperation_shieldcoinbase.cpp \
   wallet/crypter.cpp \
   wallet/db.cpp \
-  paymentdisclosure.cpp \
-  paymentdisclosuredb.cpp \
+  zcash/Note.cpp \
   transaction_builder.cpp \
-  wallet/rpcdisclosure.cpp \
   wallet/rpcdump.cpp \
   cc/CCtokens.cpp \
   cc/CCassetsCore.cpp \
@@ -436,7 +429,6 @@ libbitcoin_common_a_SOURCES = \
   metrics.cpp \
   primitives/block.cpp \
   primitives/transaction.cpp \
-  primitives/nonce.cpp \
   protocol.cpp \
   pubkey.cpp \
   scheduler.cpp \
@@ -496,7 +488,7 @@ libbitcoin_cli_a_SOURCES = \
 nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
 #
 
-# bitcoind binary #
+# komodod binary #
 komodod_SOURCES = bitcoind.cpp
 komodod_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 komodod_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -555,7 +547,7 @@ if TARGET_DARWIN
 komodod_LDFLAGS += -static-libgcc
 endif
 
-# bitcoin-cli binary #
+# komodo-cli binary #
 komodo_cli_SOURCES = bitcoin-cli.cpp
 komodo_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
 komodo_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -603,7 +595,7 @@ wallet_utility_LDADD = \
   $(LIBCRYPTOCONDITIONS)
 endif
 
-# zcash-tx binary #
+# komodo-tx binary #
 komodo_tx_SOURCES = komodo-tx.cpp
 komodo_tx_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 komodo_tx_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -613,7 +605,6 @@ if TARGET_WINDOWS
 komodo_tx_SOURCES += bitcoin-tx-res.rc
 endif
 
-# FIXME: Is libzcash needed for hush-tx ?
 komodo_tx_LDADD = \
   $(LIBUNIVALUE) \
   $(LIBBITCOIN_COMMON) \
@@ -625,7 +616,6 @@ komodo_tx_LDADD = \
   $(LIBCRYPTOCONDITIONS)
 
 komodo_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
-#
 
 # zcash protocol primitives #
 libzcash_a_SOURCES = \
@@ -661,7 +651,6 @@ libzcashconsensus_la_SOURCES = \
   crypto/sha512.cpp \
   hash.cpp \
   primitives/transaction.cpp \
-  primitives/nonce.cpp \
   pubkey.cpp \
   script/zcashconsensus.cpp \
   script/interpreter.cpp \

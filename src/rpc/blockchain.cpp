@@ -1668,9 +1668,10 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp, const CPubKey& my
     obj.push_back(Pair("chainwork",             chainActive.LastTip()->chainPower.chainWork.GetHex()));
     obj.push_back(Pair("pruned",                fPruneMode));
 
-    SproutMerkleTree tree;
-    pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), tree);
-    obj.push_back(Pair("commitments",           static_cast<uint64_t>(tree.size())));
+    //SproutMerkleTree tree;
+    //pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), tree);
+    //obj.push_back(Pair("commitments",           static_cast<uint64_t>(tree.size())));
+    obj.push_back(Pair("commitments",           0));
 
     CBlockIndex* tip = chainActive.LastTip();
     UniValue valuePools(UniValue::VARR);

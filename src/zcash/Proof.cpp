@@ -1,3 +1,5 @@
+// Copyright (c) 2019-2020 The Hush developers
+
 #include "Proof.hpp"
 
 #include "crypto/common.h"

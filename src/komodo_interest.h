@@ -107,9 +107,9 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
 {
     int32_t minutes,exception; uint64_t interestnew,numerator,denominator,interest = 0; uint32_t activation;
     activation = 1491350400;  // 1491350400 5th April
-    if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_ACTIVEUSERREWARD == 0 )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_ACTIVEUSERREWARD[0] == 0 )
         return(0);
-    if ( txheight >= KOMODO_ENDOFERA && ASSETCHAINS_ACTIVEUSERREWARD == 0 )
+    if ( txheight >= KOMODO_ENDOFERA && ASSETCHAINS_ACTIVEUSERREWARD[0] == 0 )
         return(0);
     if ( nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= 10*COIN ) //komodo_moneysupply(txheight) < MAX_MONEY && 
     {

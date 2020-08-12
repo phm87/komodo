@@ -15,6 +15,7 @@
 #include <cstring>
 #include <exception>
 #include <functional>
+#include <stdexcept>
 #include <memory>
 #include <set>
 #include <vector>

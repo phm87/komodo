@@ -1270,7 +1270,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
 {
     dispflag = 1;
     if ( KOMODO_REWIND == 0 && ((ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD) 
-                                || (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 && (int64_t)tx.nLockTime >= ASSETCHAINS_ACTIVEUSERREWARD[3] )) //1473793441 )
+                                || (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 && (int64_t)tx.nLockTime >= ASSETCHAINS_ACTIVEUSERREWARD[3] ))) //1473793441 )
     {
         if ( txheight > 246748 ) // to adapt?
         {

@@ -3453,11 +3453,13 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                                     (*ptr) = 0;
                                 }
                             }
+                            /*
                             else
                             {
                                 ptr = (uint64_t *)&pcoin->vout[i].interest;
                                 (*ptr) = 0;
                             }
+                            */
                         }
                         else
                         {

@@ -1886,7 +1886,7 @@ void komodo_args(char *argv0)
         ASSETCHAINS_CBOPRET = GetArg("-ac_cbopret",0);
         ASSETCHAINS_CBMATURITY = GetArg("-ac_cbmaturity",0);
         ASSETCHAINS_ADAPTIVEPOW = GetArg("-ac_adaptivepow",0);
-        Split(GetArg("-ac_aur",""), sizeof(ASSETCHAINS_ACTIVEUSERREWARD)/sizeof(*ASSETCHAINS_ACTIVEUSERREWARD), ASSETCHAINS_ACTIVEUSERREWARD, (uint64_t) 0);
+        Split(GetArg("-ac_aur",""), sizeof(ASSETCHAINS_ACTIVEUSERREWARD)/sizeof(*ASSETCHAINS_ACTIVEUSERREWARD), ASSETCHAINS_ACTIVEUSERREWARD, 0);
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {

@@ -201,4 +201,10 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
     }
     return(interest);
 }
-
+/*
+bool is_mm2_address(CTxDestination address)
+//        if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+    
+    return false;
+)
+*/

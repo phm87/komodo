@@ -787,7 +787,7 @@ void ThreadUpdateKomodoInternals() {
 
             boost::this_thread::interruption_point();
 
-            if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            if ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_ACTIVEUSERREWARD[0] == 1)
                 {
                     if ( KOMODO_NSPV_FULLNODE ) {
                         auto start = std::chrono::high_resolution_clock::now();

@@ -593,6 +593,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-ac_halving", _("Number of blocks between each block reward halving"));
     strUsage += HelpMessageOpt("-ac_name", _("Name of asset chain"));
     strUsage += HelpMessageOpt("-ac_notarypay", _("Pay notaries, default 0"));
+    strUsage += HelpMessageOpt("-ac_paytxtoaddy", _("Pay when coins are sent to an address, default 0"));
     strUsage += HelpMessageOpt("-ac_perc", _("Percentage of block rewards paid to the founder"));
     strUsage += HelpMessageOpt("-ac_private", _("Shielded transactions only (except coinbase + notaries), default is 0"));
     strUsage += HelpMessageOpt("-ac_pubkey", _("Public key for receiving payments on the network"));

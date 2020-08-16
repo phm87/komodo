@@ -1769,6 +1769,7 @@ void komodo_args(char *argv0)
     ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
     KOMODO_SNAPSHOT_INTERVAL = GetArg("-ac_snapshot",0);
     Split(GetArg("-ac_nk",""), sizeof(ASSETCHAINS_NK)/sizeof(*ASSETCHAINS_NK), ASSETCHAINS_NK, 0);
+    Split(GetArg("-ac_aur",""), sizeof(ASSETCHAINS_ACTIVEUSERREWARD)/sizeof(*ASSETCHAINS_ACTIVEUSERREWARD), ASSETCHAINS_ACTIVEUSERREWARD, 0);
     
     // -ac_ccactivateht=evalcode,height,evalcode,height,evalcode,height....
     Split(GetArg("-ac_ccactivateht",""), sizeof(ccEnablesHeight)/sizeof(*ccEnablesHeight), ccEnablesHeight, 0);
@@ -1826,7 +1827,35 @@ void komodo_args(char *argv0)
         {
             printf("ASSETCHAINS_ALGO, %s not supported. using equihash\n", selectedAlgo.c_str());
         }
-
+        if (ASSETCHAINS_ACTIVEUSERREWARD[0] != 0 && ASSETCHAINS_ACTIVEUSERREWARD[0] != 1)
+        {
+            printf("ASSETCHAINS_ACTIVEUSERREWARD[0], %d not supported. Accepted values: 0 (disable) and 1 (enable)\n", ASSETCHAINS_ACTIVEUSERREWARD[0]);
+	    exit(0);
+        }
+	if (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1)
+        {
+	    if (ASSETCHAINS_ACTIVEUSERREWARD[1] <= 0 || ASSETCHAINS_ACTIVEUSERREWARD[1] > 1000000000) // activationHeight (60000 on KMD)
+	    {
+	        printf("ASSETCHAINS_ACTIVEUSERREWARD[1], %d not supported. Accepted values are > 1 and < 1000000000\n", ASSETCHAINS_ACTIVEUSERREWARD[1]);
+	        exit(0);
+	    }
+	    if (ASSETCHAINS_ACTIVEUSERREWARD[2] <= 0 || ASSETCHAINS_ACTIVEUSERREWARD[2] > 1000000000) // TODO: link with max(data types used)
+	    {
+	        printf("ASSETCHAINS_ACTIVEUSERREWARD[2], %d not supported. Accepted values are > 1 and < 1000000000\n", ASSETCHAINS_ACTIVEUSERREWARD[2]);
+	        exit(0);
+	    }
+	    if (ASSETCHAINS_ACTIVEUSERREWARD[3] <= 0 || ASSETCHAINS_ACTIVEUSERREWARD[3] > 5000000000) // LOCKTIME_THRESHOLD (500 000 000), TODO: link with max datatype
+	    {
+	        printf("ASSETCHAINS_ACTIVEUSERREWARD[3], %d not supported. Accepted values are > 0 and < 5000000000\n", ASSETCHAINS_ACTIVEUSERREWARD[3]);
+	        exit(0);
+	    }
+	    if (ASSETCHAINS_ACTIVEUSERREWARD[4] <= 0 || ASSETCHAINS_ACTIVEUSERREWARD[4] > 1000000) // percentage (5), TODO: link with max datatype
+	    {
+	        printf("ASSETCHAINS_ACTIVEUSERREWARD[4], %d not supported. Accepted values are > 0 and < 1000000\n", ASSETCHAINS_ACTIVEUSERREWARD[4]);
+	        exit(0);
+	    }
+        }
+	    
         ASSETCHAINS_LASTERA = GetArg("-ac_eras", 1);
         if ( ASSETCHAINS_LASTERA < 1 || ASSETCHAINS_LASTERA > ASSETCHAINS_MAX_ERAS )
         {
@@ -1886,7 +1915,6 @@ void komodo_args(char *argv0)
         ASSETCHAINS_CBOPRET = GetArg("-ac_cbopret",0);
         ASSETCHAINS_CBMATURITY = GetArg("-ac_cbmaturity",0);
         ASSETCHAINS_ADAPTIVEPOW = GetArg("-ac_adaptivepow",0);
-        Split(GetArg("-ac_aur",""), sizeof(ASSETCHAINS_ACTIVEUSERREWARD)/sizeof(*ASSETCHAINS_ACTIVEUSERREWARD), ASSETCHAINS_ACTIVEUSERREWARD, 0);
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
@@ -2226,7 +2254,7 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
                 extraptr[extralen++] = ASSETCHAINS_ADAPTIVEPOW;
 	    if (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1)
 	    {
-                for ( int i = 0; i <= 5; i++ )
+                for ( int i = 0; i <= 4; i++ )
 		{
 		    extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_ACTIVEUSERREWARD[i]),(void *)&ASSETCHAINS_ACTIVEUSERREWARD[i]);
 		}					

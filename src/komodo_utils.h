@@ -1836,12 +1836,12 @@ void komodo_args(char *argv0)
         {
 	    if (ASSETCHAINS_ACTIVEUSERREWARD[1] <= 0 || ASSETCHAINS_ACTIVEUSERREWARD[1] > 1000000000) // activationHeight (60000 on KMD)
 	    {
-	        printf("ASSETCHAINS_ACTIVEUSERREWARD[1], %"PRId64" not supported. Accepted values are > 1 and < 1000000000\n", ASSETCHAINS_ACTIVEUSERREWARD[1]);
+	        printf("ASSETCHAINS_ACTIVEUSERREWARD[1], %"PRId64" not supported. Accepted values are > 0 and < 1000000000\n", ASSETCHAINS_ACTIVEUSERREWARD[1]);
 	        exit(0);
 	    }
 	    if (ASSETCHAINS_ACTIVEUSERREWARD[2] <= 0 || ASSETCHAINS_ACTIVEUSERREWARD[2] > 1000000000) // TODO: link with max(data types used)
 	    {
-	        printf("ASSETCHAINS_ACTIVEUSERREWARD[2], %"PRId64" not supported. Accepted values are > 1 and < 1000000000\n", ASSETCHAINS_ACTIVEUSERREWARD[2]);
+	        printf("ASSETCHAINS_ACTIVEUSERREWARD[2], %"PRId64" not supported. Accepted values are > 0 and < 1000000000\n", ASSETCHAINS_ACTIVEUSERREWARD[2]);
 	        exit(0);
 	    }
 	    if (ASSETCHAINS_ACTIVEUSERREWARD[3] <= 0 || ASSETCHAINS_ACTIVEUSERREWARD[3] > 5000000000) // LOCKTIME_THRESHOLD (500 000 000), TODO: link with max datatype

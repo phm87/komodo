@@ -1236,10 +1236,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
 uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
-    static bool didinit = false,ishush3 = false;
-    // LABS fungible chains, cannot have any block reward!
-    if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
-        return(0);
+    static bool didinit = false, ishush3 = false;
 
     if (!didinit) {
         ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;

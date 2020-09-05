@@ -2416,9 +2416,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
         else if ( nHeight < 2*KOMODO_ENDOFERA )
             return(2 * COIN);
         else return(COIN);
-    }
-    else
-    {
+    } else {
         return(komodo_ac_block_subsidy(nHeight));
     }
 }

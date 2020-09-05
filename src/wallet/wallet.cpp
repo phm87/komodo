@@ -59,6 +59,7 @@ using namespace libzcash;
 /**
  * Settings
  */
+const char * DEFAULT_WALLET_DAT = "wallet.dat";
 CFeeRate payTxFee(DEFAULT_TRANSACTION_FEE);
 CAmount maxTxFee = DEFAULT_TRANSACTION_MAXFEE;
 unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;

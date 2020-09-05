@@ -1250,14 +1250,23 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
 
+        // Do not change this code unless you really know what you are doing.
+        // Here Be Dragons! -- Duke Leto
         if (ishush3) {
             // TODO: Calculate new BR_END based on 75s block time!!! 2X old BR_END is a rough estimate, not exact!
             int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),  INTERVAL = 840000, TRANSITION = 129, BR_END = 2*5422111;
+            // TODO: how many halvings will we have given new 75s blocktime?
+            int32_t commisions[] = {starting_commision, 3125000000, 1562500000, 781250000, 390625000,
+                                    195312500, 97656250, 48828125, // these are exact
+                                    24414062, 12207031, 6103515 // these have deviation from ideal BR
+                                    // Just like BTC, BRs in the far future will be slightly less than
+                                    // they should be because exact values are not integers, causing
+                                    // slightly less coins to be actually mined
+            };
             // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it ourselves.
             // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
             // but to tell the AC params, I need to say "11% of 11.25" is 1.25
             // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
-
 
             if( height > HALVING1) {
                 // Block time going from 150s to 75s (half) means the interval between halvings
@@ -1271,25 +1280,25 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             if (height < TRANSITION) {
                 commission = 0;
             } else if (height < HALVING1) {               // before 1st Halving @ Block 340000 (Nov 2020)
-                commission = starting_commission;
+                commission = commisions[0];
             } else if (height < HALVING1+1*INTERVAL) {    // before 2nd Halving @ Block 2020000
-                commission = starting_commission / 2;
+                commission = commisions[1];
             } else if (height < HALVING1+2*INTERVAL) {    // before 3rd Halving @ Block 3700000
-                commission = starting_commission / 4;
+                commission = commisions[2];
             } else if (height < HALVING1+3*INTERVAL) {    // before 4th Halving @ Block 5380000
-                commission = starting_commission / 8;
+                commission =  commisions[3];
             } else if (height < HALVING1+4*INTERVAL) {    // before 5th Halving @ Block 7060000
-                commission = starting_commission / 16;
+                commission =  commisions[4];
             } else if (height < HALVING1+5*INTERVAL) {    // before 6th Halving @ Block 8740000
-                commission = starting_commission / 32;
+                commission = commisions[5];
             } else if (height < HALVING1+6*INTERVAL) {    // before 7th Halving @ Block 10420000
-                commission = starting_commission / 64;
+                commission = commisions[6];
             } else if (height < HALVING1+7*INTERVAL) {    // before 8th Halving @ Block 12100000
-                // Block reward will go to zero between 7th+8th halvings, ac_end may need adjusting
-                commission = starting_commission / 128;
+                // TODO: Still true??? Block reward will go to zero between 7th+8th halvings, ac_end may need adjusting
+                commission = commisions[7];
             } else if (height < HALVING1+8*INTERVAL) {    // before 9th Halving @ Block 13780000
                 // BR should be zero before this halving happens
-                commission = starting_commission / 256;
+                commission = commisions[8];
             }
             // Explicitly set the last block reward
             // BR_END is the block with the last non-zero block reward, which overrides

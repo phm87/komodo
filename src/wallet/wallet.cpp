@@ -668,6 +668,23 @@ void CWallet::Flush(bool shutdown)
 
 bool CWallet::Verify(const string& walletFile, string& warningString, string& errorString)
 {
+    LogPrintf("Using wallet %s\n", walletFile);
+    uiInterface.InitMessage(_("Verifying wallet..."));
+
+    if (walletFile != boost::filesystem::basename(walletFile) + boost::filesystem::extension(walletFile)) {
+        boost::filesystem::path path(walletFile);
+        if (path.is_absolute()) {
+            if (!boost::filesystem::exists(path.parent_path())) {
+                return UIError(strprintf(_("Absolute path %s does not exist!"), walletFile));
+            }
+        } else {
+            boost::filesystem::path full_path = GetDataDir() / path;
+            if (!boost::filesystem::exists(full_path.parent_path())) {
+                return UIError(strprintf(_("Relative path %s does not exist!"), walletFile));
+            }
+        }
+    }
+
     if (!bitdb.Open(GetDataDir()))
     {
         // try moving the database env out of the way

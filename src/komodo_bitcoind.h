@@ -1258,7 +1258,8 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         // Here Be Dragons! -- Duke Leto
         if (ishush3) {
             // TODO: Calculate new BR_END based on 75s block time!!! 2X old BR_END is a rough estimate, not exact!
-            int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),  INTERVAL = 840000, TRANSITION = 129, BR_END = 2*5422111;
+            int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),
+                INTERVAL = GetArg("-ac_halving1",840000), TRANSITION = 129, BR_END = 2*5422111;
             // TODO: how many halvings will we have given new 75s blocktime?
             int32_t commisions[] = {starting_commission, 312500000, 156250000, 78125000, 39062500, 19531250, 9765625, // these are exact
                                     4882812, 2441406, 1220703, 610351 // these have deviation from ideal BR
@@ -1276,7 +1277,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
                 // must be twice as often, i.e. 840000*2=1680000
                 // With 150s blocks, we have 210,000 blocks per year
                 // With 75s blocks,  we have 420,000 blocks per year
-                INTERVAL = 1680000;
+                INTERVAL = GetArg("-ac_halving2",1680000);
             }
 
             // Transition period of 128 blocks has BR=FR=0

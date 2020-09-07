@@ -676,12 +676,14 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
         boost::filesystem::path path(walletFile);
         if (path.is_absolute()) {
             if (!boost::filesystem::exists(path.parent_path())) {
-                return UIError(strprintf(_("Absolute path %s does not exist!"), walletFile));
+                LogPrintf("Absolute path %s does not exist!", walletFile);
+                return false;
             }
         } else {
             boost::filesystem::path full_path = GetDataDir() / path;
             if (!boost::filesystem::exists(full_path.parent_path())) {
-                return UIError(strprintf(_("Relative path %s does not exist!"), walletFile));
+                LogPrintf("Relative path %s does not exist!", walletFile);
+                return false;
             }
         }
     }

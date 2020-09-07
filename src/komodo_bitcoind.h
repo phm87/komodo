@@ -1234,6 +1234,10 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
+// This function defines the Hush Founders Reward (AKA Dev Tax)
+// 10% of all block rewards go towards Hush core team
+// If you do not like this, you are encouraged to fork the chain
+// or start your own Hush Smart Chain: https://github.com/myhush/hush-smart-chains
 uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
     static bool didinit = false, ishush3 = false;
@@ -1256,9 +1260,8 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             // TODO: Calculate new BR_END based on 75s block time!!! 2X old BR_END is a rough estimate, not exact!
             int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),  INTERVAL = 840000, TRANSITION = 129, BR_END = 2*5422111;
             // TODO: how many halvings will we have given new 75s blocktime?
-            int32_t commisions[] = {starting_commision, 3125000000, 1562500000, 781250000, 390625000,
-                                    195312500, 97656250, 48828125, // these are exact
-                                    24414062, 12207031, 6103515 // these have deviation from ideal BR
+            int32_t commisions[] = {starting_commission, 312500000, 156250000, 78125000, 39062500, 19531250, 9765625, // these are exact
+                                    4882812, 2441406, 1220703, 610351 // these have deviation from ideal BR
                                     // Just like BTC, BRs in the far future will be slightly less than
                                     // they should be because exact values are not integers, causing
                                     // slightly less coins to be actually mined

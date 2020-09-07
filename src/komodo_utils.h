@@ -1634,6 +1634,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
     return(subsidy);
 }
 
+extern bool ishush3;
 extern int64_t MAX_MONEY;
 void komodo_cbopretupdate(int32_t forceflag);
 void SplitStr(const std::string& strVal, std::vector<std::string> &outVals);
@@ -1810,8 +1811,21 @@ void komodo_args(char *argv0)
         }
 
         Split(GetArg("-ac_end",""), sizeof(ASSETCHAINS_ENDSUBSIDY)/sizeof(*ASSETCHAINS_ENDSUBSIDY),  ASSETCHAINS_ENDSUBSIDY, 0);
-        Split(GetArg("-ac_reward",""), sizeof(ASSETCHAINS_REWARD)/sizeof(*ASSETCHAINS_REWARD),  ASSETCHAINS_REWARD, 0);
         Split(GetArg("-ac_halving",""), sizeof(ASSETCHAINS_HALVING)/sizeof(*ASSETCHAINS_HALVING),  ASSETCHAINS_HALVING, 0);
+        Split(GetArg("-ac_reward",""), sizeof(ASSETCHAINS_REWARD)/sizeof(*ASSETCHAINS_REWARD),  ASSETCHAINS_REWARD, 0);
+        if(ishush3) {
+            // Over-ride HUSH3 values from CLI params. Changing our blocktime to 75s changes things
+            ASSETCHAINS_REWARD[0]  = 0;
+            ASSETCHAINS_REWARD[1]  = 1125000000;
+            ASSETCHAINS_REWARD[2]  = 281250000; // 2.8125  HUSH goes to miners per block after 1st halving at Block 340K
+            ASSETCHAINS_REWARD[3]  = 140625000; // 1.40625 HUSH after 2nd halving at Block 2020000
+            ASSETCHAINS_HALVING[0] = 129;
+            ASSETCHAINS_HALVING[1] = GetArg("-z2zheight",340000);
+            ASSETCHAINS_HALVING[2] = 2020000; // 2020000 = 340000 + 1680000 (old halving interval plus new halving interval)
+            ASSETCHAINS_HALVING[3] = 3700000; // ASSETCHAINS_HALVING[2] + 1680000;
+            // TODO: fill in all possible values for each halving/reward interval
+            // based on simple halving schedule
+        }
         Split(GetArg("-ac_decay",""), sizeof(ASSETCHAINS_DECAY)/sizeof(*ASSETCHAINS_DECAY),  ASSETCHAINS_DECAY, 0);
         Split(GetArg("-ac_notarypay",""), sizeof(ASSETCHAINS_NOTARY_PAY)/sizeof(*ASSETCHAINS_NOTARY_PAY),  ASSETCHAINS_NOTARY_PAY, 0);
 

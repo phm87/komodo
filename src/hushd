@@ -28,10 +28,9 @@ HALVING=129,340000,840000
 PERC=11111111
 END=128,340000,5422111
 
-# 6250000 - (sprout pool at block 500,000)
+# 6250000 - (Sprout pool at block 500,000)
 SUPPLY=6178674
 FOUNDERS=1
-# NOTE: komodo_bitcoind.h decides these values
 CLIENTNAME=GoldenSandtrout
 NODE1=188.165.212.101 # EU
 NODE2=64.120.113.130  # AR
@@ -40,6 +39,10 @@ NODE4=94.130.35.94    # EU
 CCLIB=hush3
 
 # CryptoConditions/Custom Consensus params
+# CCs will effectively be turned off at Block 340K
+# since transparent outputs will not be allowed, except
+# for mining and dpow. CCs can be used on Hush Smart
+# Chains that do not define ac_private=1
 FAUCET=228
 HEIR=234
 CHANNEL=235
@@ -59,7 +62,6 @@ else
 		exit 1
     fi
 fi
-
 
 $KMD -ac_name=$NAME           \
      -ac_sapling=$SAPLING     \

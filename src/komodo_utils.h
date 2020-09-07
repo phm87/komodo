@@ -1821,7 +1821,7 @@ void komodo_args(char *argv0)
             ASSETCHAINS_REWARD[3]  = 140625000; // 1.40625 HUSH after 2nd halving at Block 2020000
             ASSETCHAINS_HALVING[0] = 129;
             ASSETCHAINS_HALVING[1] = GetArg("-z2zheight",340000);
-            ASSETCHAINS_HALVING[2] = 2020000; // 2020000 = 340000 + 1680000 (old halving interval plus new halving interval)
+            ASSETCHAINS_HALVING[2] = 2020000; // 2020000 = 340000 + 1680000 (1st halving block plus new halving interval)
             ASSETCHAINS_HALVING[3] = 3700000; // ASSETCHAINS_HALVING[2] + 1680000;
             // TODO: fill in all possible values for each halving/reward interval
             // based on simple halving schedule

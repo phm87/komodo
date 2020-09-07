@@ -1634,7 +1634,6 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
     return(subsidy);
 }
 
-extern bool ishush3;
 extern int64_t MAX_MONEY;
 void komodo_cbopretupdate(int32_t forceflag);
 void SplitStr(const std::string& strVal, std::vector<std::string> &outVals);
@@ -1813,6 +1812,9 @@ void komodo_args(char *argv0)
         Split(GetArg("-ac_end",""), sizeof(ASSETCHAINS_ENDSUBSIDY)/sizeof(*ASSETCHAINS_ENDSUBSIDY),  ASSETCHAINS_ENDSUBSIDY, 0);
         Split(GetArg("-ac_halving",""), sizeof(ASSETCHAINS_HALVING)/sizeof(*ASSETCHAINS_HALVING),  ASSETCHAINS_HALVING, 0);
         Split(GetArg("-ac_reward",""), sizeof(ASSETCHAINS_REWARD)/sizeof(*ASSETCHAINS_REWARD),  ASSETCHAINS_REWARD, 0);
+
+        bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+
         if(ishush3) {
             // Over-ride HUSH3 values from CLI params. Changing our blocktime to 75s changes things
             ASSETCHAINS_REWARD[0]  = 0;

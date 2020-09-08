@@ -1841,11 +1841,11 @@ void komodo_args(char *argv0)
             ASSETCHAINS_REWARD[0]     = 0;
             ASSETCHAINS_REWARD[1]     = 1125000000;
             ASSETCHAINS_REWARD[2]     = 281250000; // 2.8125  HUSH goes to miners per block after 1st halving at Block 340K
-            //ASSETCHAINS_REWARD[3]     = 140625000; // 1.40625 HUSH after 2nd halving at Block 2020000
+            ASSETCHAINS_REWARD[3]     = 140625000; // 1.40625 HUSH after 2nd halving at Block 2020000
             ASSETCHAINS_HALVING[0]    = 129;
             ASSETCHAINS_HALVING[1]    = GetArg("-z2zheight",340000);
             ASSETCHAINS_HALVING[2]    = 2020000; // 2020000 = 340000 + 1680000 (1st halving block plus new halving interval)
-            //ASSETCHAINS_HALVING[3]    = 3700000; // ASSETCHAINS_HALVING[2] + 1680000;
+            ASSETCHAINS_HALVING[3]    = 3700000; // ASSETCHAINS_HALVING[2] + 1680000;
             ASSETCHAINS_ENDSUBSIDY[0] = 129;
             ASSETCHAINS_ENDSUBSIDY[1] = GetArg("-z2zheight",340000);
             ASSETCHAINS_ENDSUBSIDY[2] = 2*5422111; // TODO: Fix this, twice the previous end of rewards is an estimate

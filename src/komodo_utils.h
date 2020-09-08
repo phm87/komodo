@@ -1618,15 +1618,13 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
             if ( nHeight == 1 )
                 subsidy += (ASSETCHAINS_SUPPLY % 1000000000)*COIN + magicExtra;
         }
-    }
-    else if ( nHeight == 1 )
-    {
+    } else if ( nHeight == 1 ) {
         if ( ASSETCHAINS_LASTERA == 0 )
             subsidy = ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
         else
             subsidy += ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
     }
-    fprintf(stderr,"%s: ht.%d curEra.%d subsidy.%ld numhalvings.%d\n",__func__,nHeight,curEra,subsidy,numhalvings);
+    fprintf(stderr,"%s: ht.%d curEra.%d lastEra.%d subsidy.%ld numhalvings.%d\n",__func__,nHeight,curEra,ASSETCHAINS_LASTERA,subsidy,numhalvings);
     return(subsidy);
 }
 
@@ -1794,6 +1792,7 @@ void komodo_args(char *argv0)
             printf("ASSETCHAINS_LASTERA, if specified, must be between 1 and %u. ASSETCHAINS_LASTERA set to %lu\n", ASSETCHAINS_MAX_ERAS, ASSETCHAINS_LASTERA);
         }
         ASSETCHAINS_LASTERA -= 1;
+        fprintf(stderr,"%s: lastEra=%d maxEras=%d\n", ASSETCHAINS_LASTERA, ASSETCHAINS_MAX_ERAS);
 
         ASSETCHAINS_TIMELOCKGTE = (uint64_t)GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
         ASSETCHAINS_TIMEUNLOCKFROM = GetArg("-ac_timeunlockfrom", 0);
@@ -1801,7 +1800,7 @@ void komodo_args(char *argv0)
         if ( ASSETCHAINS_TIMEUNLOCKFROM > ASSETCHAINS_TIMEUNLOCKTO )
         {
             printf("ASSETCHAINS_TIMELOCKGTE - must specify valid ac_timeunlockfrom and ac_timeunlockto\n");
-            ASSETCHAINS_TIMELOCKGTE = _ASSETCHAINS_TIMELOCKOFF;
+            ASSETCHAINS_TIMELOCKGTE    = _ASSETCHAINS_TIMELOCKOFF;
             ASSETCHAINS_TIMEUNLOCKFROM = ASSETCHAINS_TIMEUNLOCKTO = 0;
         }
 

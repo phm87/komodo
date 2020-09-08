@@ -1261,7 +1261,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),
                 INTERVAL = GetArg("-ac_halving1",840000), TRANSITION = 129, BR_END = 2*5422111;
             // TODO: how many halvings will we have given new 75s blocktime?
-            int32_t commisions[] = {starting_commission, 312500000, 156250000, 78125000, 39062500, 19531250, 9765625, // these are exact
+            int32_t commisions[] = {starting_commission, 31250000, 15625000, 78125000, 39062500, 19531250, 9765625, // these are exact
                                     4882812, 2441406, 1220703, 610351 // these have deviation from ideal BR
                                     // Just like BTC, BRs in the far future will be slightly less than
                                     // they should be because exact values are not integers, causing

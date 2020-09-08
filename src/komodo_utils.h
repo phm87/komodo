@@ -1548,10 +1548,9 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
     static uint64_t cached_subsidy; static int32_t cached_numhalvings; static int cached_era;
 
     // check for backwards compat, older chains with no explicit rewards had 0.0001 block reward
-    if ( ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] == 0 )
+    if ( ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] == 0 ) {
         subsidy = 10000;
-    else if ( (ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] != 0) || ASSETCHAINS_ENDSUBSIDY[0] != 0 )
-    {
+    } else if ( (ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] != 0) || ASSETCHAINS_ENDSUBSIDY[0] != 0 ) {
         // if we have an end block in the first era, find our current era
         if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 )
         {
@@ -1571,16 +1570,14 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
                 {
                     if ( (numhalvings = ((nHeight - nStart) / ASSETCHAINS_HALVING[curEra])) > 0 )
                     {
-                        if ( ASSETCHAINS_DECAY[curEra] == 0 )
+                        if ( ASSETCHAINS_DECAY[curEra] == 0 ) {
                             subsidy >>= numhalvings;
-                        else if ( ASSETCHAINS_DECAY[curEra] == 100000000 && ASSETCHAINS_ENDSUBSIDY[curEra] != 0 )
-                        {
+                            fprintf(stderr,"%s: no decay, numhalvings.%d curEra.%d subsidy.%ld\n",__func__, numhalvings, curEra, subsidy);
+                        } else if ( ASSETCHAINS_DECAY[curEra] == 100000000 && ASSETCHAINS_ENDSUBSIDY[curEra] != 0 ) {
                             if ( curEra == ASSETCHAINS_LASTERA )
                             {
                                 subsidyDifference = subsidy;
-                            }
-                            else
-                            {
+                            } else {
                                 // Ex: -ac_eras=3 -ac_reward=0,384,24 -ac_end=1440,260640,0 -ac_halving=1,1440,2103840 -ac_decay 100000000,97750000,0
                                 subsidyDifference = subsidy - ASSETCHAINS_REWARD[curEra + 1];
                                 if (subsidyDifference < 0)
@@ -1592,13 +1589,10 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
                             denominator = ASSETCHAINS_ENDSUBSIDY[curEra] - nStart;
                             numerator = denominator - ((ASSETCHAINS_ENDSUBSIDY[curEra] - nHeight) + ((nHeight - nStart) % ASSETCHAINS_HALVING[curEra]));
                             subsidy = subsidy - sign * ((subsidyDifference * numerator) / denominator);
-                        }
-                        else
-                        {
-                            if ( cached_subsidy > 0 && cached_era == curEra && cached_numhalvings == numhalvings )
+                        } else {
+                            if ( cached_subsidy > 0 && cached_era == curEra && cached_numhalvings == numhalvings ) {
                                 subsidy = cached_subsidy;
-                            else
-                            {
+                            } else {
                                 for (int i=0; i < numhalvings && subsidy != 0; i++)
                                     subsidy = (subsidy * ASSETCHAINS_DECAY[curEra]) / 100000000;
                                 cached_subsidy = subsidy;
@@ -1614,6 +1608,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
     uint32_t magicExtra = ASSETCHAINS_STAKED ? ASSETCHAINS_MAGIC : (ASSETCHAINS_MAGIC & 0xffffff);
     if ( ASSETCHAINS_SUPPLY > 10000000000 ) // over 10 billion?
     {
+        fprintf(stderr,"%s: Detected supply over 10 billion, danger zone!\n",__func__);
         if ( nHeight <= ASSETCHAINS_SUPPLY/1000000000 )
         {
             subsidy += (uint64_t)1000000000 * COIN;
@@ -1628,9 +1623,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         else
             subsidy += ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
     }
-    else if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
-        return(0);
-    // LABS fungible chains, cannot have any block reward!
+    fprintf(stderr,"%s: ht.%d curEra.%d subsidy.%ld numhalvings.%d\n",__func__,nHeight,curEra,subsidy,numhalvings);
     return(subsidy);
 }
 

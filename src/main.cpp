@@ -2406,19 +2406,10 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW)
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
+    fprintf(stderr,"%s: ht.%d\n", __func__, nHeight);
     int32_t numhalvings,i; uint64_t numerator; CAmount nSubsidy = 3 * COIN;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
-    {
-        if ( nHeight == 1 )
-            return(100000000 * COIN); // ICO allocation
-        else if ( nHeight < KOMODO_ENDOFERA )
-            return(3 * COIN);
-        else if ( nHeight < 2*KOMODO_ENDOFERA )
-            return(2 * COIN);
-        else return(COIN);
-    } else {
-        return(komodo_ac_block_subsidy(nHeight));
-    }
+
+    return komodo_ac_block_subsidy(nHeight);
 }
 
 bool IsInitialBlockDownload()

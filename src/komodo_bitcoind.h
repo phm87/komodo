@@ -1240,18 +1240,20 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 // or start your own Hush Smart Chain: https://github.com/myhush/hush-smart-chains
 uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
+    fprintf(stderr,"%s at height=%d\n",__func__,height);
     static bool didinit = false, ishush3 = false;
 
     if (!didinit) {
         ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
         didinit = true;
+        fprintf(stderr,"%s: didinit ishush3=%d\n", __func__, ishush3);
     }
 
     int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
-        //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
+        fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
 
         // Do not change this code unless you really know what you are doing.
@@ -1997,6 +1999,7 @@ void GetKomodoEarlytxidScriptPub()
 
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
 {
+    fprintf(stderr,"%s at height=%d\n",__func__,height);
     int64_t checktoshis=0; uint8_t *script,scripthex[8192]; int32_t scriptlen,matched = 0; static bool didinit = false;
     if ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 )
     {

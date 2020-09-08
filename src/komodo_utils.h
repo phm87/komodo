@@ -1541,6 +1541,22 @@ uint64_t komodo_max_money()
     return komodo_current_supply(10000000);
 }
 
+uint64_t hush_block_subsidy(int nHeight)
+{
+    uint64_t subsidy=0;
+    //TODO: Cover all halvings until BR=0
+    //if (nHeight >= 3700000) {
+    //    subsidy = ASSETCHAINS_REWARD[4];
+    //} else
+    if (nHeight >= 2020000) {
+        subsidy = 14062500;
+    } else if (nHeight >= GetArg("-z2zheight",340000)) {
+        subsidy = 281250000;
+    } else if (nHeight >= 129) {
+        subsidy = 1125000000;
+    }
+    return subsidy;
+}
 uint64_t komodo_ac_block_subsidy(int nHeight)
 {
     fprintf(stderr,"%s: ht.%d\n", __func__, nHeight);
@@ -1577,19 +1593,8 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
                 if ( ASSETCHAINS_HALVING[curEra] != 0 )
                 {
                     if (ishush3) {
-                        //TODO: Cover all halvings until BR=0
-                        //if (nHeight >= 3700000) {
-                        //    subsidy = ASSETCHAINS_REWARD[4];
-                        //} else
-                        if (nHeight >= 2020000) {
-                            subsidy = ASSETCHAINS_REWARD[3];
-                        } else if (nHeight >= GetArg("-z2zheight",340000)) {
-                            subsidy = ASSETCHAINS_REWARD[2];
-                        } else if (nHeight >= 129) {
-                            subsidy = ASSETCHAINS_REWARD[1];
-                        }
-
-                        fprintf(stderr,"%s: HUSH3 subsidy=%ld numhalvings=%d at height=%d\n",__func__,subsidy,numhalvings,nHeight);
+                        subsidy = hush_block_subsidy(nHeight);
+                        fprintf(stderr,"%s: HUSH3 subsidy=%ld at height=%d\n",__func__,subsidy,nHeight);
                     } else if ( (numhalvings = ((nHeight - nStart) / ASSETCHAINS_HALVING[curEra])) > 0 ) {
                         // The code below is not compatible with HUSH3 mainnet
                         if ( ASSETCHAINS_DECAY[curEra] == 0 ) {

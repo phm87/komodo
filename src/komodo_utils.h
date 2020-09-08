@@ -1534,6 +1534,8 @@ char *argv0names[] =
     (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"BTCH", (char *)"BTCH", (char *)"BTCH", (char *)"BTCH"
 };
 
+
+// Large total supplies lead to numerical errors, beware!
 uint64_t komodo_max_money()
 {
     return komodo_current_supply(10000000);
@@ -1541,11 +1543,13 @@ uint64_t komodo_max_money()
 
 uint64_t komodo_ac_block_subsidy(int nHeight)
 {
-    // we have to find our era, start from beginning reward, and determine current subsidy
+    fprintf(stderr,"%s: ht.%d\n", __func__, nHeight);
+    // Find current era, start from beginning reward, and determine current subsidy
     int64_t numerator, denominator, subsidy = 0;
     int64_t subsidyDifference;
     int32_t numhalvings, curEra = 0, sign = 1;
     static uint64_t cached_subsidy; static int32_t cached_numhalvings; static int cached_era;
+    bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
 
     // check for backwards compat, older chains with no explicit rewards had 0.0001 block reward
     if ( ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] == 0 ) {
@@ -1561,6 +1565,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
                     break;
             }
         }
+
         if ( curEra <= ASSETCHAINS_LASTERA )
         {
             int64_t nStart = curEra ? ASSETCHAINS_ENDSUBSIDY[curEra - 1] : 0;
@@ -1571,8 +1576,26 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
             {
                 if ( ASSETCHAINS_HALVING[curEra] != 0 )
                 {
-                    if ( (numhalvings = ((nHeight - nStart) / ASSETCHAINS_HALVING[curEra])) > 0 )
-                    {
+                    if (ishush3) {
+                        //TODO: Cover all halvings until BR=0
+                        if (nHeight >= 129) {
+                            // This is the beginning of an Era but not a Halving
+                        } else if (nHeight >= GetArg("-z2zheight",340000)) {
+                            numhalvings = 1;
+                        } else if (nHeight >= 2020000) {
+                            numhalvings = 2;
+                        } else if (nHeight >= 3700000) {
+                            numhalvings = 3;
+                        }
+
+                        // Since we had 128 blocks of BR=0 when we launched Hush v3 mainnet, it adds an index
+                        // to the beginning of ASSETCHAINS_REWARD, so we must add one to numhalvings to get
+                        // the correct block reward
+                        subsidy = ASSETCHAINS_REWARD[numhalvings+1];
+
+                        fprintf(stderr,"%s: HUSH3 subsidy=%ld numhalvings=%d at height=%d\n",__func__,subsidy,numhalvings,nHeight);
+                    } else if ( (numhalvings = ((nHeight - nStart) / ASSETCHAINS_HALVING[curEra])) > 0 ) {
+                        // The code below is not compatible with HUSH3 mainnet
                         if ( ASSETCHAINS_DECAY[curEra] == 0 ) {
                             subsidy >>= numhalvings;
                             fprintf(stderr,"%s: no decay, numhalvings.%d curEra.%d subsidy.%ld nStart.%ld\n",__func__, numhalvings, curEra, subsidy, nStart);
@@ -1606,6 +1629,8 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
                     }
                 }
             }
+        } else {
+            fprintf(stderr,"%s: curEra.%d > lastEra.%lu\n", __func__, curEra, ASSETCHAINS_LASTERA);
         }
     }
     uint32_t magicExtra = ASSETCHAINS_STAKED ? ASSETCHAINS_MAGIC : (ASSETCHAINS_MAGIC & 0xffffff);
@@ -1624,7 +1649,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         else
             subsidy += ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
     }
-    fprintf(stderr,"%s: ht.%d curEra.%d lastEra.%d subsidy.%ld numhalvings.%d\n",__func__,nHeight,curEra,ASSETCHAINS_LASTERA,subsidy,numhalvings);
+    fprintf(stderr,"%s: ht.%d curEra.%d lastEra.%lu subsidy.%ld numhalvings.%d magicExtra.%u\n",__func__,nHeight,curEra,ASSETCHAINS_LASTERA,subsidy,numhalvings,magicExtra);
     return(subsidy);
 }
 
@@ -1792,7 +1817,7 @@ void komodo_args(char *argv0)
             printf("ASSETCHAINS_LASTERA, if specified, must be between 1 and %u. ASSETCHAINS_LASTERA set to %lu\n", ASSETCHAINS_MAX_ERAS, ASSETCHAINS_LASTERA);
         }
         ASSETCHAINS_LASTERA -= 1;
-        fprintf(stderr,"%s: lastEra=%d maxEras=%d\n", ASSETCHAINS_LASTERA, ASSETCHAINS_MAX_ERAS);
+        fprintf(stderr,"%s: lastEra=%lu maxEras=%d\n", __func__, ASSETCHAINS_LASTERA, ASSETCHAINS_MAX_ERAS);
 
         ASSETCHAINS_TIMELOCKGTE = (uint64_t)GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
         ASSETCHAINS_TIMEUNLOCKFROM = GetArg("-ac_timeunlockfrom", 0);

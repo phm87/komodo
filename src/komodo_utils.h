@@ -1549,6 +1549,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 
     // check for backwards compat, older chains with no explicit rewards had 0.0001 block reward
     if ( ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] == 0 ) {
+        fprintf(stderr,"%s: defaulting to 0.0001 subsidy\n",__func__);
         subsidy = 10000;
     } else if ( (ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] != 0) || ASSETCHAINS_ENDSUBSIDY[0] != 0 ) {
         // if we have an end block in the first era, find our current era
@@ -1564,6 +1565,8 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         {
             int64_t nStart = curEra ? ASSETCHAINS_ENDSUBSIDY[curEra - 1] : 0;
             subsidy = (int64_t)ASSETCHAINS_REWARD[curEra];
+            fprintf(stderr,"%s: nStart.%ld subsidy.%ld curEra.%d\n",__func__,nStart,subsidy,curEra);
+
             if ( subsidy || (curEra != ASSETCHAINS_LASTERA && ASSETCHAINS_REWARD[curEra + 1] != 0) )
             {
                 if ( ASSETCHAINS_HALVING[curEra] != 0 )
@@ -1572,7 +1575,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
                     {
                         if ( ASSETCHAINS_DECAY[curEra] == 0 ) {
                             subsidy >>= numhalvings;
-                            fprintf(stderr,"%s: no decay, numhalvings.%d curEra.%d subsidy.%ld\n",__func__, numhalvings, curEra, subsidy);
+                            fprintf(stderr,"%s: no decay, numhalvings.%d curEra.%d subsidy.%ld nStart.%ld\n",__func__, numhalvings, curEra, subsidy, nStart);
                         } else if ( ASSETCHAINS_DECAY[curEra] == 100000000 && ASSETCHAINS_ENDSUBSIDY[curEra] != 0 ) {
                             if ( curEra == ASSETCHAINS_LASTERA )
                             {

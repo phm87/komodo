@@ -1578,20 +1578,16 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
                 {
                     if (ishush3) {
                         //TODO: Cover all halvings until BR=0
-                        if (nHeight >= 129) {
-                            // This is the beginning of an Era but not a Halving
+                        //if (nHeight >= 3700000) {
+                        //    subsidy = ASSETCHAINS_REWARD[4];
+                        //} else
+                        if (nHeight >= 2020000) {
+                            subsidy = ASSETCHAINS_REWARD[3];
                         } else if (nHeight >= GetArg("-z2zheight",340000)) {
-                            numhalvings = 1;
-                        } else if (nHeight >= 2020000) {
-                            numhalvings = 2;
-                        } else if (nHeight >= 3700000) {
-                            numhalvings = 3;
+                            subsidy = ASSETCHAINS_REWARD[2];
+                        } else if (nHeight >= 129) {
+                            subsidy = ASSETCHAINS_REWARD[1];
                         }
-
-                        // Since we had 128 blocks of BR=0 when we launched Hush v3 mainnet, it adds an index
-                        // to the beginning of ASSETCHAINS_REWARD, so we must add one to numhalvings to get
-                        // the correct block reward
-                        subsidy = ASSETCHAINS_REWARD[numhalvings+1];
 
                         fprintf(stderr,"%s: HUSH3 subsidy=%ld numhalvings=%d at height=%d\n",__func__,subsidy,numhalvings,nHeight);
                     } else if ( (numhalvings = ((nHeight - nStart) / ASSETCHAINS_HALVING[curEra])) > 0 ) {

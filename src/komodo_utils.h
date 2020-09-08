@@ -1816,15 +1816,19 @@ void komodo_args(char *argv0)
         bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
 
         if(ishush3) {
+            fprintf(stderr,"Setting custom HUSH3 chain values...\n");
             // Over-ride HUSH3 values from CLI params. Changing our blocktime to 75s changes things
-            ASSETCHAINS_REWARD[0]  = 0;
-            ASSETCHAINS_REWARD[1]  = 1125000000;
-            ASSETCHAINS_REWARD[2]  = 281250000; // 2.8125  HUSH goes to miners per block after 1st halving at Block 340K
-            ASSETCHAINS_REWARD[3]  = 140625000; // 1.40625 HUSH after 2nd halving at Block 2020000
-            ASSETCHAINS_HALVING[0] = 129;
-            ASSETCHAINS_HALVING[1] = GetArg("-z2zheight",340000);
-            ASSETCHAINS_HALVING[2] = 2020000; // 2020000 = 340000 + 1680000 (1st halving block plus new halving interval)
-            ASSETCHAINS_HALVING[3] = 3700000; // ASSETCHAINS_HALVING[2] + 1680000;
+            ASSETCHAINS_REWARD[0]     = 0;
+            ASSETCHAINS_REWARD[1]     = 1125000000;
+            ASSETCHAINS_REWARD[2]     = 281250000; // 2.8125  HUSH goes to miners per block after 1st halving at Block 340K
+            ASSETCHAINS_REWARD[3]     = 140625000; // 1.40625 HUSH after 2nd halving at Block 2020000
+            ASSETCHAINS_HALVING[0]    = 129;
+            ASSETCHAINS_HALVING[1]    = GetArg("-z2zheight",340000);
+            ASSETCHAINS_HALVING[2]    = 2020000; // 2020000 = 340000 + 1680000 (1st halving block plus new halving interval)
+            ASSETCHAINS_HALVING[3]    = 3700000; // ASSETCHAINS_HALVING[2] + 1680000;
+            ASSETCHAINS_ENDSUBSIDY[0] = 129;
+            ASSETCHAINS_ENDSUBSIDY[1] = GetArg("-z2zheight",340000);
+            ASSETCHAINS_ENDSUBSIDY[2] = 2*5422111; // TODO: Fix this, twice the previous end of rewards is an estimate
             // TODO: fill in all possible values for each halving/reward interval
             // based on simple halving schedule
         }

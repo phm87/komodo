@@ -1552,7 +1552,7 @@ uint64_t hush_block_subsidy(int nHeight)
         subsidy = 140625000;
     } else if (nHeight >= GetArg("-z2zheight",340000)) {
         subsidy = 281250000;
-    } else if (nHeight >= 129) {
+    } else if (nHeight >= 128) {
         subsidy = 1125000000;
     }
     return subsidy;

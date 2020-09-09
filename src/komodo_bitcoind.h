@@ -1234,52 +1234,83 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
+// This function defines the Hush Founders Reward (AKA Dev Tax)
+// 10% of all block rewards go towards Hush core team
+// If you do not like this, you are encouraged to fork the chain
+// or start your own Hush Smart Chain: https://github.com/myhush/hush-smart-chains
 uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
-    static bool didinit = false,ishush3 = false;
-    // LABS fungible chains, cannot have any block reward!
-    if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
-        return(0);
+    fprintf(stderr,"%s at height=%d\n",__func__,height);
+    static bool didinit = false, ishush3 = false;
 
     if (!didinit) {
         ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
         didinit = true;
+        fprintf(stderr,"%s: didinit ishush3=%d\n", __func__, ishush3);
     }
 
     int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
-        //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
+        fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
 
+        // Do not change this code unless you really know what you are doing.
+        // Here Be Dragons! -- Duke Leto
         if (ishush3) {
-            int32_t starting_commission = 125000000, HALVING1 = 340000,  INTERVAL = 840000, TRANSITION = 129, BR_END = 5422111;
+            // TODO: Calculate new BR_END based on 75s block time!!! 2X old BR_END is a rough estimate, not exact!
+            int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),
+                INTERVAL = GetArg("-ac_halving1",840000), TRANSITION = 129, BR_END = 2*5422111;
+            // TODO: how many halvings will we have given new 75s blocktime?
+            int32_t commisions[] = {starting_commission, 31250000, 15625000, 78125000, 39062500, 19531250, 9765625, // these are exact
+                                    4882812, 2441406, 1220703, 610351 // these have deviation from ideal BR
+                                    // Just like BTC, BRs in the far future will be slightly less than
+                                    // they should be because exact values are not integers, causing
+                                    // slightly less coins to be actually mined
+            };
             // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it ourselves.
             // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
             // but to tell the AC params, I need to say "11% of 11.25" is 1.25
             // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
+
+            if( height > HALVING1) {
+                // Block time going from 150s to 75s (half) means the interval between halvings
+                // must be twice as often, i.e. 840000*2=1680000
+                // With 150s blocks, we have 210,000 blocks per year
+                // With 75s blocks,  we have 420,000 blocks per year
+                INTERVAL = GetArg("-ac_halving2",1680000);
+            }
+
             // Transition period of 128 blocks has BR=FR=0
             if (height < TRANSITION) {
                 commission = 0;
-            } else if (height < HALVING1) {
-                commission = starting_commission;
-            } else if (height < HALVING1+1*INTERVAL) {
-                commission = starting_commission / 2;
-            } else if (height < HALVING1+2*INTERVAL) {
-                commission = starting_commission / 4;
-            } else if (height < HALVING1+3*INTERVAL) {
-                commission = starting_commission / 8;
-            } else if (height < HALVING1+4*INTERVAL) {
-                commission = starting_commission / 16;
-            } else if (height < HALVING1+5*INTERVAL) {
-                commission = starting_commission / 32;
-            } else if (height < HALVING1+6*INTERVAL) { // Block 5380000
-                // Block reward will go to zero between 7th+8th halvings, ac_end may need adjusting
-                commission = starting_commission / 64;
-            } else if (height < HALVING1+7*INTERVAL) {
-                // Block reward will be zero before this is ever reached
-                commission = starting_commission / 128; // Block 6220000
+            } else if (height < HALVING1) {               // before 1st Halving @ Block 340000 (Nov 2020)
+                commission = commisions[0];
+            } else if (height < HALVING1+1*INTERVAL) {    // before 2nd Halving @ Block 2020000
+                commission = commisions[1];
+            } else if (height < HALVING1+2*INTERVAL) {    // before 3rd Halving @ Block 3700000
+                commission = commisions[2];
+            } else if (height < HALVING1+3*INTERVAL) {    // before 4th Halving @ Block 5380000
+                commission =  commisions[3];
+            } else if (height < HALVING1+4*INTERVAL) {    // before 5th Halving @ Block 7060000
+                commission =  commisions[4];
+            } else if (height < HALVING1+5*INTERVAL) {    // before 6th Halving @ Block 8740000
+                commission = commisions[5];
+            } else if (height < HALVING1+6*INTERVAL) {    // before 7th Halving @ Block 10420000
+                commission = commisions[6];
+            } else if (height < HALVING1+7*INTERVAL) {    // before 8th Halving @ Block 12100000
+                // TODO: Still true??? Block reward will go to zero between 7th+8th halvings, ac_end may need adjusting
+                commission = commisions[7];
+            } else if (height < HALVING1+8*INTERVAL) {    // before 9th Halving @ Block 13780000
+                // BR should be zero before this halving happens
+                commission = commisions[8];
+            }
+            // Explicitly set the last block reward
+            // BR_END is the block with the last non-zero block reward, which overrides
+            // the -ac_end param on HUSH3
+            if(height > BR_END) {
+                commission = 0;
             }
         }
 
@@ -1968,20 +1999,21 @@ void GetKomodoEarlytxidScriptPub()
 
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
 {
+    fprintf(stderr,"%s at height=%d\n",__func__,height);
     int64_t checktoshis=0; uint8_t *script,scripthex[8192]; int32_t scriptlen,matched = 0; static bool didinit = false;
     if ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 )
     {
         checktoshis = komodo_commission(pblock,height);
         if ( checktoshis >= 10000 && pblock->vtx[0].vout.size() < 2 )
         {
-            //fprintf(stderr,"komodo_checkcommission vsize.%d height.%d commission %.8f\n",(int32_t)pblock->vtx[0].vout.size(),height,(double)checktoshis/COIN);
+            fprintf(stderr,"komodo_checkcommission vsize.%d height.%d commission %.8f\n",(int32_t)pblock->vtx[0].vout.size(),height,(double)checktoshis/COIN);
             return(-1);
         }
         else if ( checktoshis != 0 )
         {
             script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
             scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
-            if ( 0 )
+            if ( 1 )
             {
                 int32_t i;
                 for (i=0; i<scriptlen; i++)

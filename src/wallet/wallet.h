@@ -100,6 +100,8 @@ static const unsigned int DEFAULT_TX_RETENTION_LASTTX = 200;
 //Amount of transactions to delete per run while syncing
 static const int MAX_DELETE_TX_SIZE = 50000;
 
+extern const char * DEFAULT_WALLET_DAT;
+
 class CBlockIndex;
 class CCoinControl;
 class COutput;

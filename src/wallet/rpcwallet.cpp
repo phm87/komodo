@@ -3352,8 +3352,8 @@ UniValue z_listreceivedaddress(const UniValue& params, bool fHelp,const CPubKey&
 
   if (fHelp || params.size() > 5 || params.size() == 3)
       throw runtime_error(
-        "z_listreceivedbyaddress\n"
-        "\nReturns received outputs for a single address.\n"
+        "z_listreceivedaddress\n"
+        "\nReturns received outputs.\n"
         "\n"
         "This function only returns information on addresses with full spending keys."
         "\n"

@@ -4086,7 +4086,8 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp, const CPubK
             "  \"txid\": xxxxx,           (string) the transaction id\n"
             "  \"amount\": xxxxx,         (numeric) the amount of value in the note\n"
             "  \"memo\": xxxxx,           (string) hexadecimal string representation of memo field\n"
-            "  \"confirmations\" : n,     (numeric) the number of confirmations\n"
+            "  \"confirmations\" : n,     (numeric) the number of notarized confirmations (dpowconfs)\n"
+            "  \"rawconfirmations\" : n,     (numeric) the number of raw confirmations\n"
             "  \"outindex\" (sapling) : n,     (numeric) the output index\n"
             "  \"change\": true|false,    (boolean) true if the address that received the note is also one of the sending addresses\n"
             "}\n"
@@ -4131,7 +4132,6 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp, const CPubK
     if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
         for (SaplingNoteEntry & entry : saplingEntries) {
             UniValue obj(UniValue::VOBJ);
-
             int nHeight   = tx_height(entry.op.hash);
             int dpowconfs = komodo_dpowconfs(nHeight, entry.confirmations);
             // Only return notarized results when minconf>1
@@ -4152,6 +4152,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp, const CPubK
             }
             obj.push_back(Pair("outindex", (int)entry.op.n));
             obj.push_back(Pair("rawconfirmations", entry.confirmations));
+            auto wtx = pwalletMain->mapWallet.at(entry.op.hash); //.ToString());
+            //fprintf(stderr,"%s: txid=%s not found in wallet!\n", __func__, entry.op.hash.ToString().c_str());
+            obj.push_back(Pair("time", wtx.GetTxTime()));
+
             obj.push_back(Pair("confirmations", dpowconfs));
             if (hasSpendingKey) {
               obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));

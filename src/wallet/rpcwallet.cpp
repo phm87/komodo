@@ -3411,8 +3411,8 @@ UniValue z_listreceivedaddress(const UniValue& params, bool fHelp,const CPubKey&
         "       }],\n"
         "   },\n"
         "\nExamples:\n"
-        + HelpExampleCli("z_listreceivedbyaddress", "R...")
-        + HelpExampleRpc("z_listreceivedbyaddress", "R...")
+        + HelpExampleCli("z_listreceivedaddress", "\"*\"")
+        + HelpExampleRpc("z_listreceivedaddress", "RHushEyeDm7XwtaTWtyCbjGQumYyV8vMjn")
     );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);

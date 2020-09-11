@@ -1541,6 +1541,8 @@ uint64_t komodo_max_money()
     return komodo_current_supply(10000000);
 }
 
+
+// This implements the Hush Emission Curve
 uint64_t hush_block_subsidy(int nHeight)
 {
     uint64_t subsidy=0;
@@ -1557,6 +1559,8 @@ uint64_t hush_block_subsidy(int nHeight)
     }
     return subsidy;
 }
+
+// wrapper for more general supply curves of Hush Smart Chains
 uint64_t komodo_ac_block_subsidy(int nHeight)
 {
     fprintf(stderr,"%s: ht.%d\n", __func__, nHeight);

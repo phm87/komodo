@@ -35,6 +35,8 @@
 
 #if USE_BIP39_CACHE
 
+int BIP39_WORDS = 2048;
+
 static int bip39_cache_index = 0;
 
 static CONFIDENTIAL struct {

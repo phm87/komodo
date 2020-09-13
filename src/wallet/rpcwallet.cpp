@@ -4744,17 +4744,15 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
    // End goal is to have this be as large as possible without slowing xtns down too much
    // A value of 7 will provide much stronger linkability privacy versus pre-Sietch operations
 	unsigned int DEFAULT_MIN_ZOUTS=7;
-	unsigned int MAX_ZOUTS=25;
+	unsigned int MAX_ZOUTS=50;
 	unsigned int MIN_ZOUTS=GetArg("--sietch-min-zouts", DEFAULT_MIN_ZOUTS);
 
     if((MIN_ZOUTS<3) || (MIN_ZOUTS>MAX_ZOUTS)) {
-        fprintf(stderr,"%s: Sietch min zouts must be >=3 and <= 25, setting to default value of %d\n", __FUNCTION__, DEFAULT_MIN_ZOUTS );
+        fprintf(stderr,"%s: Sietch min zouts must be >= 3 and <= %d, setting to default value of %d\n", __FUNCTION__, MAX_ZOUTS, DEFAULT_MIN_ZOUTS );
         MIN_ZOUTS=DEFAULT_MIN_ZOUTS;
     }
 
     int nAmount = 0;
-    // Dynamic Sietch zaddrs default to OFF
-    bool fSietchDynamic = GetArg("--sietch-dynamic",0);
 	while (zaddrRecipients.size() < MIN_ZOUTS) {
         // OK, we identify this xtn as needing privacy zdust, we must decide how much, non-deterministically
         int decider = 1 + GetRandInt(100); // random int between 1 and 100

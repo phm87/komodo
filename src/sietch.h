@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2019-2020 The Hush developers                                       *
+ * Copyright © 2019-2020 The Hush developers                                  *
  *                                                                            *
  * See the AUTHORS and LICENSE files at                                       *
  * the top-level directory of this distribution for the individual copyright  *
@@ -10,6 +10,7 @@
  * or distributed except according to the terms contained in the GPLv3        *
  *                                                                            *
  * Removal or modification of this copyright notice is prohibited.            *
+ * https://myhush.org                                                         *
  *                                                                            *
  ******************************************************************************/
 
@@ -24,6 +25,7 @@ string newSietchZaddr() {
 
 SendManyRecipient newSietchRecipient(string zaddr) {
     int nAmount = 0;
+    // TODO: Should we randomize length of data, perhaps into buckets?
     // Sietch zouts have random data in their memos so they are indistinguishable from
     // encrypted data being stored in the memo field
     char hex[] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};

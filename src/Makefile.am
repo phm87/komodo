@@ -462,7 +462,7 @@ libbitcoin_server_a_SOURCES += rpc/testtransactions.cpp
 endif
 
 
-# cli: zcash-cli
+# cli
 libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_cli_a_SOURCES = \

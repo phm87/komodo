@@ -1,6 +1,5 @@
 /**
- * Copyright (c) 2013-2014 Tomas Dzetkulic
- * Copyright (c) 2013-2014 Pavol Rusnak
+ * Copyright (c) 2017 Saleem Rashid
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the "Software"),
@@ -21,24 +20,22 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __BIP39_H__
-#define __BIP39_H__
+#ifndef __BASE32_H__
+#define __BASE32_H__
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
-#define BIP39_PBKDF2_ROUNDS 2048
+extern const char *BASE32_ALPHABET_RFC4648;
 
-const char *mnemonic_generate(int strength);	// strength in bits
-const char *mnemonic_from_data(const uint8_t *data, int len);
-void mnemonic_clear(void);
+char *base32_encode(const uint8_t *in, size_t inlen, char *out, size_t outlen, const char *alphabet);
+void base32_encode_unsafe(const uint8_t *in, size_t inlen, uint8_t *out);
 
-int mnemonic_check(const char *mnemonic);
+uint8_t *base32_decode(const char *in, size_t inlen, uint8_t *out, size_t outlen, const char *alphabet);
+bool base32_decode_unsafe(const uint8_t *in, size_t inlen, uint8_t *out, const char *alphabet);
 
-int mnemonic_to_entropy(const char *mnemonic, uint8_t *entropy);
-
-// passphrase must be at most 256 characters otherwise it would be truncated
-void mnemonic_to_seed(const char *mnemonic, const char *passphrase, uint8_t seed[512 / 8], void (*progress_callback)(uint32_t current, uint32_t total));
-
-const char * const *mnemonic_wordlist(void);
+size_t base32_encoded_length(size_t inlen);
+size_t base32_decoded_length(size_t inlen);
 
 #endif

@@ -1,3 +1,4 @@
+// Copyright (c) 2019-2020 The Hush developers
 // Copyright (c) 2016 The Zcash developers
 // Original code from: https://gist.github.com/laanwj/0e689cfa37b52bcbbb44
 
@@ -74,9 +75,9 @@ void ThreadSendAlert()
     if (!mapArgs.count("-sendalert") && !mapArgs.count("-printalert"))
         return;
 
+    //TODO: wait until KOMODO_IN_SYNC
     MilliSleep(60*1000); // Wait a minute so we get connected
 
-    //
     // Alerts are relayed around the network until nRelayUntil, flood
     // filling to every node.
     // After the relay time is past, new nodes are told about alerts
@@ -87,7 +88,7 @@ void ThreadSendAlert()
     CAlert alert;
     alert.nRelayUntil   = GetTime() + 15 * 60;
     alert.nExpiration   = GetTime() + 10 * 365 * 24 * 60 * 60;
-    alert.nID           = 1005;  // use https://github.com/zcash/zcash/wiki/specification#assigned-numbers to keep track of alert IDs
+    alert.nID           = 1005;  // HUSH3 has never had any alert id's
     alert.nCancel       = 1004;  // cancels previous messages up to this ID number
 
     // These versions are protocol versions
@@ -103,12 +104,12 @@ void ThreadSendAlert()
     //  4000 or higher will put the RPC into safe mode
     alert.nPriority     = 4000;
     alert.strComment    = "";
-    alert.strStatusBar  = "Your client version has degraded networking behavior. Please update to the most recent version of Hush (3.2.0 or later).";
+    alert.strStatusBar  = "Your client version has degraded networking behavior. Please update to the most recent version of Hush (3.5.0 or later).";
     alert.strRPCError   = alert.strStatusBar;
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:
     // alert.setSubVer.insert(std::string("/MagicBean:0.7.2/"));
-    const std::vector<std::string> useragents = {}; //{"MagicBean", "BeanStalk", "AppleSeed", "EleosZcash"};
+    const std::vector<std::string> useragents = {}; //{"MagicBean", "BeanStalk", "AppleSeed" };
 
     BOOST_FOREACH(const std::string& useragent, useragents) {
     }

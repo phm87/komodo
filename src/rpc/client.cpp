@@ -169,11 +169,11 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_listsentbyaddress", 3},
     { "z_listsentbyaddress", 4},
     { "z_listsentbyaddress", 5},
-    { "z_listreceivedbyaddress", 1},
-    { "z_listreceivedbyaddress", 2},
-    { "z_listreceivedbyaddress", 3},
-    { "z_listreceivedbyaddress", 4},
-    { "z_listreceivedbyaddress", 5},
+    { "z_listreceivedaddress", 1},
+    { "z_listreceivedaddress", 2},
+    { "z_listreceivedaddress", 3},
+    { "z_listreceivedaddress", 4},
+    { "z_listreceivedaddress", 5},
 
     // crosschain
     { "assetchainproof", 1},

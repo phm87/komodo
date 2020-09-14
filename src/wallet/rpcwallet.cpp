@@ -72,8 +72,7 @@ using namespace libzcash;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern std::string ASSETCHAINS_OVERRIDE_PUBKEY;
 const std::string ADDR_TYPE_SAPLING = "sapling";
-const std::string ADDR_TYPE_DONOTREMEMBER = "donotremember";
-extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
+const std::string ADDR_TYPE_AMNESIA = "amnesia";
 extern int32_t KOMODO_INSYNC;
 uint32_t komodo_segid32(char *coinaddr);
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
@@ -170,7 +169,6 @@ void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
     BOOST_FOREACH(const PAIRTYPE(string,string)& item, wtx.mapValue)
         entry.push_back(Pair(item.first, item.second));
 
-    entry.push_back(Pair("vjoinsplit", TxJoinSplitToJSON(wtx)));
 }
 
 string AccountFromValue(const UniValue& value)
@@ -3352,8 +3350,8 @@ UniValue z_listreceivedaddress(const UniValue& params, bool fHelp,const CPubKey&
 
   if (fHelp || params.size() > 5 || params.size() == 3)
       throw runtime_error(
-        "z_listreceivedbyaddress\n"
-        "\nReturns received outputs for a single address.\n"
+        "z_listreceivedaddress\n"
+        "\nReturns received outputs.\n"
         "\n"
         "This function only returns information on addresses with full spending keys."
         "\n"
@@ -3411,8 +3409,8 @@ UniValue z_listreceivedaddress(const UniValue& params, bool fHelp,const CPubKey&
         "       }],\n"
         "   },\n"
         "\nExamples:\n"
-        + HelpExampleCli("z_listreceivedbyaddress", "R...")
-        + HelpExampleRpc("z_listreceivedbyaddress", "R...")
+        + HelpExampleCli("z_listreceivedaddress", "\"*\"")
+        + HelpExampleRpc("z_listreceivedaddress", "RHushEyeDm7XwtaTWtyCbjGQumYyV8vMjn")
     );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -3895,16 +3893,16 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
         throw runtime_error(
             "z_getnewaddress ( type )\n"
             "\nReturns a new shielded address for receiving payments.\n"
-            "\nWith no arguments, returns a Sapling address.\n"
-            "\nBe very careful with 'donotremember' address type, the extended spending key (xsk) of that address is not stored in wallet.dat!\n"
+            "\nWith no arguments, returns a Sapling address (zaddr).\n"
+            "\nBe very careful with 'amnesia' address type, the address is not stored in wallet.dat and if you send funds to it THEY WILL BE LOST FOREVER\n"
             "\nArguments:\n"
-            "1. \"type\"         (string, optional, default=\"" + defaultType + "\") The type of address. Either "+ ADDR_TYPE_SAPLING + " or " + ADDR_TYPE_DONOTREMEMBER + " .\n"
+            "1. \"type\"         (string, optional, default=\"" + defaultType + "\") The type of address. Either "+ ADDR_TYPE_SAPLING + " or " + ADDR_TYPE_AMNESIA + " .\n"
             "\nResult:\n"
             "\"" + strprintf("%s",komodo_chainname()) + "_address\"    (string) The new shielded address.\n"
             "\nExamples:\n"
             + HelpExampleCli("z_getnewaddress", "")
             + HelpExampleCli("z_getnewaddress", ADDR_TYPE_SAPLING)
-            + HelpExampleCli("z_getnewaddress", ADDR_TYPE_DONOTREMEMBER)
+            + HelpExampleCli("z_getnewaddress", ADDR_TYPE_AMNESIA)
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -3917,15 +3915,14 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
     }
     if (addrType == ADDR_TYPE_SAPLING) {
         return EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey());
-    } else if (addrType == ADDR_TYPE_DONOTREMEMBER) {
-        bool addToWallet = false;
-        auto zaddr = EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey(addToWallet));
+    } else if (addrType == ADDR_TYPE_AMNESIA) {
+        auto zaddr = randomSietchZaddr();
         if(fZdebug) {
-            fprintf(stderr,"%s: Sietch zaddr=%s created, xsk not stored in wallet.dat!\n", __FUNCTION__, zaddr.c_str() );
+            fprintf(stderr,"%s: Sietch zaddr=%s created, not stored in wallet.dat!\n", __FUNCTION__, zaddr.c_str() );
         }
         return zaddr;
     } else {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type! Try " + ADDR_TYPE_SAPLING + " or " + ADDR_TYPE_DONOTREMEMBER);
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type! Try " + ADDR_TYPE_SAPLING + " or " + ADDR_TYPE_AMNESIA);
     }
 }
 
@@ -4086,7 +4083,8 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp, const CPubK
             "  \"txid\": xxxxx,           (string) the transaction id\n"
             "  \"amount\": xxxxx,         (numeric) the amount of value in the note\n"
             "  \"memo\": xxxxx,           (string) hexadecimal string representation of memo field\n"
-            "  \"confirmations\" : n,     (numeric) the number of confirmations\n"
+            "  \"confirmations\" : n,     (numeric) the number of notarized confirmations (dpowconfs)\n"
+            "  \"rawconfirmations\" : n,     (numeric) the number of raw confirmations\n"
             "  \"outindex\" (sapling) : n,     (numeric) the output index\n"
             "  \"change\": true|false,    (boolean) true if the address that received the note is also one of the sending addresses\n"
             "}\n"
@@ -4131,7 +4129,6 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp, const CPubK
     if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
         for (SaplingNoteEntry & entry : saplingEntries) {
             UniValue obj(UniValue::VOBJ);
-
             int nHeight   = tx_height(entry.op.hash);
             int dpowconfs = komodo_dpowconfs(nHeight, entry.confirmations);
             // Only return notarized results when minconf>1
@@ -4152,6 +4149,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp, const CPubK
             }
             obj.push_back(Pair("outindex", (int)entry.op.n));
             obj.push_back(Pair("rawconfirmations", entry.confirmations));
+            auto wtx = pwalletMain->mapWallet.at(entry.op.hash); //.ToString());
+            //fprintf(stderr,"%s: txid=%s not found in wallet!\n", __func__, entry.op.hash.ToString().c_str());
+            obj.push_back(Pair("time", wtx.GetTxTime()));
+
             obj.push_back(Pair("confirmations", dpowconfs));
             if (hasSpendingKey) {
               obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));
@@ -4740,24 +4741,22 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
    // End goal is to have this be as large as possible without slowing xtns down too much
    // A value of 7 will provide much stronger linkability privacy versus pre-Sietch operations
 	unsigned int DEFAULT_MIN_ZOUTS=7;
-	unsigned int MAX_ZOUTS=25;
+	unsigned int MAX_ZOUTS=50;
 	unsigned int MIN_ZOUTS=GetArg("--sietch-min-zouts", DEFAULT_MIN_ZOUTS);
 
     if((MIN_ZOUTS<3) || (MIN_ZOUTS>MAX_ZOUTS)) {
-        fprintf(stderr,"%s: Sietch min zouts must be >=3 and <= 25, setting to default value of %d\n", __FUNCTION__, DEFAULT_MIN_ZOUTS );
+        fprintf(stderr,"%s: Sietch min zouts must be >= 3 and <= %d, setting to default value of %d\n", __FUNCTION__, MAX_ZOUTS, DEFAULT_MIN_ZOUTS );
         MIN_ZOUTS=DEFAULT_MIN_ZOUTS;
     }
 
     int nAmount = 0;
-    // Dynamic Sietch zaddrs default to OFF
-    bool fSietchDynamic = GetArg("--sietch-dynamic",0);
 	while (zaddrRecipients.size() < MIN_ZOUTS) {
         // OK, we identify this xtn as needing privacy zdust, we must decide how much, non-deterministically
         int decider = 1 + GetRandInt(100); // random int between 1 and 100
         string zdust1, zdust2;
 
-        // Which zaddr we send to is non-deterministically chosen from two zpools...
-        zdust1 = fSietchDynamic ? newSietchZaddr() : randomSietchZaddr();
+        // Which zaddr we send to is randomly generated
+        zdust1 = randomSietchZaddr();
 
         // And their ordering when given to internals is also non-deterministic, which
         // helps breaks assumptions blockchain analysts may use from z_sendmany internals
@@ -4771,7 +4770,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
         //50% chance of adding another zout
         if (decider % 2) {
-            zdust2 = fSietchDynamic ? newSietchZaddr() : randomSietchZaddr();
+            zdust2 = randomSietchZaddr();
             // 50% chance of adding it to the front or back since all odd numbers are 1 or 3 mod 4
             if(decider % 4 == 3) {
                 zaddrRecipients.push_back(  newSietchRecipient(zdust2)  );

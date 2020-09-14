@@ -21,24 +21,18 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __BIP39_H__
-#define __BIP39_H__
+#ifndef __SECP256K1_H__
+#define __SECP256K1_H__
 
 #include <stdint.h>
 
-#define BIP39_PBKDF2_ROUNDS 2048
+#include "ecdsa.h"
+#include "bip32.h"
 
-const char *mnemonic_generate(int strength);	// strength in bits
-const char *mnemonic_from_data(const uint8_t *data, int len);
-void mnemonic_clear(void);
-
-int mnemonic_check(const char *mnemonic);
-
-int mnemonic_to_entropy(const char *mnemonic, uint8_t *entropy);
-
-// passphrase must be at most 256 characters otherwise it would be truncated
-void mnemonic_to_seed(const char *mnemonic, const char *passphrase, uint8_t seed[512 / 8], void (*progress_callback)(uint32_t current, uint32_t total));
-
-const char * const *mnemonic_wordlist(void);
+extern const ecdsa_curve secp256k1;
+extern const curve_info secp256k1_info;
+extern const curve_info secp256k1_decred_info;
+extern const curve_info secp256k1_groestl_info;
+extern const curve_info secp256k1_smart_info;
 
 #endif

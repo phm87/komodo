@@ -1362,7 +1362,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     }
     if ( commission < 10000 )
         commission = 0;
-    //fprintf(stderr,"-> %.8f\n",(double)commission/COIN);
+    fprintf(stderr,"%s: commission=%.8f at height=%d\n",__func__, (double)commission/COIN, height);
     return(commission);
 }
 

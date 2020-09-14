@@ -2402,13 +2402,8 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW)
     return true;
 }
 
-//uint64_t komodo_moneysupply(int32_t height);
-
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-    fprintf(stderr,"%s: ht.%d\n", __func__, nHeight);
-    int32_t numhalvings,i; uint64_t numerator; CAmount nSubsidy = 3 * COIN;
-
     return komodo_ac_block_subsidy(nHeight);
 }
 

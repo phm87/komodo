@@ -1263,9 +1263,10 @@ uint64_t hush_commission(int height)
     if( height > HALVING1) {
         // Block time going from 150s to 75s (half) means the interval between halvings
         // must be twice as often, i.e. 840000*2=1680000
+        // 840000 is 4 years worth of 150s blocks
         // With 150s blocks, we have 210,000 blocks per year
         // With 75s blocks,  we have 420,000 blocks per year
-        INTERVAL = GetArg("-ac_halving2",1680000);
+        INTERVAL = GetArg("-ac_halving2",1680000);  // 4 years worth of 75s blocks
         fprintf(stderr,"%s: height=%d increasing interval to %d\n", __func__, height, INTERVAL);
     }
 

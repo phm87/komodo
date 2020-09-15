@@ -1567,7 +1567,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
     // Find current era, start from beginning reward, and determine current subsidy
     int64_t numerator, denominator, subsidy = 0;
     int64_t subsidyDifference;
-    int32_t numhalvings, curEra = 0, sign = 1;
+    int32_t numhalvings = 0, curEra = 0, sign = 1;
     static uint64_t cached_subsidy; static int32_t cached_numhalvings; static int cached_era;
     bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
 
@@ -1654,7 +1654,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         else
             subsidy += ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
     }
-    fprintf(stderr,"%s: ht.%d curEra.%d lastEra.%lu subsidy.%ld numhalvings.%d magicExtra.%u\n",__func__,nHeight,curEra,ASSETCHAINS_LASTERA,subsidy,numhalvings,magicExtra);
+    fprintf(stderr,"%s: ht.%d curEra.%d lastEra.%lu subsidy.%ld magicExtra.%u\n",__func__,nHeight,curEra,ASSETCHAINS_LASTERA,subsidy,magicExtra);
     return(subsidy);
 }
 

@@ -1750,7 +1750,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             // and edge cases. This empty mempool assures there will be no transactions involving taddrs
             // stuck in the mempool, when the z2z rule takes effect.
             // Thanks to jl777 for helping design this
-            fprintf(stderr,"%s: rejecting all tx's during z2z transition window at height=%d\n", __func__,nHeight);
+            fprintf(stderr,"%s: rejecting all tx's during z2z transition window. Please retry after Block %d !!!\n", __func__,nHeight);
             return false;
         }
     }

@@ -1298,13 +1298,14 @@ uint64_t hush_commission(int height)
         fprintf(stderr,"%s: HUSH block reward has gone to zero at height %d!!! It was a good run folks\n", __func__, height);
         commission = 0;
     }
-    fprintf(stderr,"%s: commission=%lu,interval=%d at height %d\n", __func__, commission, INTERVAL, height);
+    if(fDebug)
+        fprintf(stderr,"%s: commission=%lu,interval=%d at height %d\n", __func__, commission, INTERVAL, height);
     return commission;
 }
 
 uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
-    fprintf(stderr,"%s at height=%d\n",__func__,height);
+    //fprintf(stderr,"%s at height=%d\n",__func__,height);
     static bool didinit = false, ishush3 = false;
 
     if (!didinit) {
@@ -1317,7 +1318,8 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
-        fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
+        if(fDebug)
+            fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
 
         if (ishush3) {
@@ -1333,7 +1335,8 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
                 } else {
                     commission = ASSETCHAINS_FOUNDERS_REWARD;
                 }
-                fprintf(stderr,"%s: set commission=%lu at height %d with\n",__func__,commission, height);
+                if(fDebug)
+                    fprintf(stderr,"%s: set commission=%lu at height %d with\n",__func__,commission, height);
             } else {
                 commission = 0;
             }
@@ -1362,7 +1365,8 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     }
     if ( commission < 10000 )
         commission = 0;
-    fprintf(stderr,"%s: commission=%.8f at height=%d\n",__func__, (double)commission/COIN, height);
+    if(fDebug)
+        fprintf(stderr,"%s: commission=%.8f at height=%d\n",__func__, (double)commission/COIN, height);
     return(commission);
 }
 
@@ -2010,21 +2014,22 @@ void GetKomodoEarlytxidScriptPub()
 
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
 {
-    fprintf(stderr,"%s at height=%d\n",__func__,height);
+    if(fDebug)
+        fprintf(stderr,"%s at height=%d\n",__func__,height);
     int64_t checktoshis=0; uint8_t *script,scripthex[8192]; int32_t scriptlen,matched = 0; static bool didinit = false;
     if ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 )
     {
         checktoshis = komodo_commission(pblock,height);
         if ( checktoshis >= 10000 && pblock->vtx[0].vout.size() < 2 )
         {
-            fprintf(stderr,"komodo_checkcommission vsize.%d height.%d commission %.8f\n",(int32_t)pblock->vtx[0].vout.size(),height,(double)checktoshis/COIN);
+            fprintf(stderr,"ERROR: komodo_checkcommission vsize.%d height.%d commission %.8f has checktoshis <10000 or not enough vouts\n",(int32_t)pblock->vtx[0].vout.size(),height,(double)checktoshis/COIN);
             return(-1);
         }
         else if ( checktoshis != 0 )
         {
             script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
             scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
-            if ( 1 )
+            if ( fDebug )
             {
                 int32_t i;
                 for (i=0; i<scriptlen; i++)
@@ -2064,11 +2069,13 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
             }
             if ( pblock->vtx[0].vout[1].nValue != checktoshis )
             {
-                fprintf(stderr,"ht.%d checktoshis %.8f vs actual vout[1] %.8f\n",height,dstr(checktoshis),dstr(pblock->vtx[0].vout[1].nValue));
+                fprintf(stderr,"ERROR: ht.%d checktoshis %.8f vs actual vout[1] %.8f !!!\n",height,dstr(checktoshis),dstr(pblock->vtx[0].vout[1].nValue));
                 return(-1);
             }
         }
     }
+    if(fDebug)
+        fprintf(stderr,"%s checktoshis=%li at height=%d\n",__func__,checktoshis, height);
     return(checktoshis);
 }
 

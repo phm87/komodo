@@ -1563,7 +1563,7 @@ uint64_t hush_block_subsidy(int nHeight)
 // wrapper for more general supply curves of Hush Smart Chains
 uint64_t komodo_ac_block_subsidy(int nHeight)
 {
-    fprintf(stderr,"%s: ht.%d\n", __func__, nHeight);
+    //fprintf(stderr,"%s: ht.%d\n", __func__, nHeight);
     // Find current era, start from beginning reward, and determine current subsidy
     int64_t numerator, denominator, subsidy = 0;
     int64_t subsidyDifference;
@@ -1590,7 +1590,8 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         {
             int64_t nStart = curEra ? ASSETCHAINS_ENDSUBSIDY[curEra - 1] : 0;
             subsidy = (int64_t)ASSETCHAINS_REWARD[curEra];
-            fprintf(stderr,"%s: nStart.%ld subsidy.%ld curEra.%d\n",__func__,nStart,subsidy,curEra);
+            if(fDebug)
+                fprintf(stderr,"%s: nStart.%ld subsidy.%ld curEra.%d\n",__func__,nStart,subsidy,curEra);
 
             if ( subsidy || (curEra != ASSETCHAINS_LASTERA && ASSETCHAINS_REWARD[curEra + 1] != 0) )
             {
@@ -1598,7 +1599,8 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
                 {
                     if (ishush3) {
                         subsidy = hush_block_subsidy(nHeight);
-                        fprintf(stderr,"%s: HUSH3 subsidy=%ld at height=%d\n",__func__,subsidy,nHeight);
+                        if(fDebug)
+                            fprintf(stderr,"%s: HUSH3 subsidy=%ld at height=%d\n",__func__,subsidy,nHeight);
                     } else if ( (numhalvings = ((nHeight - nStart) / ASSETCHAINS_HALVING[curEra])) > 0 ) {
                         // The code below is not compatible with HUSH3 mainnet
                         if ( ASSETCHAINS_DECAY[curEra] == 0 ) {
@@ -1654,7 +1656,8 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         else
             subsidy += ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
     }
-    fprintf(stderr,"%s: ht.%d curEra.%d lastEra.%lu subsidy.%ld magicExtra.%u\n",__func__,nHeight,curEra,ASSETCHAINS_LASTERA,subsidy,magicExtra);
+    if(fDebug)
+        fprintf(stderr,"%s: ht.%d curEra.%d lastEra.%lu subsidy.%ld magicExtra.%u\n",__func__,nHeight,curEra,ASSETCHAINS_LASTERA,subsidy,magicExtra);
     return(subsidy);
 }
 
@@ -1822,7 +1825,8 @@ void komodo_args(char *argv0)
             printf("ASSETCHAINS_LASTERA, if specified, must be between 1 and %u. ASSETCHAINS_LASTERA set to %lu\n", ASSETCHAINS_MAX_ERAS, ASSETCHAINS_LASTERA);
         }
         ASSETCHAINS_LASTERA -= 1;
-        fprintf(stderr,"%s: lastEra=%lu maxEras=%d\n", __func__, ASSETCHAINS_LASTERA, ASSETCHAINS_MAX_ERAS);
+        if(fDebug)
+            fprintf(stderr,"%s: lastEra=%lu maxEras=%d\n", __func__, ASSETCHAINS_LASTERA, ASSETCHAINS_MAX_ERAS);
 
         ASSETCHAINS_TIMELOCKGTE = (uint64_t)GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
         ASSETCHAINS_TIMEUNLOCKFROM = GetArg("-ac_timeunlockfrom", 0);
@@ -1841,7 +1845,7 @@ void komodo_args(char *argv0)
         bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
 
         if(ishush3) {
-            fprintf(stderr,"Setting custom HUSH3 chain values...\n");
+            fprintf(stderr,"%s: Setting custom HUSH3 reward,halving,subsidy chain values...\n",__func__);
             // Over-ride HUSH3 values from CLI params. Changing our blocktime to 75s changes things
             ASSETCHAINS_REWARD[0]     = 0;
             ASSETCHAINS_REWARD[1]     = 1125000000;

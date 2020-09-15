@@ -1258,7 +1258,9 @@ uint64_t hush_commission(int height)
     };
     uint64_t commission = 0;
 
-    if( height >= HALVING1) {
+    //TODO: Likely a bug hiding here or at the next halving :)
+    //if( height >= HALVING1) {
+    if( height > HALVING1) {
         // Block time going from 150s to 75s (half) means the interval between halvings
         // must be twice as often, i.e. 840000*2=1680000
         // With 150s blocks, we have 210,000 blocks per year

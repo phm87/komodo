@@ -1261,10 +1261,10 @@ uint64_t hush_commission(int height)
     if( height > HALVING1) {
         // Block time going from 150s to 75s (half) means the interval between halvings
         // must be twice as often, i.e. 840000*2=1680000
-        // 840000 is 4 years worth of 150s blocks
+        // 840000 is ~4 years worth of 150s blocks
         // With 150s blocks, we have 210,000 blocks per year
         // With 75s blocks,  we have 420,000 blocks per year
-        INTERVAL = GetArg("-ac_halving2",1680000);  // 4 years worth of 75s blocks
+        INTERVAL = GetArg("-ac_halving2",1680000);  // ~4 years worth of 75s blocks
         fprintf(stderr,"%s: height=%d increasing interval to %d\n", __func__, height, INTERVAL);
     }
 
@@ -1286,10 +1286,8 @@ uint64_t hush_commission(int height)
     } else if (height < HALVING1+6*INTERVAL) {    // before 7th Halving @ Block 10420000
         commission = commisions[6];
     } else if (height < HALVING1+7*INTERVAL) {    // before 8th Halving @ Block 12100000
-        // TODO: Still true??? Block reward will go to zero between 7th+8th halvings, ac_end may need adjusting
         commission = commisions[7];
     } else if (height < HALVING1+8*INTERVAL) {    // before 9th Halving @ Block 13780000
-        // BR should be zero before this halving happens
         commission = commisions[8];
     }
     // Explicitly set the last block reward

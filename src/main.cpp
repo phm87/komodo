@@ -4789,9 +4789,10 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         nShieldedOutputsInBlock += nShieldedOutputs;
         nShieldedSpendsInBlock  += nShieldedSpends;
         if (fZdebug) {
-            fprintf(stderr,"%s: tx=%s has zspends=%d zouts=%d\n", __FUNCTION__, tx.GetHash().ToString().c_str(), nShieldedSpendsInBlock, nShieldedOutputsInBlock );
+            fprintf(stderr,"%s: tx=%s has zspends=%d zouts=%d\n", __FUNCTION__, tx.GetHash().ToString().c_str(), nShieldedSpends, nShieldedOutputs );
         }
     }
+    fprintf(stderr,"%s: block %s has total zspends=%d zouts=%d\n", __FUNCTION__, block.GetHash().ToString().c_str(), nShieldedSpendsInBlock, nShieldedOutputsInBlock );
 
     pindexNew->nSproutValue = sproutValue;
     pindexNew->nChainSproutValue = boost::none;

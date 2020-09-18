@@ -1543,18 +1543,17 @@ uint64_t komodo_max_money()
 
 
 // This implements the Hush Emission Curve
-uint64_t hush_block_subsidy(int nHeight)
+uint64_t hush_block_subsidy(int height)
 {
     uint64_t subsidy=0;
     //TODO: Cover all halvings until BR=0
-    //if (nHeight >= 3700000) {
-    //    subsidy = ASSETCHAINS_REWARD[4];
-    //} else
-    if (nHeight >= 2020000) {
+    if (nHeight >= 3700000) {
+        subsidy = -1;
+    } else if (height >= 2020000) {
         subsidy = 140625000;
-    } else if (nHeight >= GetArg("-z2zheight",340000)) {
+    } else if (height >= GetArg("-z2zheight",340000)) {
         subsidy = 281250000;
-    } else if (nHeight >= 128) {
+    } else if (height >= 128) {
         subsidy = 1125000000;
     }
     return subsidy;

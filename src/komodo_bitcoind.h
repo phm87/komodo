@@ -1248,12 +1248,6 @@ uint64_t hush_commission(int height)
     // BR_END is the 31st halving
     int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),
         INTERVAL = GetArg("-ac_halving1",840000), TRANSITION = 129, BR_END = 50740000;
-    int32_t commisions[] = {starting_commission, 31250000, 15625000, 78125000, 39062500, 19531250, 9765625, // these are exact
-                            4882812, 2441406, 1220703, 610351 // these have deviation from ideal BR
-                            // Just like BTC, BRs in the far future will be slightly less than
-                            // they should be because exact values are not integers, causing
-                            // slightly less coins to be actually mined
-    };
     uint64_t commission = 0;
 
     //TODO: Likely a bug hiding here or at the next halving :)
@@ -1267,29 +1261,107 @@ uint64_t hush_commission(int height)
         INTERVAL = GetArg("-ac_halving2",1680000);  // ~4 years worth of 75s blocks
         fprintf(stderr,"%s: height=%d increasing interval to %d\n", __func__, height, INTERVAL);
     }
+/*
+0,1250000000,1125000000,125000000
+1,312500000,281250000,31250000
+2,156250000,140625000,15625000
+3,78125000,70312500,7812500
+4,39062500,35156250,3906250
+5,19531250,17578125,1953125
+6,9765625,8789062,976562
+7,4882812,4394531,488281
+8,2441406,2197265,244140
+9,1220703,1098632,122070
+10,610351,549316,61035
+11,305175,274658,30517
+12,152587,137329,15258
+13,76293,68664,7629
+14,38146,34332,3814
+15,19073,17166,1907
+16,9536,8583,953
+17,4768,4291,476
+18,2384,2145,238
+19,1192,1072,119
+20,596,536,59
+21,298,268,29
+22,149,134,14
+23,74,67,7
+24,37,33,3
+25,18,16,1
+*/
 
-    // Transition period of 128 blocks has BR=FR=0
+
     if (height < TRANSITION) {
         commission = 0;
-    } else if (height < HALVING1) {               // before 1st Halving @ Block 340000 (Nov 2020)
-        commission = commisions[0];
-    } else if (height < HALVING1+1*INTERVAL) {    // before 2nd Halving @ Block 2020000
-        commission = commisions[1];
-    } else if (height < HALVING1+2*INTERVAL) {    // before 3rd Halving @ Block 3700000
-        commission = commisions[2];
-    } else if (height < HALVING1+3*INTERVAL) {    // before 4th Halving @ Block 5380000
-        commission =  commisions[3];
-    } else if (height < HALVING1+4*INTERVAL) {    // before 5th Halving @ Block 7060000
-        commission =  commisions[4];
-    } else if (height < HALVING1+5*INTERVAL) {    // before 6th Halving @ Block 8740000
-        commission = commisions[5];
-    } else if (height < HALVING1+6*INTERVAL) {    // before 7th Halving @ Block 10420000
-        commission = commisions[6];
-    } else if (height < HALVING1+7*INTERVAL) {    // before 8th Halving @ Block 12100000
-        commission = commisions[7];
-    } else if (height < HALVING1+8*INTERVAL) {    // before 9th Halving @ Block 13780000
-        commission = commisions[8];
+    } else {
+        // Just like BTC, BRs in the far future will be slightly less than
+        // they should be because exact values are not integers, causing
+        // slightly less coins to be actually mined
+        if (height < HALVING1) { // before 1st Halving @ Block 340000 (Nov 2020)
+            commission = starting_commission;
+        } else if (height < 2020000 ) {
+            commission = 312500000;
+        } else if (height < 3700000 ) {
+            commission = 156250000;
+        } else if (height < 5380000 ) {
+            commission = 78125000;
+        } else if (height < 7060000 ) {
+            commission = 39062500;
+        } else if (height < 8740000 ) {
+            commission = 19531250;
+        } else if (height < 10420000) {
+            commission = 9765625;
+        } else if (height < 12100000) {
+            commission = 488281;
+        } else if (height < 15460000) {
+            commission = 244140;
+        } else if (height < 17140000) {
+            commission = 122070;
+        } else if (height < 18820000) {
+            commission = 61035;
+        } else if (height < 23860000) {
+            commission = 30517;
+        } else if (height < 23860000) {
+            commission = 15258;
+        } else if (height < 25540000) {
+            commission = 7629;
+        } else if (height < 27220000) {
+            commission = 3814;
+        } else if (height < 27220000) {
+            commission = 1907;
+        } else if (height < 28900000) {
+            commission = 953;
+        } else if (height < 30580000) {
+            commission = 476;
+        } else if (height < 32260000) {
+            commission = 238;
+        } else if (height < 33940000) {
+            commission = 119;
+        } else if (height < 35620000) {
+            commission = 59;
+        } else if (height < 37300000) {
+            commission = 29;
+        } else if (height < 38980000) {
+            commission = 14;
+        } else if (height < 40660000) {
+            commission = 7;
+        } else if (height < 42340000) {
+            commission = 3;
+        } else if (height < 44020000) {
+            commission = 1;
+        } else if (height < 45700000) {
+            commission = 0;
+        } else if (height < 47380000) {
+            commission = 0;
+        } else if (height < 49060000) {
+            commission = 0;
+        } else if (height < 50740000) {
+            commission = 0;
+        } else {
+            commission = 0;
+        }
     }
+
     // Explicitly set the last block reward
     // BR_END is the block with first zero block reward, which overrides
     // the -ac_end param on HUSH3

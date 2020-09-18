@@ -4,14 +4,6 @@
 use warnings;
 use strict;
 
-# Simulate the total supply on Hush v3 mainnet
-# Todo: track FR
-# Todo: verify FR off-by-one
-
-# Block Reward: Total Coinbase In Block
-# Subsidy     : Coinbase Earned by Miner
-# FR          : Founders Reward (10%)
-# Block Reward = Subsidy + FR
 
 my $supply   = 0.0;
 my $block    = 0; # Block 0 in Hush Smart chains is the BTC genesis block
@@ -22,11 +14,22 @@ my $initial  = 6178674 * $puposhis;
 my $interval = 1_680_000; # ~4 years of 75s blocks
 my $stop     = shift || -1;
 my $totalfr  = 0; # total paid out to FR address
-my $subsidy  = [$subsidy0, 31250000, 15625000, 78125000, 39062500, 19531250, 9765625, # these are exact
-                            4882812, 2441406, 1220703, 610351 ]; # these have deviation from ideal BR
 
-# Usage: ./hush_supply  &> supply.csv
-#        ./hush_supply HEIGHT &> supply.csv # stop at HEIGHT
+
+if ($stop eq 'help' or $stop =~ m/-h/) {
+    die <<HELP;
+# Simulate the total supply on Hush v3 mainnet
+# Block Reward: Total Coinbase In Block
+# Subsidy     : Coinbase Earned by Miner
+# FR          : Founders Reward (10%)
+# Block Reward = Subsidy + FR
+Usage: ./hush_supply  &> supply.csv
+       ./hush_supply HEIGHT &> supply.csv # stop at HEIGHT
+# This will generate CSV in the form of:
+# block, supply, reward, subsidy, fr, totalfr, halvings
+HELP
+}
+
 
 printf "# block, supply, reward, subsidy, fr, totalfr, halvings\n";
 

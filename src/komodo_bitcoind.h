@@ -1245,10 +1245,9 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 // Here Be Dragons! -- Duke Leto
 uint64_t hush_commission(int height)
 {
-    // TODO: Calculate new BR_END based on 75s block time!!! 2X old BR_END is a rough estimate, not exact!
+    // BR_END is the 31st halving
     int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),
-        INTERVAL = GetArg("-ac_halving1",840000), TRANSITION = 129, BR_END = 2*5422111;
-    // TODO: how many halvings will we have given new 75s blocktime?
+        INTERVAL = GetArg("-ac_halving1",840000), TRANSITION = 129, BR_END = 50740000;
     int32_t commisions[] = {starting_commission, 31250000, 15625000, 78125000, 39062500, 19531250, 9765625, // these are exact
                             4882812, 2441406, 1220703, 610351 // these have deviation from ideal BR
                             // Just like BTC, BRs in the far future will be slightly less than
@@ -1294,9 +1293,9 @@ uint64_t hush_commission(int height)
         commission = commisions[8];
     }
     // Explicitly set the last block reward
-    // BR_END is the block with the last non-zero block reward, which overrides
+    // BR_END is the block with first zero block reward, which overrides
     // the -ac_end param on HUSH3
-    if(height > BR_END) {
+    if(height >= BR_END) {
         fprintf(stderr,"%s: HUSH block reward has gone to zero at height %d!!! It was a good run folks\n", __func__, height);
         commission = 0;
     }

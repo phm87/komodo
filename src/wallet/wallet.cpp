@@ -59,6 +59,7 @@ using namespace libzcash;
 /**
  * Settings
  */
+const char * DEFAULT_WALLET_DAT = "wallet.dat";
 CFeeRate payTxFee(DEFAULT_TRANSACTION_FEE);
 CAmount maxTxFee = DEFAULT_TRANSACTION_MAXFEE;
 unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
@@ -668,6 +669,25 @@ void CWallet::Flush(bool shutdown)
 
 bool CWallet::Verify(const string& walletFile, string& warningString, string& errorString)
 {
+    LogPrintf("Using wallet %s\n", walletFile);
+    uiInterface.InitMessage(_("Verifying wallet..."));
+
+    if (walletFile != boost::filesystem::basename(walletFile) + boost::filesystem::extension(walletFile)) {
+        boost::filesystem::path path(walletFile);
+        if (path.is_absolute()) {
+            if (!boost::filesystem::exists(path.parent_path())) {
+                LogPrintf("Absolute path %s does not exist!", walletFile);
+                return false;
+            }
+        } else {
+            boost::filesystem::path full_path = GetDataDir() / path;
+            if (!boost::filesystem::exists(full_path.parent_path())) {
+                LogPrintf("Relative path %s does not exist!", walletFile);
+                return false;
+            }
+        }
+    }
+
     if (!bitdb.Open(GetDataDir()))
     {
         // try moving the database env out of the way
@@ -3930,6 +3950,8 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
         // Track how many getdata requests our transaction gets
         mapRequestCount[wtxNew.GetHash()] = 0;
 
+        std::string strCmd = GetArg("-txsend", "");
+
         if (fBroadcastTransactions)
         {
             // Broadcast
@@ -3941,6 +3963,12 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
                 return false;
             }
             wtxNew.RelayWalletTransaction();
+        }
+           // If we are configured to send transactions via an
+        // external service instead of broadcasting, do that
+        else if (!strCmd.empty()) {
+            boost::replace_all(strCmd, "%s", EncodeHexTx(wtxNew));
+            boost::thread t(runCommand, strCmd); // thread runs free
         }
     }
     return true;

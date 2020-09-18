@@ -134,6 +134,9 @@ void zsTxSpendsToJSON(const CWalletTx& wtx, UniValue& spends, CAmount& totalSpen
 
 void zsTxReceivedToJSON(const CWalletTx& wtx, UniValue& received, CAmount& totalReceived, const std::string& strAddress, bool filterByAddress) {
 
+  if(fZdebug)
+    fprintf(stderr,"%s: txid=%s\n", __func__, wtx.GetHash().ToString().c_str() );
+
   LOCK2(cs_main, pwalletMain->cs_wallet);
 
   //Check address
@@ -401,6 +404,10 @@ void zsWalletTxJSON(const CWalletTx& wtx, UniValue& ret, const std::string strAd
 
   //Begin Compiling the Decrypted Transaction
   tx.push_back(Pair("txid", wtx.GetHash().ToString()));
+
+  if(fZdebug)
+    fprintf(stderr,"%s: txid=%s\n", __func__, wtx.GetHash().ToString().c_str() );
+
   if (wtx.IsCoinBase())
   {
       tx.push_back(Pair("coinbase", true));

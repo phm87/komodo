@@ -392,6 +392,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-sysperms", _("Create new files with system default permissions, instead of umask 077 (only effective with disabled wallet functionality)"));
 #endif
     strUsage += HelpMessageOpt("-txindex", strprintf(_("Maintain a full transaction index, used by the getrawtransaction rpc call (default: %u)"), 0));
+    strUsage += HelpMessageOpt("-txsend=<cmd>", _("Execute command to send a transaction instead of broadcasting (%s in cmd is replaced by transaction hex)"));
     strUsage += HelpMessageOpt("-addressindex", strprintf(_("Maintain a full address index, used to query for the balance, txids and unspent outputs for addresses (default: %u)"), DEFAULT_ADDRESSINDEX));
     strUsage += HelpMessageOpt("-timestampindex", strprintf(_("Maintain a timestamp index for block hashes, used to query blocks hashes by a range of timestamps (default: %u)"), DEFAULT_TIMESTAMPINDEX));
     strUsage += HelpMessageOpt("-spentindex", strprintf(_("Maintain a full spent index, used to query the spending txid and input index for an outpoint (default: %u)"), DEFAULT_SPENTINDEX));
@@ -454,7 +455,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-maxtxfee=<amt>", strprintf(_("Maximum total fees (in %s) to use in a single wallet transaction; setting this too low may abort large transactions (default: %s)"),
         CURRENCY_UNIT, FormatMoney(maxTxFee)));
     strUsage += HelpMessageOpt("-upgradewallet", _("Upgrade wallet to latest format") + " " + _("on startup"));
-    strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file (within data directory)") + " " + strprintf(_("(default: %s)"), "wallet.dat"));
+    strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file absolute path or a path relative to the data directory") + " " + strprintf(_("(default: %s)"), DEFAULT_WALLET_DAT));
     strUsage += HelpMessageOpt("-walletbroadcast", _("Make the wallet broadcast transactions") + " " + strprintf(_("(default: %u)"), true));
     strUsage += HelpMessageOpt("-walletnotify=<cmd>", _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)"));
     strUsage += HelpMessageOpt("-whitelistaddress=<Raddress>", _("Enable the wallet filter for notary nodes and add one Raddress to the whitelist of the wallet filter. If -whitelistaddress= is used, then the wallet filter is automatically activated. Several Raddresses can be defined using several -whitelistaddress= (similar to -addnode). The wallet filter will filter the utxo to only ones coming from my own Raddress (derived from pubkey) and each Raddress defined using -whitelistaddress= this option is mostly for Notary Nodes)."));
@@ -1116,6 +1117,16 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 return InitError(_("Can't run with a wallet in prune mode."));
         }
 #endif
+    }
+
+      if (mapArgs.count("-txsend")) {
+        if (GetBoolArg("-walletbroadcast", true))  {
+            if (SoftSetBoolArg("-walletbroadcast", false)) {
+                LogPrintf("%s: parameter interaction: -txsend=<cmd> -> setting -walletbroadcast=0\n", __func__);
+            } else {
+                return InitError(_("Wallet transaction broadcasting is incompatible with -txsend (for privacy)."));
+            }
+        }
     }
 
     // ********************************************************* Step 3: parameter-to-internal-flags

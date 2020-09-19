@@ -598,6 +598,7 @@ void *chainparams_commandline()
                 {
                         boost::assign::map_list_of
                                 (0, pCurrentParams->consensus.hashGenesisBlock)
+                                // Generated at 1600532337 via hush3 contrib/checkpoints.pl by Duke Leto
                                 (5000,     uint256S("0x000000018f8543066baa9c5f83e981749da4cb625fad02c187b4a9c4693ebd60"))
                                 (10000,     uint256S("0x00000002d177d1cbfeaf7c27a2a32766ea9063d222cbcc7623dc08355b07a3ad"))
                                 (15000,     uint256S("0x000000008dbfbd5d5e27d819bf2989c5658c3494608bfa1320ad0b090660cd44"))
@@ -651,10 +652,15 @@ void *chainparams_commandline()
                                 (255000,     uint256S("0x00000000b76f444f3f5258a2d20d2639c0bffebb6ee0217caa56fcd0404337d5"))
                                 (260000,     uint256S("0x00000001f2dc5f292d9ee232d463faf1bc59362b9b3432f5bd1f72ffc76716f8"))
                                 (265000,     uint256S("0x00000003c2dc488c16fc1d73b288065e89bfb9e38dd08cc543867b0b7aa26047"))
-                                (270000,     uint256S("0x000000026cc545eed18b508c3368cd20256c012bfa10f5f115b21ad0101c02cb")),
-                                (int64_t)  1596129098, // time of last checkpointed block
-                                (int64_t) 527001,      // total txs
-                                (double)  891         // txs in the last day before block 270407
+                                (270000,     uint256S("0x000000026cc545eed18b508c3368cd20256c012bfa10f5f115b21ad0101c02cb"))
+                                (275000,     uint256S("0x0000000376ee6074814c8274238f88e48f96a87ee6ba63e7d349554128087014"))
+                                (280000,     uint256S("0x000000036b2c0edb762736b4243cdba4d5b576456cc4c6b6a29ed69d27f0c4d9"))
+                                (285000,     uint256S("0x000000064ca1b27d679ffc9e25af53d531d9f80bc00fd130f5a71054b2f96124"))
+                                (290000,     uint256S("0x00000000c9bd5248099f4caca2a5b1da88548cd1824bb22a0efa6c30cf6ccfce"))
+                                (295000,     uint256S("0x00000002fb6bbf41e4f17f88301895c9143ea93e628523b97e5bd5765070d803")),
+                                (int64_t)  1599924956, // time of last checkpointed block
+                                (int64_t) 573115,      // total txs
+                                (double)  970        // txs in the last day before block 298951
                 };
         } else {
             checkpointData = //(Checkpoints::CCheckpointData)

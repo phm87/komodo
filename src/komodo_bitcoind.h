@@ -1241,19 +1241,14 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
 // but to tell the AC params, I need to say "11% of 11.25" is 1.25
 // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
-// Do not change this code unless you really know what you are doing.
+// This must be kept in sync with hush_block_subsidy() in komoto_utils.h!
+// Changing these functions are consensus changes!
 // Here Be Dragons! -- Duke Leto
 uint64_t hush_commission(int height)
 {
     // BR_END is the 31st halving
     int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),
         INTERVAL = GetArg("-ac_halving1",840000), TRANSITION = 129, BR_END = 50740000;
-    int32_t commisions[] = {starting_commission, 31250000, 15625000, 78125000, 39062500, 19531250, 9765625, // these are exact
-                            4882812, 2441406, 1220703, 610351 // these have deviation from ideal BR
-                            // Just like BTC, BRs in the far future will be slightly less than
-                            // they should be because exact values are not integers, causing
-                            // slightly less coins to be actually mined
-    };
     uint64_t commission = 0;
 
     //TODO: Likely a bug hiding here or at the next halving :)
@@ -1261,44 +1256,91 @@ uint64_t hush_commission(int height)
     if( height > HALVING1) {
         // Block time going from 150s to 75s (half) means the interval between halvings
         // must be twice as often, i.e. 840000*2=1680000
-        // 840000 is 4 years worth of 150s blocks
+        // 840000 is ~4 years worth of 150s blocks
         // With 150s blocks, we have 210,000 blocks per year
         // With 75s blocks,  we have 420,000 blocks per year
-        INTERVAL = GetArg("-ac_halving2",1680000);  // 4 years worth of 75s blocks
+        INTERVAL = GetArg("-ac_halving2",1680000);  // ~4 years worth of 75s blocks
         fprintf(stderr,"%s: height=%d increasing interval to %d\n", __func__, height, INTERVAL);
     }
 
-    // Transition period of 128 blocks has BR=FR=0
     if (height < TRANSITION) {
         commission = 0;
-    } else if (height < HALVING1) {               // before 1st Halving @ Block 340000 (Nov 2020)
-        commission = commisions[0];
-    } else if (height < HALVING1+1*INTERVAL) {    // before 2nd Halving @ Block 2020000
-        commission = commisions[1];
-    } else if (height < HALVING1+2*INTERVAL) {    // before 3rd Halving @ Block 3700000
-        commission = commisions[2];
-    } else if (height < HALVING1+3*INTERVAL) {    // before 4th Halving @ Block 5380000
-        commission =  commisions[3];
-    } else if (height < HALVING1+4*INTERVAL) {    // before 5th Halving @ Block 7060000
-        commission =  commisions[4];
-    } else if (height < HALVING1+5*INTERVAL) {    // before 6th Halving @ Block 8740000
-        commission = commisions[5];
-    } else if (height < HALVING1+6*INTERVAL) {    // before 7th Halving @ Block 10420000
-        commission = commisions[6];
-    } else if (height < HALVING1+7*INTERVAL) {    // before 8th Halving @ Block 12100000
-        // TODO: Still true??? Block reward will go to zero between 7th+8th halvings, ac_end may need adjusting
-        commission = commisions[7];
-    } else if (height < HALVING1+8*INTERVAL) {    // before 9th Halving @ Block 13780000
-        // BR should be zero before this halving happens
-        commission = commisions[8];
+    } else {
+        // Just like BTC, BRs in the far future will be slightly less than
+        // they should be because exact values are not integers, causing
+        // slightly less coins to be actually mined and small deviations
+        // to the ideal FR/devtax
+        if (height < HALVING1) { // before 1st Halving @ Block 340000 (Nov 2020)
+            commission = starting_commission;
+        } else if (height < 2020000 ) {
+            commission = 31250000;
+        } else if (height < 3700000 ) {
+            commission = 15625000;
+        } else if (height < 5380000 ) {
+            commission = 7812500;
+        } else if (height < 7060000 ) {
+            commission = 3906250;
+        } else if (height < 8740000 ) {
+            commission = 1953125;
+        } else if (height < 10420000) {
+            commission = 976562; // 0.5 puposhi deviation, all further BRs have deviation from ideal
+        } else if (height < 12100000) {
+            commission = 488281;
+        } else if (height < 15460000) {
+            commission = 244140;
+        } else if (height < 17140000) {
+            commission = 122070;
+        } else if (height < 18820000) {
+            commission = 61035;
+        } else if (height < 23860000) {
+            commission = 30517;
+        } else if (height < 23860000) {
+            commission = 15258;
+        } else if (height < 25540000) {
+            commission = 7629;
+        } else if (height < 27220000) {
+            commission = 3814;
+        } else if (height < 27220000) {
+            commission = 1907;
+        } else if (height < 28900000) {
+            commission = 953;
+        } else if (height < 30580000) {
+            commission = 476;
+        } else if (height < 32260000) {
+            commission = 238;
+        } else if (height < 33940000) {
+            commission = 119;
+        } else if (height < 35620000) {
+            commission = 59;
+        } else if (height < 37300000) {
+            commission = 29;
+        } else if (height < 38980000) {
+            commission = 14;
+        } else if (height < 40660000) {
+            commission = 7;
+        } else if (height < 42340000) {
+            commission = 3;
+        } else if (height < 44020000) {
+            commission = 1;
+        } else if (height < 45700000) {
+            // FR goes to zero at Halving 26
+            commission = 0;
+        } else if (height < 47380000) {
+            // FR still zero at Halving 27
+            commission = 0;
+        } else if (height < 49060000) {
+            // FR still zero at Halving 28
+            commission = 0;
+        } else if (height < 50740000) {
+            // FR still zero at Halving 29
+            commission = 0;
+        } else {
+            // enforce FR=0 for all other heights
+            // This over-rides the -ac_end param via HUSH3 cli args
+            commission = 0;
+        }
     }
-    // Explicitly set the last block reward
-    // BR_END is the block with first zero block reward, which overrides
-    // the -ac_end param on HUSH3
-    if(height >= BR_END) {
-        fprintf(stderr,"%s: HUSH block reward has gone to zero at height %d!!! It was a good run folks\n", __func__, height);
-        commission = 0;
-    }
+
     if(fDebug)
         fprintf(stderr,"%s: commission=%lu,interval=%d at height %d\n", __func__, commission, INTERVAL, height);
     return commission;

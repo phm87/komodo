@@ -1542,21 +1542,95 @@ uint64_t komodo_max_money()
 }
 
 
-// This implements the Hush Emission Curve
-uint64_t hush_block_subsidy(int nHeight)
+// This implements the Hush Emission Curve, the miner subsidy part,
+// and must be kept in sync with hush_commision() in komoto_bitcoind.h!
+// Changing these functions are consensus changes!
+// Here Be Dragons! -- Duke Leto
+uint64_t hush_block_subsidy(int height)
 {
-    uint64_t subsidy=0;
-    //TODO: Cover all halvings until BR=0
-    //if (nHeight >= 3700000) {
-    //    subsidy = ASSETCHAINS_REWARD[4];
-    //} else
-    if (nHeight >= 2020000) {
-        subsidy = 140625000;
-    } else if (nHeight >= GetArg("-z2zheight",340000)) {
-        subsidy = 281250000;
-    } else if (nHeight >= 128) {
-        subsidy = 1125000000;
+    uint64_t subsidy = 0;
+    int32_t HALVING1 = GetArg("-z2zheight",340000);
+    //TODO: support INTERVAL :(
+    //int32_t INTERVAL = GetArg("-ac_halving1",840000);
+    int32_t TRANSITION = 129;
+
+    if (height < TRANSITION) {
+        if(fDebug)
+            fprintf(stderr,"%s: setting subsidy=0 during transition at height=%d\n",__func__, height);
+        subsidy = 0;
+    } else {
+        // Just like BTC, BRs in the far future will be slightly less than
+        // they should be because exact values are not integers, causing
+        // slightly less coins to be actually mined and small deviations
+        // to the ideal FR/devtax
+        if (height < HALVING1) { // before 1st Halving @ Block 340000 (Nov 2020)
+            subsidy = 1125000000;
+        } else if (height < 2020000 ) {
+            subsidy = 281250000;
+        } else if (height < 3700000 ) {
+            subsidy = 140625000;
+        } else if (height < 5380000 ) {
+            subsidy = 70312500;
+        } else if (height < 7060000 ) {
+            subsidy = 35156250;
+        } else if (height < 8740000 ) {
+            subsidy = 17578125;
+        } else if (height < 10420000) {
+            subsidy = 8789062;
+        } else if (height < 12100000) {
+            subsidy = 4394531;
+        } else if (height < 15460000) {
+            subsidy = 2197265;
+        } else if (height < 17140000) {
+            subsidy = 1098632;
+        } else if (height < 18820000) {
+            subsidy = 549316;
+        } else if (height < 23860000) {
+            subsidy = 274658;
+        } else if (height < 23860000) {
+            subsidy = 137329;
+        } else if (height < 25540000) {
+            subsidy = 68664;
+        } else if (height < 27220000) {
+            subsidy = 34332;
+        } else if (height < 27220000) {
+            subsidy = 17166;
+        } else if (height < 28900000) {
+            subsidy = 8583;
+        } else if (height < 30580000) {
+            subsidy = 4291;
+        } else if (height < 32260000) {
+            subsidy = 2145;
+        } else if (height < 33940000) {
+            subsidy = 1072;
+        } else if (height < 35620000) {
+            subsidy = 536;
+        } else if (height < 37300000) {
+            subsidy = 268;
+        } else if (height < 38980000) {
+            subsidy = 134;
+        } else if (height < 40660000) {
+            subsidy = 67;
+        } else if (height < 42340000) {
+            subsidy = 33;
+        } else if (height < 44020000) {
+            subsidy = 16;
+        } else if (height < 45700000) {
+            subsidy = 8;
+        } else if (height < 47380000) {
+            subsidy = 4;
+        } else if (height < 49060000) {
+            subsidy = 2;
+        } else if (height < 50740000) {
+            subsidy = 1;
+        } else {
+            // HUSH Block Reward rounds down to 0 at Block 50740000 which is the 31st halving
+            // because Bitcoin/Zcash/Hush internals don't support 0.5 sat block reward yet ;)
+            subsidy = 0;
+        }
     }
+    if(fDebug)
+        fprintf(stderr,"%s: subsidy=%lu at height=%d\n",__func__,subsidy,height);
     return subsidy;
 }
 

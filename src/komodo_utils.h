@@ -1549,7 +1549,10 @@ uint64_t komodo_max_money()
 uint64_t hush_block_subsidy(int height)
 {
     uint64_t subsidy = 0;
-    int32_t HALVING1 = GetArg("-z2zheight",340000),
+    int32_t HALVING1 = GetArg("-z2zheight",340000);
+    //TODO: support INTERVAL :(
+    //int32_t INTERVAL = GetArg("-ac_halving1",840000);
+    int32_t TRANSITION = 129;
 
     if (height < TRANSITION) {
         if(fDebug)
@@ -1627,7 +1630,7 @@ uint64_t hush_block_subsidy(int height)
         }
     }
     if(fDebug)
-        fprintf(stderr,"%s: subsidy=%ul at height=%d\n",__func__,subsidy,height);
+        fprintf(stderr,"%s: subsidy=%lu at height=%d\n",__func__,subsidy,height);
     return subsidy;
 }
 

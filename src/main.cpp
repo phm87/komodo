@@ -1750,7 +1750,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             // and edge cases. This empty mempool assures there will be no transactions involving taddrs
             // stuck in the mempool, when the z2z rule takes effect.
             // Thanks to jl777 for helping design this
-            fprintf(stderr,"%s: rejecting all tx's during z2z transition window at height=%d\n", __func__,nHeight);
+            fprintf(stderr,"%s: rejecting all tx's during z2z transition window. Please retry after Block %d !!!\n", __func__,nHeight);
             return false;
         }
     }
@@ -2402,13 +2402,8 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW)
     return true;
 }
 
-//uint64_t komodo_moneysupply(int32_t height);
-
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-    fprintf(stderr,"%s: ht.%d\n", __func__, nHeight);
-    int32_t numhalvings,i; uint64_t numerator; CAmount nSubsidy = 3 * COIN;
-
     return komodo_ac_block_subsidy(nHeight);
 }
 
@@ -4794,9 +4789,10 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         nShieldedOutputsInBlock += nShieldedOutputs;
         nShieldedSpendsInBlock  += nShieldedSpends;
         if (fZdebug) {
-            fprintf(stderr,"%s: tx=%s has zspends=%d zouts=%d\n", __FUNCTION__, tx.GetHash().ToString().c_str(), nShieldedSpendsInBlock, nShieldedOutputsInBlock );
+            fprintf(stderr,"%s: tx=%s has zspends=%d zouts=%d\n", __FUNCTION__, tx.GetHash().ToString().c_str(), nShieldedSpends, nShieldedOutputs );
         }
     }
+    fprintf(stderr,"%s: block %s has total zspends=%d zouts=%d\n", __FUNCTION__, block.GetHash().ToString().c_str(), nShieldedSpendsInBlock, nShieldedOutputsInBlock );
 
     pindexNew->nSproutValue = sproutValue;
     pindexNew->nChainSproutValue = boost::none;

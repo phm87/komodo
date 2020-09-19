@@ -681,9 +681,6 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp, const CPubKey& myp
         throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Cannot get a block template while no peers are connected or chain not in sync!");
     }
 
-    //if (IsInitialBlockDownload())
-     //   throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zcash is downloading blocks...");
-
     static unsigned int nTransactionsUpdatedLast;
 
     if (!lpval.isNull())

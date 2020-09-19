@@ -1241,7 +1241,8 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
 // but to tell the AC params, I need to say "11% of 11.25" is 1.25
 // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
-// Do not change this code unless you really know what you are doing.
+// This must be kept in sync with hush_block_subsidy() in komoto_utils.h!
+// Changing these functions are consensus changes!
 // Here Be Dragons! -- Duke Leto
 uint64_t hush_commission(int height)
 {
@@ -1261,56 +1262,28 @@ uint64_t hush_commission(int height)
         INTERVAL = GetArg("-ac_halving2",1680000);  // ~4 years worth of 75s blocks
         fprintf(stderr,"%s: height=%d increasing interval to %d\n", __func__, height, INTERVAL);
     }
-/*
-0,1250000000,1125000000,125000000
-1,312500000,281250000,31250000
-2,156250000,140625000,15625000
-3,78125000,70312500,7812500
-4,39062500,35156250,3906250
-5,19531250,17578125,1953125
-6,9765625,8789062,976562
-7,4882812,4394531,488281
-8,2441406,2197265,244140
-9,1220703,1098632,122070
-10,610351,549316,61035
-11,305175,274658,30517
-12,152587,137329,15258
-13,76293,68664,7629
-14,38146,34332,3814
-15,19073,17166,1907
-16,9536,8583,953
-17,4768,4291,476
-18,2384,2145,238
-19,1192,1072,119
-20,596,536,59
-21,298,268,29
-22,149,134,14
-23,74,67,7
-24,37,33,3
-25,18,16,1
-*/
-
 
     if (height < TRANSITION) {
         commission = 0;
     } else {
         // Just like BTC, BRs in the far future will be slightly less than
         // they should be because exact values are not integers, causing
-        // slightly less coins to be actually mined
+        // slightly less coins to be actually mined and small deviations
+        // to the ideal FR/devtax
         if (height < HALVING1) { // before 1st Halving @ Block 340000 (Nov 2020)
             commission = starting_commission;
         } else if (height < 2020000 ) {
-            commission = 312500000;
+            commission = 31250000;
         } else if (height < 3700000 ) {
-            commission = 156250000;
+            commission = 15625000;
         } else if (height < 5380000 ) {
-            commission = 78125000;
+            commission = 7812500;
         } else if (height < 7060000 ) {
-            commission = 39062500;
+            commission = 3906250;
         } else if (height < 8740000 ) {
-            commission = 19531250;
+            commission = 1953125;
         } else if (height < 10420000) {
-            commission = 9765625;
+            commission = 976562; // 0.5 puposhi deviation, all further BRs have deviation from ideal
         } else if (height < 12100000) {
             commission = 488281;
         } else if (height < 15460000) {
@@ -1350,25 +1323,24 @@ uint64_t hush_commission(int height)
         } else if (height < 44020000) {
             commission = 1;
         } else if (height < 45700000) {
+            // FR goes to zero at Halving 26
             commission = 0;
         } else if (height < 47380000) {
+            // FR still zero at Halving 27
             commission = 0;
         } else if (height < 49060000) {
+            // FR still zero at Halving 28
             commission = 0;
         } else if (height < 50740000) {
+            // FR still zero at Halving 29
             commission = 0;
         } else {
+            // enforce FR=0 for all other heights
+            // This over-rides the -ac_end param via HUSH3 cli args
             commission = 0;
         }
     }
 
-    // Explicitly set the last block reward
-    // BR_END is the block with first zero block reward, which overrides
-    // the -ac_end param on HUSH3
-    if(height >= BR_END) {
-        fprintf(stderr,"%s: HUSH block reward has gone to zero at height %d!!! It was a good run folks\n", __func__, height);
-        commission = 0;
-    }
     if(fDebug)
         fprintf(stderr,"%s: commission=%lu,interval=%d at height %d\n", __func__, commission, INTERVAL, height);
     return commission;

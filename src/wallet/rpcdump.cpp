@@ -100,7 +100,7 @@ UniValue convertpassphrase(const UniValue& params, bool fHelp, const CPubKey& my
             "1. \"agamapassphrase\"   (string, required) Agama passphrase\n"
             "\nResult:\n"
             "\"agamapassphrase\": \"agamapassphrase\",   (string) Agama passphrase you entered\n"
-            "\"address\": \"komodoaddress\",             (string) Address corresponding to your passphrase\n"
+            "\"address\": \"hushaddress\",             (string) Address corresponding to your passphrase\n"
             "\"pubkey\": \"publickeyhex\",               (string) The hex value of the raw public key\n"
             "\"privkey\": \"privatekeyhex\",             (string) The hex value of the raw private key\n"
             "\"wif\": \"wif\"                            (string) The private key in WIF format to use with 'importprivkey'\n"

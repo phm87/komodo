@@ -2050,7 +2050,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 #endif // ENABLE_MINING
 
-     // Start the thread that notifies listeners of transactions that have been
+    // Start the thread that notifies listeners of transactions that have been
     // recently added to the mempool, or have been added to or removed from the
     // chain. We perform this before step 10 (import blocks) so that the
     // original value of chainActive.Tip(), which corresponds with the wallet's

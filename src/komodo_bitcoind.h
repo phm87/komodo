@@ -1247,7 +1247,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 uint64_t hush_commission(int height)
 {
     int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),
-        INTERVAL = GetArg("-ac_halving1",840000), TRANSITION = 128;
+        INTERVAL = GetArg("-ac_halving1",840000), TRANSITION = 129;
     uint64_t commission = 0;
 
     //TODO: Likely a bug hiding here or at the next halving :)
@@ -1262,6 +1262,7 @@ uint64_t hush_commission(int height)
         fprintf(stderr,"%s: height=%d increasing interval to %d\n", __func__, height, INTERVAL);
     }
 
+    // Block 128 had a miner subsidy but no FR!!! Discovered by Denio
     if (height < TRANSITION) {
         commission = 0;
     } else {

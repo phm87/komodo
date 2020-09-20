@@ -1524,6 +1524,9 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
 
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
+    if(fDebug)
+        fprintf(stderr,"%s: tx=%s\n", __func__, tx.GetHash().ToString().c_str() );
+
     {
         AssertLockHeld(cs_wallet);
         if ( tx.IsCoinBase() && tx.vout[0].nValue == 0 )
@@ -1606,6 +1609,8 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 void CWallet::SyncTransaction(const CTransaction& tx, const CBlock* pblock)
 {
     LOCK(cs_wallet);
+    if(fDebug)
+        fprintf(stderr,"%s: tx=%s\n", __func__, tx.GetHash().ToString().c_str() );
     if (!AddToWalletIfInvolvingMe(tx, pblock, true))
         return; // Not one of ours
 
@@ -1614,6 +1619,8 @@ void CWallet::SyncTransaction(const CTransaction& tx, const CBlock* pblock)
 
 void CWallet::MarkAffectedTransactionsDirty(const CTransaction& tx)
 {
+    if(fDebug)
+        fprintf(stderr,"%s: tx=%s\n", __func__, tx.GetHash().ToString().c_str() );
     // If a transaction changes 'conflicted' state, that changes the balance
     // available of the outputs it spends. So force those to be
     // recomputed, also:
@@ -1630,6 +1637,8 @@ void CWallet::MarkAffectedTransactionsDirty(const CTransaction& tx)
             mapWallet[mapSaplingNullifiersToNotes[nullifier].hash].MarkDirty();
         }
     }
+    if(fDebug)
+        fprintf(stderr,"%s: finished marking dirty transactions\n", __func__);
 }
 
 void CWallet::EraseFromWallet(const uint256 &hash)

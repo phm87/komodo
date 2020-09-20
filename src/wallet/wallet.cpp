@@ -2389,6 +2389,8 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
 void CWallet::ReorderWalletTransactions(std::map<std::pair<int,int>, CWalletTx*> &mapSorted, int64_t &maxOrderPos)
 {
     LOCK2(cs_main, cs_wallet);
+    if(fZdebug)
+        fprintf(stderr,"%s: maxOrderPos=%li\n",__func__, maxOrderPos);
 
     int maxSortNumber = chainActive.Tip()->GetHeight() + 1;
 
@@ -2419,8 +2421,11 @@ void CWallet::UpdateWalletTransactionOrder(std::map<std::pair<int,int>, CWalletT
   int64_t previousPosition = 0;
   std::map<const uint256, CWalletTx*> mapUpdatedTxs;
 
+  if(fZdebug)
+        fprintf(stderr,"%s: maxSorted.size=%li\n",__func__, mapSorted.size());
+
   //Check the postion of each transaction relative to the previous one.
-for (map<std::pair<int,int>, CWalletTx*>::iterator it = mapSorted.begin(); it != mapSorted.end(); ++it) {
+  for (map<std::pair<int,int>, CWalletTx*>::iterator it = mapSorted.begin(); it != mapSorted.end(); ++it) {
       CWalletTx* pwtx = it->second;
       const uint256 wtxid = pwtx->GetHash();
 
@@ -2456,9 +2461,13 @@ for (map<std::pair<int,int>, CWalletTx*>::iterator it = mapSorted.begin(); it !=
 void CWallet::DeleteTransactions(std::vector<uint256> &removeTxs) {
     LOCK(cs_wallet);
 
+    int numTx = removeTxs.size();
+    if(fZdebug)
+        fprintf(stderr,"%s: removeTxs.size=%d\n", __func__, numTx);
+
     CWalletDB walletdb(strWalletFile, "r+", false);
 
-    for (int i = 0; i< removeTxs.size(); i++) {
+    for (int i = 0; i< numTx; i++) {
         if (mapWallet.erase(removeTxs[i])) {
             walletdb.EraseTx(removeTxs[i]);
             LogPrintf("%s: Deleting tx %s, %i.\n", __func__, removeTxs[i].ToString(),i);
@@ -2480,6 +2489,9 @@ void CWallet::DeleteWalletTransactions(const CBlockIndex* pindex) {
 
       int nDeleteAfter = (int)fDeleteTransactionsAfterNBlocks;
       bool runCompact = false;
+
+      if(fZdebug)
+        fprintf(stderr,"%s: nDeleteAfter=%d\n",__func__,nDeleteAfter);
 
       if (pindex && fTxDeleteEnabled) {
 
@@ -2646,8 +2658,11 @@ void CWallet::DeleteWalletTransactions(const CBlockIndex* pindex) {
         LogPrintf("Delete Tx - Total Transaction Count %i, Transactions Deleted %i\n ", txCount, int(removeTxs.size()));
 
         //Compress Wallet
-        if (runCompact)
-          CWalletDB::Compact(bitdb,strWalletFile);
+        if (runCompact) {
+            if(fZdebug)
+                fprintf(stderr,"%s: compacting wallet\n",__func__);
+            CWalletDB::Compact(bitdb,strWalletFile);
+        }
       }
 }
 
@@ -2689,11 +2704,9 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
                 }
             }
 
-            //SproutMerkleTree sproutTree;
             SaplingMerkleTree saplingTree;
             // This should never fail: we should always be able to get the tree
             // state on the path to the tip of our chain
-            //assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, sproutTree));
             if (pindex->pprev) {
                 if (NetworkUpgradeActive(pindex->pprev->GetHeight(), Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
                     assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, saplingTree));

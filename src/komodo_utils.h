@@ -1552,7 +1552,7 @@ uint64_t hush_block_subsidy(int height)
     int32_t HALVING1 = GetArg("-z2zheight",340000);
     //TODO: support INTERVAL :(
     //int32_t INTERVAL = GetArg("-ac_halving1",840000);
-    int32_t TRANSITION = 129;
+    int32_t TRANSITION = 128;
 
     if (height < TRANSITION) {
         if(fDebug)

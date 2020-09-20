@@ -1246,9 +1246,8 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 // Here Be Dragons! -- Duke Leto
 uint64_t hush_commission(int height)
 {
-    // BR_END is the 31st halving
     int32_t starting_commission = 125000000, HALVING1 = GetArg("-z2zheight",340000),
-        INTERVAL = GetArg("-ac_halving1",840000), TRANSITION = 129, BR_END = 50740000;
+        INTERVAL = GetArg("-ac_halving1",840000), TRANSITION = 128;
     uint64_t commission = 0;
 
     //TODO: Likely a bug hiding here or at the next halving :)

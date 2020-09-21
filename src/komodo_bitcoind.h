@@ -710,7 +710,7 @@ bool hush_hardfork_active(uint32_t time)
     uint32_t nHardForkHeight = GetArg("-hardfork-height", nHushHardforkHeight);
     bool isactive = chainActive.Height() > nHardForkHeight;
     if(fDebug) {
-        fprintf(stderr, "%s: active=%d at height=%d and forkheight=%d\n", __FUNCTION__, (int)isactive, chainActive.Height(), nHardForkHeight);
+        //fprintf(stderr, "%s: active=%d at height=%d and forkheight=%d\n", __FUNCTION__, (int)isactive, chainActive.Height(), nHardForkHeight);
     }
     return isactive;
 }

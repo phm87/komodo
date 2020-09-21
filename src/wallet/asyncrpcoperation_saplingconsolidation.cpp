@@ -78,7 +78,7 @@ void AsyncRPCOperation_saplingconsolidation::main() {
 bool AsyncRPCOperation_saplingconsolidation::main_impl() {
     bool status=true;
     auto opid=getId();
-    LogPrint("zrpcunsafe", "%s: Beginning AsyncRPCOperation_saplingconsolidation.\n", opid);
+    LogPrintf("%s: Beginning AsyncRPCOperation_saplingconsolidation.\n", __func__, opid);
     auto consensusParams = Params().GetConsensus();
     auto nextActivationHeight = NextActivationHeight(targetHeight_, consensusParams);
     if (nextActivationHeight && targetHeight_ + CONSOLIDATION_EXPIRY_DELTA >= nextActivationHeight.get()) {
@@ -161,7 +161,7 @@ bool AsyncRPCOperation_saplingconsolidation::main_impl() {
             auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain);
             //builder.SetExpiryHeight(targetHeight_ + CONSOLIDATION_EXPIRY_DELTA);
             auto actualAmountToSend = amountToSend < fConsolidationTxFee ? 0 : amountToSend - fConsolidationTxFee;
-            LogPrint("zrpcunsafe", "%s: Beginning to create transaction with Sapling output amount=%s\n", opid, FormatMoney(actualAmountToSend));
+            LogPrintf("%s: %s Beginning to create transaction with Sapling output amount=%s\n", __func__, opid, FormatMoney(actualAmountToSend));
 
             // Select Sapling notes
             std::vector<SaplingOutPoint> ops;

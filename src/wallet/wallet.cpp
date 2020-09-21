@@ -2452,20 +2452,22 @@ void CWallet::UpdateWalletTransactionOrder(std::map<std::pair<int,int>, CWalletT
   CWalletDB walletdb(strWalletFile, "r+", false);
   for (map<const uint256, CWalletTx*>::iterator it = mapUpdatedTxs.begin(); it != mapUpdatedTxs.end(); ++it) {
     CWalletTx* pwtx = it->second;
-    LogPrintf("%s: Updating Positon to %i for Tx %s\n ", __func__, pwtx->nOrderPos, pwtx->GetHash().ToString());
+    LogPrintf("%s: Updating Position to %i for Tx %s\n ", __func__, pwtx->nOrderPos, pwtx->GetHash().ToString());
     bool ret = pwtx->WriteToDisk(&walletdb);
     if(fZdebug)
         fprintf(stderr,"%s: wrote data to disk at %s for tx=%s ret=%d\n",__func__, strWalletFile.c_str(), pwtx->GetHash().ToString().c_str(), ret );
     
     mapWallet[pwtx->GetHash()].nOrderPos = pwtx->nOrderPos;
   }
+  if(fZdebug)
+        fprintf(stderr,"%s: updated nOrderPos on %lu transactions\n",__func__, mapUpdatedTxs.size() );
 
-  //Update Next Wallet Tx Positon
+  //Update Next Wallet Tx Position
   nOrderPosNext = previousPosition++;
   CWalletDB(strWalletFile).WriteOrderPosNext(nOrderPosNext);
   if(fZdebug)
         fprintf(stderr,"%s: wrote data to disk at %s nOrderPosNext=%li\n",__func__, strWalletFile.c_str(), nOrderPosNext );
-  LogPrint("%s: Total Transactions Reordered %i, Next Position %i\n ", __func__, mapUpdatedTxs.size(), nOrderPosNext);
+  LogPrintf("%s: Total Transactions Reordered %i, Next Position %i\n ", __func__, mapUpdatedTxs.size(), nOrderPosNext);
 }
 
 /**
@@ -2692,7 +2694,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
     int64_t nNow = GetTime();
     const CChainParams& chainParams = Params();
     if(fZdebug)
-      LogPrintf("%s: fUpdate=%d now=%li\n",fUpdate,nNow);
+      LogPrintf("%s: fUpdate=%d now=%li\n",__func__,fUpdate,nNow);
 
     CBlockIndex* pindex = pindexStart;
     {
@@ -2755,7 +2757,7 @@ void CWallet::ReacceptWalletTransactions()
 {
     int64_t nNow = GetTime();
     if(fZdebug)
-      LogPrintf("%s: now=%li\n",nNow);
+      LogPrintf("%s: now=%li\n",__func__,nNow);
 
     if ( IsInitialBlockDownload() )
         return;
@@ -2814,7 +2816,7 @@ bool CWalletTx::RelayWalletTransaction()
 {
     int64_t nNow = GetTime();
     if(fZdebug)
-      LogPrintf("%s: now=%li\n",nNow);
+      LogPrintf("%s: now=%li\n",__func__,nNow);
     if ( pwallet == 0 )
     {
         //fprintf(stderr,"unexpected null pwallet in RelayWalletTransaction\n");

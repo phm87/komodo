@@ -2491,7 +2491,8 @@ void CWallet::DeleteTransactions(std::vector<uint256> &removeTxs) {
             return;
         }
     }
-#if defined(__GLIBC__)
+//TODO: the build system should check for malloc_trim support
+#if defined(__unix__)
     malloc_trim(0);
 #else
     // On Mac and Win memory isn't kept back upon vector or list member erase, different garbage collector strategy. No need to force trimming.

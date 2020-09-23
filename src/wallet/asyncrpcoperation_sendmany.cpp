@@ -62,23 +62,6 @@ bool hush_hardfork_active(uint32_t time);
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue sendrawtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
-int find_output(UniValue obj, int n) {
-    UniValue outputMapValue = find_value(obj, "outputmap");
-    if (!outputMapValue.isArray()) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Missing outputmap for JoinSplit operation");
-    }
-
-    UniValue outputMap = outputMapValue.get_array();
-    assert(outputMap.size() == ZC_NUM_JS_OUTPUTS);
-    for (size_t i = 0; i < outputMap.size(); i++) {
-        if (outputMap[i].get_int() == n) {
-            return i;
-        }
-    }
-
-    throw std::logic_error("n is not present in outputmap");
-}
-
 AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         boost::optional<TransactionBuilder> builder,
         CMutableTransaction contextualTx,
@@ -473,14 +456,13 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         // Add Sapling outputs
         for (auto r : z_outputs_) {
             auto address = std::get<0>(r);
-            auto value = std::get<1>(r);
+            auto value   = std::get<1>(r);
             auto hexMemo = std::get<2>(r);
-
-            auto addr = DecodePaymentAddress(address);
+            auto addr    = DecodePaymentAddress(address);
             assert(boost::get<libzcash::SaplingPaymentAddress>(&addr) != nullptr);
             auto to = boost::get<libzcash::SaplingPaymentAddress>(addr);
             if(fZdebug)
-                LogPrintf("%s: Adding Sapling output to address %s\n", __FUNCTION__, to.GetHash().ToString().c_str());
+                LogPrintf("%s: Adding Sapling output to address %s\n", __FUNCTION__, address.c_str());
 
             auto memo = get_memo_from_hex_string(hexMemo);
 
@@ -556,6 +538,8 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing hex data for raw transaction");
     }
     std::string rawtxn = rawtxnValue.get_str();
+    if(fZdebug)
+        LogPrintf("%s: Signing raw txid=%s\n", __FUNCTION__, rawtxn.c_str());
 
     UniValue params = UniValue(UniValue::VARR);
     params.push_back(rawtxn);
@@ -567,12 +551,16 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
         // TODO: #1366 Maybe get "errors" and print array vErrors into a string
         throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Failed to sign transaction");
     }
+    if(fZdebug)
+        LogPrintf("%s: Signed raw txid correctly %s\n", __FUNCTION__);
 
     UniValue hexValue = find_value(signResultObject, "hex");
     if (hexValue.isNull()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing hex data for signed transaction");
     }
     std::string signedtxn = hexValue.get_str();
+    if(fZdebug)
+        LogPrintf("%s: Found hex data\n", __FUNCTION__, rawtxn.c_str());
 
     // Send the signed transaction
     if (!testmode) {
@@ -585,6 +573,8 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
         }
 
         std::string txid = sendResultValue.get_str();
+        if(fZdebug)
+            LogPrintf("%s: sendrawtransction on txid=%s completed\n", __FUNCTION__, txid.c_str());
 
         UniValue o(UniValue::VOBJ);
         o.push_back(Pair("txid", txid));
@@ -614,7 +604,8 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
     std::set<CTxDestination> destinations;
     destinations.insert(fromtaddr_);
 
-    //printf("Looking for %s\n", boost::apply_visitor(AddressVisitorString(), fromtaddr_).c_str());
+    if(fZdebug)
+        LogPrintf("%s: Looking for %s\n", boost::apply_visitor(AddressVisitorString(), fromtaddr_).c_str());
 
     vector<COutput> vecOutputs;
 
@@ -678,6 +669,9 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
 
 bool AsyncRPCOperation_sendmany::find_unspent_notes() {
+    if(fZdebug)
+        LogPrintf("%s: For address %s depth=%d\n", __FUNCTION__, fromaddress_.c_str(), mindepth_);
+
     std::vector<SaplingNoteEntry> saplingEntries;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);

@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -1440,7 +1440,7 @@ UniValue gettxout(const UniValue& params, bool fHelp, const CPubKey& mypk)
             "     \"reqSigs\" : n,          (numeric) Number of required signatures\n"
             "     \"type\" : \"pubkeyhash\", (string) The type, eg pubkeyhash\n"
             "     \"addresses\" : [          (array of string) array of Komodo addresses\n"
-            "        \"komodoaddress\"        (string) Komodo address\n"
+            "        \"hushaddress\"        (string) Hush address\n"
             "        ,...\n"
             "     ]\n"
             "  },\n"
@@ -1904,6 +1904,7 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
             "  \"nullifiers\": xxxxx,                     (numeric) The total number of shielded nullifiers in the chain up to that point.\n"
             "  \"shielded_txcount\": xxxxx,               (numeric) The total number of shielded (containing a zaddr) transactions in the chain up to that point.\n"
             "  \"shielded_outputs\": xxxxx,               (numeric) The total number of shielded outputs in the chain up to that point.\n"
+            "  \"shielded_spends\": xxxxx,                (numeric) The total number of shielded spends in the chain up to that point.\n"
             "  \"shielded_pool_size\": xxxxx,             (numeric) The total number of unspent shielded outputs, i.e. the Shielded Pool or Anonymity Set (anonset).\n"
             "  \"shielding_txcount\": xxxxx,              (numeric) The total number of shielding (containing a zaddr output) transactions in the chain up to that point.\n"
             "  \"deshielding_txcount\": xxxxx,            (numeric) The total number of deshielding (containing a zaddr input) transactions in the chain up to that point.\n"
@@ -2003,9 +2004,11 @@ UniValue getchaintxstats(const UniValue& params, bool fHelp, const CPubKey& mypk
         ret.pushKV("shielding_payments", (int64_t)pindex->nChainShieldingPayments);
 
         int64_t nullifierCount = pwalletMain->NullifierCount();
+        //TODO: this is unreliable, is only a cache or subset of total nullifiers
         ret.pushKV("nullifiers", (int64_t)nullifierCount);
-        ret.pushKV("shielded_pool_size", (int64_t)pindex->nChainShieldedOutputs - nullifierCount);
+        ret.pushKV("shielded_pool_size", (int64_t)(pindex->nChainShieldedOutputs - pindex->nChainShieldedSpends));
         ret.pushKV("shielded_outputs", (int64_t)pindex->nChainShieldedOutputs);
+        ret.pushKV("shielded_spends", (int64_t)pindex->nChainShieldedSpends);
     }
 
     if (blockcount > 0) {

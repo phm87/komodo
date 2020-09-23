@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -99,6 +99,8 @@ static const unsigned int DEFAULT_TX_RETENTION_LASTTX = 200;
 
 //Amount of transactions to delete per run while syncing
 static const int MAX_DELETE_TX_SIZE = 50000;
+
+extern const char * DEFAULT_WALLET_DAT;
 
 class CBlockIndex;
 class CCoinControl;
@@ -1071,7 +1073,8 @@ public:
       * Sapling ZKeys
       */
     //! Generates new Sapling key
-    libzcash::SaplingPaymentAddress GenerateNewSaplingZKey();
+    // Sietch uses addToWallet=false
+    libzcash::SaplingPaymentAddress GenerateNewSaplingZKey(bool addToWallet=true);
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(
         const libzcash::SaplingExtendedSpendingKey &key,

@@ -3,7 +3,7 @@
 // Copyright (c) 2019-2020 The Hush developers
 
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -723,6 +723,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nPayments              = diskindex.nPayments;
                 pindexNew->nShieldedTx            = diskindex.nShieldedTx;
                 pindexNew->nShieldedOutputs       = diskindex.nShieldedOutputs;
+                pindexNew->nShieldedSpends        = diskindex.nShieldedSpends;
                 pindexNew->nShieldedPayments      = diskindex.nShieldedPayments;
                 pindexNew->nShieldingTx           = diskindex.nShieldingTx;
                 pindexNew->nShieldingPayments     = diskindex.nShieldingPayments;

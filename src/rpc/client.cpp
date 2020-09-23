@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -169,11 +169,11 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_listsentbyaddress", 3},
     { "z_listsentbyaddress", 4},
     { "z_listsentbyaddress", 5},
-    { "z_listreceivedbyaddress", 1},
-    { "z_listreceivedbyaddress", 2},
-    { "z_listreceivedbyaddress", 3},
-    { "z_listreceivedbyaddress", 4},
-    { "z_listreceivedbyaddress", 5},
+    { "z_listreceivedaddress", 1},
+    { "z_listreceivedaddress", 2},
+    { "z_listreceivedaddress", 3},
+    { "z_listreceivedaddress", 4},
+    { "z_listreceivedaddress", 5},
 
     // crosschain
     { "assetchainproof", 1},

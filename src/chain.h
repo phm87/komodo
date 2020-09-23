@@ -1,8 +1,8 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019      The Hush developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -276,8 +276,11 @@ public:
     //! inputs and outputs.
     int64_t nShieldedTx;
 
-    //! (memory only) Number of shielded outputs in the block up to and including this block.
+    //! (memory only) Number of shielded outputs
     int64_t nShieldedOutputs;
+
+    //! (memory only) Number of shielded spends
+    int64_t nShieldedSpends;
 
     //! (memory only) Number of fully shielded transactions. A fully shielded transaction is defined
     //! as a transaction containing JoinSplits and only shielded inputs and outputs, i.e. no transparent
@@ -331,6 +334,9 @@ public:
 
     //! (memory only) Number of shielded outputs in the chain up to and including this block.
     int64_t nChainShieldedOutputs;
+
+    //! (memory only) Number of shielded spends in the chain up to and including this block.
+    int64_t nChainShieldedSpends;
 
     //! (memory only) Number of fully shielded transactions. A fully shielded transaction is defined
     //! as a transaction containing JoinSplits and only shielded inputs and outputs, i.e. no transparent
@@ -429,18 +435,20 @@ public:
         nChainNotarizations = 0;
         nChainFullyShieldedTx = 0;
         nChainShieldedOutputs = 0;
+        nChainShieldedSpends  = 0;
         nChainShieldedPayments = 0;
         nChainShieldingPayments = 0;
         nChainDeshieldingPayments = 0;
         nChainFullyShieldedPayments = 0;
 
-        // Shieldex Index stats
+        // Shielded Index stats
         nPayments = 0;
         nShieldedTx = 0;
         nShieldingTx = 0;
         nNotarizations = 0;
         nDeshieldingTx = 0;
         nShieldedOutputs = 0;
+        nShieldedSpends  = 0;
         nFullyShieldedTx = 0;
         nShieldedPayments = 0;
         nShieldingPayments = 0;
@@ -679,6 +687,7 @@ public:
             READWRITE(nDeshieldingPayments);
             READWRITE(nFullyShieldedPayments);
             READWRITE(nShieldedOutputs);
+            READWRITE(nShieldedSpends);
         }
     }
 

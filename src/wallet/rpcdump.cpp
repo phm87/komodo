@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -100,7 +100,7 @@ UniValue convertpassphrase(const UniValue& params, bool fHelp, const CPubKey& my
             "1. \"agamapassphrase\"   (string, required) Agama passphrase\n"
             "\nResult:\n"
             "\"agamapassphrase\": \"agamapassphrase\",   (string) Agama passphrase you entered\n"
-            "\"address\": \"komodoaddress\",             (string) Address corresponding to your passphrase\n"
+            "\"address\": \"hushaddress\",             (string) Address corresponding to your passphrase\n"
             "\"pubkey\": \"publickeyhex\",               (string) The hex value of the raw public key\n"
             "\"privkey\": \"privatekeyhex\",             (string) The hex value of the raw private key\n"
             "\"wif\": \"wif\"                            (string) The private key in WIF format to use with 'importprivkey'\n"
@@ -200,7 +200,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
             "2. \"label\"            (string, optional, default=\"\") An optional label\n"
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "4. height               (integer, optional, default=0) start at block height?\n"
-            "5. secret_key           (integer, optional, default=188) used to import WIFs of other coins\n" 
+            "5. secret_key           (integer, optional, default=188) decimal value used to import WIFs of other coins\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nDump a private key\n"

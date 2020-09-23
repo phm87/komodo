@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -85,6 +85,7 @@ int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 //void komodo_broadcast(CBlock *pblock,int32_t limit);
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 void komodo_setactivation(int32_t height);
+void hush_changeblocktime();
 void komodo_pricesupdate(int32_t height,CBlock *pblock);
 
 BlockMap mapBlockIndex;
@@ -115,6 +116,7 @@ bool fAlerts = DEFAULT_ALERTS;
  */
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+int32_t nFirstHalvingHeight = 340000;
 
 unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
@@ -999,7 +1001,7 @@ bool CheckFinalTx(const CTransaction &tx, int flags)
     // However this changes once median past time-locks are enforced:
     const int64_t nBlockTime = (flags & LOCKTIME_MEDIAN_TIME_PAST)
     ? chainActive.Tip()->GetMedianTimePast()
-    : GetAdjustedTime();
+    : GetTime();
 
     return IsFinalTx(tx, nBlockHeight, nBlockTime);
 }
@@ -1748,7 +1750,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             // and edge cases. This empty mempool assures there will be no transactions involving taddrs
             // stuck in the mempool, when the z2z rule takes effect.
             // Thanks to jl777 for helping design this
-            fprintf(stderr,"%s: rejecting all tx's during z2z transition window at height=%d\n", __func__,nHeight);
+            fprintf(stderr,"%s: rejecting all tx's during z2z transition window. Please retry after Block %d !!!\n", __func__,nHeight);
             return false;
         }
     }
@@ -2400,49 +2402,9 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW)
     return true;
 }
 
-//uint64_t komodo_moneysupply(int32_t height);
-
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-    int32_t numhalvings,i; uint64_t numerator; CAmount nSubsidy = 3 * COIN;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
-    {
-        if ( nHeight == 1 )
-            return(100000000 * COIN); // ICO allocation
-        else if ( nHeight < KOMODO_ENDOFERA )
-            return(3 * COIN);
-        else if ( nHeight < 2*KOMODO_ENDOFERA )
-            return(2 * COIN);
-        else return(COIN);
-    }
-    else
-    {
-        return(komodo_ac_block_subsidy(nHeight));
-    }
-    /*
-     // Mining slow start
-     // The subsidy is ramped up linearly, skipping the middle payout of
-     // MAX_SUBSIDY/2 to keep the monetary curve consistent with no slow start.
-     if (nHeight < consensusParams.nSubsidySlowStartInterval / 2) {
-     nSubsidy /= consensusParams.nSubsidySlowStartInterval;
-     nSubsidy *= nHeight;
-     return nSubsidy;
-     } else if (nHeight < consensusParams.nSubsidySlowStartInterval) {
-     nSubsidy /= consensusParams.nSubsidySlowStartInterval;
-     nSubsidy *= (nHeight+1);
-     return nSubsidy;
-     }
-
-     assert(nHeight > consensusParams.SubsidySlowStartShift());
-     int halvings = (nHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nSubsidyHalvingInterval;*/
-    // Force block reward to zero when right shift is undefined.
-    //int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
-    //if (halvings >= 64)
-    //    return 0;
-
-    // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
-    //nSubsidy >>= halvings;
-    //return nSubsidy;
+    return komodo_ac_block_subsidy(nHeight);
 }
 
 bool IsInitialBlockDownload()
@@ -3227,6 +3189,17 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
     // move best block pointer to prevout block
     view.SetBestBlock(pindex->pprev->GetBlockHash());
 
+    // If disconnecting a block brings us back before our blocktime halving height, go back
+    // to our original blocktime so our DAA has the correct target for that height
+    int nHeight = pindex->pprev->GetHeight();
+    nFirstHalvingHeight = GetArg("-z2zheight",340000);
+    if (ishush3 && (ASSETCHAINS_BLOCKTIME != 150) && (nHeight < nFirstHalvingHeight)) {
+        LogPrintf("%s: Setting blocktime to 150s at height %d!\n",__func__,nHeight);
+        ASSETCHAINS_BLOCKTIME      = 150;
+        hush_changeblocktime();
+    }
+
+
     if (pfClean) {
         *pfClean = fClean;
         return true;
@@ -3287,7 +3260,7 @@ void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const 
     if (bestHeader == NULL || initialDownloadCheck()) return;
 
     static int64_t lastAlertTime = 0;
-    int64_t now = GetAdjustedTime();
+    int64_t now = GetTime();
     if (lastAlertTime > now-60*60*24) return; // Alert at most once per day
 
     const int SPAN_HOURS=4;
@@ -3297,7 +3270,7 @@ void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const 
     boost::math::poisson_distribution<double> poisson(BLOCKS_EXPECTED);
 
     std::string strWarning;
-    int64_t startTime = GetAdjustedTime()-SPAN_SECONDS;
+    int64_t startTime = GetTime()-SPAN_SECONDS;
 
     LOCK(cs);
     const CBlockIndex* i = bestHeader;
@@ -3350,6 +3323,7 @@ static int64_t nTimeTotal = 0;
 bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false);
 bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBlockIndex *pindexNew, const CDiskBlockPos& pos);
 
+
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
     CDiskBlockPos blockPos;
@@ -3362,14 +3336,21 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     AssertLockHeld(cs_main);
 
     bool ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+
+    // At startup, HUSH3 doesn't know a block height yet and so we must wait until
+    // connecting a block to set our private/blocktime flags, which are height-dependent
+    nFirstHalvingHeight = GetArg("-z2zheight",340000);
     if(!ASSETCHAINS_PRIVATE && ishush3) {
         unsigned int nHeight       = pindex->GetHeight();
-        if(nHeight >= 340000) {
-            // At startup, HUSH3 doesn't know a block height yet and so we must wait until
-            // connecting a block
-            fprintf(stderr, "%s: Going full z2z at height %d!\n",__func__,nHeight);
+        if(nHeight >= nFirstHalvingHeight) {
+            fprintf(stderr, "%s: Going full z2z at height %d!\n",__func__,pindex->GetHeight());
             ASSETCHAINS_PRIVATE = 1;
         }
+    }
+    if (ishush3 && (ASSETCHAINS_BLOCKTIME != 75) && (chainActive.Height() >= nFirstHalvingHeight)) {
+        LogPrintf("%s: Blocktime halving to 75s at height %d!\n",__func__,pindex->GetHeight());
+        ASSETCHAINS_BLOCKTIME = 75;
+        hush_changeblocktime();
     }
 
     bool fExpensiveChecks = true;
@@ -3964,8 +3945,17 @@ void static UpdateTip(CBlockIndex *pindexNew) {
     if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
         progress = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.LastTip());
     } else {
-	int32_t longestchain = komodo_longestchain();
-	progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;
+        int32_t longestchain = komodo_longestchain();
+        progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;
+    }
+
+    nFirstHalvingHeight = GetArg("-z2zheight",340000);
+    if(ishush3) {
+        if (ASSETCHAINS_BLOCKTIME != 75 && (chainActive.Height() >= nFirstHalvingHeight)) {
+            LogPrintf("%s: Blocktime halving to 75s at height %d!\n",__func__,chainActive.Height());
+            ASSETCHAINS_BLOCKTIME = 75;
+            hush_changeblocktime();
+        }
     }
 
     LogPrintf("%s: new best=%s  height=%d  log2_work=%.8g  tx=%lu  date=%s progress=%f  cache=%.1fMiB(%utx)\n", __func__,
@@ -3976,33 +3966,6 @@ void static UpdateTip(CBlockIndex *pindexNew) {
               pcoinsTip->DynamicMemoryUsage() * (1.0 / (1<<20)), pcoinsTip->GetCacheSize());
 
     cvBlockChange.notify_all();
-    
-    /*
-    // https://github.com/zcash/zcash/issues/3992 -> https://github.com/zcash/zcash/commit/346d11d3eb2f8162df0cb00b1d1f49d542495198
-
-    // Check the version of the last 100 blocks to see if we need to upgrade:
-    static bool fWarned = false;
-    if (!IsInitialBlockDownload() && !fWarned)
-    {
-        int nUpgraded = 0;
-        const CBlockIndex* pindex = chainActive.Tip();
-        for (int i = 0; i < 100 && pindex != NULL; i++)
-        {
-            if (pindex->nVersion > CBlock::CURRENT_VERSION)
-                ++nUpgraded;
-            pindex = pindex->pprev;
-        }
-        if (nUpgraded > 0)
-            LogPrintf("%s: %d of last 100 blocks above version %d\n", __func__, nUpgraded, (int)CBlock::CURRENT_VERSION);
-        if (nUpgraded > 100/2)
-        {
-            // strMiscWarning is read by GetWarnings(), called by the JSON-RPC code to warn the user:
-            strMiscWarning = _("Warning: This version is obsolete; upgrade required!");
-            CAlert::Notify(strMiscWarning, true);
-            fWarned = true;
-        }
-    }
-    */
 }
 
 /**
@@ -4734,7 +4697,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     CAmount sproutValue       = 0;
     CAmount saplingValue      = 0;
     bool isShieldedTx         = false;
-    unsigned int nShieldedSpends=0,nShieldedOutputs=0,nPayments=0, nShieldedOutputsInBlock=0;
+    unsigned int nShieldedSpends=0,nShieldedSpendsInBlock=0,nShieldedOutputs=0,nPayments=0,nShieldedOutputsInBlock=0;
     unsigned int nShieldedTx=0,nFullyShieldedTx=0,nDeshieldingTx=0,nShieldingTx=0;
     unsigned int nShieldedPayments=0,nFullyShieldedPayments=0,nShieldingPayments=0,nDeshieldingPayments=0;
     unsigned int nNotarizations=0;
@@ -4822,9 +4785,14 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             // No shielded payments, add transparent payments minus a change address
             nPayments +=  tx.vout.size() > 1 ? tx.vout.size()-1 : tx.vout.size();
         }
-        // To calculate the anonset we must track the sum of zouts in every tx, in every block. -- Duke
+        // To calculate the anonset we must track the sum of spends and zouts in every tx, in every block. -- Duke
         nShieldedOutputsInBlock += nShieldedOutputs;
+        nShieldedSpendsInBlock  += nShieldedSpends;
+        if (fZdebug) {
+            fprintf(stderr,"%s: tx=%s has zspends=%d zouts=%d\n", __FUNCTION__, tx.GetHash().ToString().c_str(), nShieldedSpends, nShieldedOutputs );
+        }
     }
+    fprintf(stderr,"%s: block %s has total zspends=%d zouts=%d\n", __FUNCTION__, block.GetHash().ToString().c_str(), nShieldedSpendsInBlock, nShieldedOutputsInBlock );
 
     pindexNew->nSproutValue = sproutValue;
     pindexNew->nChainSproutValue = boost::none;
@@ -4840,6 +4808,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
         pindexNew->nPayments              = nPayments;
         pindexNew->nShieldedTx            = nShieldedTx;
         pindexNew->nShieldedOutputs       = nShieldedOutputsInBlock;
+        pindexNew->nShieldedSpends        = nShieldedSpendsInBlock;
         pindexNew->nFullyShieldedTx       = nFullyShieldedTx;
         pindexNew->nDeshieldingTx         = nDeshieldingTx;
         pindexNew->nShieldingTx           = nShieldingTx;
@@ -4862,12 +4831,15 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
             queue.pop_front();
             pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
 
+            // Update -zindex stats
             if (fZindex) {
-                if (fZdebug)
-                    fprintf(stderr,"%s: setting blockchain zstats with zouts=%d\n", __FUNCTION__, nShieldedOutputsInBlock );
+                if (fZdebug) {
+                    //fprintf(stderr,"%s: setting blockchain zstats with zspends=%d, zouts=%d\n", __FUNCTION__, nShieldedSpendsInBlock, nShieldedOutputsInBlock );
+                }
                 pindex->nChainNotarizations         = (pindex->pprev ? pindex->pprev->nChainNotarizations         : 0) + pindex->nNotarizations;
                 pindex->nChainShieldedTx            = (pindex->pprev ? pindex->pprev->nChainShieldedTx            : 0) + pindex->nShieldedTx;
                 pindex->nChainShieldedOutputs       = (pindex->pprev ? pindex->pprev->nChainShieldedOutputs       : 0) + pindex->nShieldedOutputs;
+                pindex->nChainShieldedSpends        = (pindex->pprev ? pindex->pprev->nChainShieldedSpends        : 0) + pindex->nShieldedSpends;
                 pindex->nChainFullyShieldedTx       = (pindex->pprev ? pindex->pprev->nChainFullyShieldedTx       : 0) + pindex->nFullyShieldedTx;
                 pindex->nChainShieldingTx           = (pindex->pprev ? pindex->pprev->nChainShieldingTx           : 0) + pindex->nShieldingTx;
                 pindex->nChainDeshieldingTx         = (pindex->pprev ? pindex->pprev->nChainDeshieldingTx         : 0) + pindex->nDeshieldingTx;
@@ -5123,28 +5095,28 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
     *futureblockp = 0;
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
     {
-        if (blockhdr.GetBlockTime() > GetAdjustedTime() + 4)
+        if (blockhdr.GetBlockTime() > GetTime() + 4)
         {
-            //LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
+            //LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetTime());
             return false;
         }
     }
-    else if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
+    else if (blockhdr.GetBlockTime() > GetTime() + 60)
     {
         /*CBlockIndex *tipindex;
-        //fprintf(stderr,"ht.%d future block %u vs time.%u + 60\n",height,(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
-        if ( (tipindex= chainActive.Tip()) != 0 && tipindex->GetBlockHash() == blockhdr.hashPrevBlock && blockhdr.GetBlockTime() < GetAdjustedTime() + 60 + 5 )
+        //fprintf(stderr,"ht.%d future block %u vs time.%u + 60\n",height,(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetTime());
+        if ( (tipindex= chainActive.Tip()) != 0 && tipindex->GetBlockHash() == blockhdr.hashPrevBlock && blockhdr.GetBlockTime() < GetTime() + 60 + 5 )
         {
-            //fprintf(stderr,"it is the next block, let's wait for %d seconds\n",GetAdjustedTime() + 60 - blockhdr.GetBlockTime());
-            while ( blockhdr.GetBlockTime() > GetAdjustedTime() + 60 )
+            //fprintf(stderr,"it is the next block, let's wait for %d seconds\n",GetTime() + 60 - blockhdr.GetBlockTime());
+            while ( blockhdr.GetBlockTime() > GetTime() + 60 )
                 sleep(1);
             //fprintf(stderr,"now its valid\n");
         }
         else*/
         {
-            if (blockhdr.GetBlockTime() < GetAdjustedTime() + 300)
+            if (blockhdr.GetBlockTime() < GetTime() + 300)
                 *futureblockp = 1;
-            //LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
+            //LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetTime());
             return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
         }
     }
@@ -5392,7 +5364,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     }
 
     // Check that timestamp is not too far in the future
-    if (block.GetBlockTime() > GetAdjustedTime() + consensusParams.nMaxFutureBlockTime)
+    if (block.GetBlockTime() > GetTime() + consensusParams.nMaxFutureBlockTime)
     {
         return state.Invalid(error("%s: block timestamp too far in the future", __func__),
                         REJECT_INVALID, "time-too-new");
@@ -7410,9 +7382,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                   pfrom->nStartingHeight, addrMe.ToString(), pfrom->id,
                   remoteAddr);
 
-        int64_t nTimeOffset = nTime - GetTime();
-        pfrom->nTimeOffset = nTimeOffset;
-        AddTimeData(pfrom->addr, nTimeOffset);
+        //int64_t nTimeOffset = nTime - GetTime();
+        //pfrom->nTimeOffset = nTimeOffset;
+        //AddTimeData(pfrom->addr, nTimeOffset);
+        pfrom->nTimeOffset = timeWarning.AddTimeData(pfrom->addr, nTime, GetTime());
     }
 
 
@@ -7488,7 +7461,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         // Store the new addresses
         vector<CAddress> vAddrOk;
-        int64_t nNow = GetAdjustedTime();
+        int64_t nNow = GetTime();
         int64_t nSince = nNow - 10 * 60;
         BOOST_FOREACH(CAddress& addr, vAddr)
         {
@@ -7698,7 +7671,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                     // not a direct successor.
                     pfrom->PushMessage("getheaders", chainActive.GetLocator(pindexBestHeader), inv.hash);
                     CNodeState *nodestate = State(pfrom->GetId());
-                    if (chainActive.Tip()->GetBlockTime() > GetAdjustedTime() - chainparams.GetConsensus().nPowTargetSpacing * 20 &&
+                    if (chainActive.Tip()->GetBlockTime() > GetTime() - chainparams.GetConsensus().nPowTargetSpacing * 20 &&
                         nodestate->nBlocksInFlight < MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
                         vToFetch.push_back(inv);
                         // Mark block as in flight already, even though the actual "getdata" message only goes out
@@ -8461,7 +8434,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         bool fFetch = state.fPreferredDownload || (nPreferredDownload == 0 && !pto->fClient && !pto->fOneShot); // Download if this is a nice peer, or we have no nice peers and this one might do.
         if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex && pindexBestHeader!=0) {
             // Only actively request headers from a single peer, unless we're close to today.
-            if ((nSyncStarted == 0 && fFetch) || pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60) {
+            if ((nSyncStarted == 0 && fFetch) || pindexBestHeader->GetBlockTime() > GetTime() - 24 * 60 * 60) {
                 state.fSyncStarted = true;
                 nSyncStarted++;
                 CBlockIndex *pindexStart = pindexBestHeader->pprev ? pindexBestHeader->pprev : pindexBestHeader;

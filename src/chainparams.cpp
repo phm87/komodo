@@ -657,10 +657,11 @@ void *chainparams_commandline()
                                 (280000,     uint256S("0x000000036b2c0edb762736b4243cdba4d5b576456cc4c6b6a29ed69d27f0c4d9"))
                                 (285000,     uint256S("0x000000064ca1b27d679ffc9e25af53d531d9f80bc00fd130f5a71054b2f96124"))
                                 (290000,     uint256S("0x00000000c9bd5248099f4caca2a5b1da88548cd1824bb22a0efa6c30cf6ccfce"))
-                                (295000,     uint256S("0x00000002fb6bbf41e4f17f88301895c9143ea93e628523b97e5bd5765070d803")),
-                                (int64_t)  1599924956, // time of last checkpointed block
-                                (int64_t) 573115,      // total txs
-                                (double)  970        // txs in the last day before block 298951
+                                (295000,     uint256S("0x00000002fb6bbf41e4f17f88301895c9143ea93e628523b97e5bd5765070d803"))
+                                (300000,     uint256S("0x000000033322d90275a09f4094e5c43db1f7017f788145d5a0edfa8200ecedad")),
+                                (int64_t)  1600695750, // time of last checkpointed block
+                                (int64_t) 576831,      // total txs
+                                (double)  1134         // txs in the last day before block 300768
                 };
         } else {
             checkpointData = //(Checkpoints::CCheckpointData)

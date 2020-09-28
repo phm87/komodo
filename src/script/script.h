@@ -1,12 +1,28 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
+
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
 
 #ifndef BITCOIN_SCRIPT_SCRIPT_H
 #define BITCOIN_SCRIPT_SCRIPT_H
 
 #include "crypto/common.h"
+#include "prevector.h"
 
 #include <assert.h>
 #include <climits>
@@ -17,7 +33,17 @@
 #include <string>
 #include <vector>
 
+#define OPRETTYPE_TIMELOCK 1
+#define OPRETTYPE_STAKEPARAMS 2
+#define OPRETTYPE_STAKECHEAT 3
+
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
+
+// Max size of pushdata in a CC sig in bytes
+static const unsigned int MAX_SCRIPT_CRYPTOCONDITION_FULFILLMENT_SIZE = 2048;
+
+// Maximum script length in bytes
+static const int MAX_SCRIPT_SIZE = 10000;
 
 // Threshold for nLockTime: below this value it is interpreted as block number,
 // otherwise as UNIX timestamp.
@@ -151,6 +177,8 @@ enum opcodetype
     OP_CHECKSIGVERIFY = 0xad,
     OP_CHECKMULTISIG = 0xae,
     OP_CHECKMULTISIGVERIFY = 0xaf,
+    OP_CHECKCRYPTOCONDITION = 0xcc,
+    OP_CHECKCRYPTOCONDITIONVERIFY = 0xcd,
 
     // expansion
     OP_NOP1 = 0xb0,
@@ -165,13 +193,13 @@ enum opcodetype
     OP_NOP9 = 0xb8,
     OP_NOP10 = 0xb9,
 
-
     // template matching params
     OP_SMALLDATA = 0xf9,
     OP_SMALLINTEGER = 0xfa,
     OP_PUBKEYS = 0xfb,
     OP_PUBKEYHASH = 0xfd,
     OP_PUBKEY = 0xfe,
+    OP_CRYPTOCONDITION = 0xfc,
 
     OP_INVALIDOPCODE = 0xff,
 };
@@ -348,8 +376,10 @@ private:
     int64_t m_value;
 };
 
+typedef prevector<28, unsigned char> CScriptBase;
+
 /** Serialized script, used inside transaction inputs and outputs */
-class CScript : public std::vector<unsigned char>
+class CScript : public CScriptBase
 {
 protected:
     CScript& push_int64(int64_t n)
@@ -368,11 +398,13 @@ protected:
         }
         return *this;
     }
+    bool GetBalancedData(const_iterator& pc, std::vector<std::vector<unsigned char>>& vSolutions) const;
 public:
     CScript() { }
-    CScript(const CScript& b) : std::vector<unsigned char>(b.begin(), b.end()) { }
-    CScript(const_iterator pbegin, const_iterator pend) : std::vector<unsigned char>(pbegin, pend) { }
-    CScript(const unsigned char* pbegin, const unsigned char* pend) : std::vector<unsigned char>(pbegin, pend) { }
+    CScript(const CScript& b) : CScriptBase(b.begin(), b.end()) { }
+    CScript(const_iterator pbegin, const_iterator pend) : CScriptBase(pbegin, pend) { }
+    CScript(std::vector<unsigned char>::const_iterator pbegin, std::vector<unsigned char>::const_iterator pend) : CScriptBase(pbegin, pend) { }
+    CScript(const unsigned char* pbegin, const unsigned char* pend) : CScriptBase(pbegin, pend) { }
 
     CScript& operator+=(const CScript& b)
     {
@@ -388,11 +420,9 @@ public:
     }
 
     CScript(int64_t b)        { operator<<(b); }
-
     explicit CScript(opcodetype b)     { operator<<(b); }
     explicit CScript(const CScriptNum& b) { operator<<(b); }
     explicit CScript(const std::vector<unsigned char>& b) { operator<<(b); }
-
 
     CScript& operator<<(int64_t b) { return push_int64(b); }
 
@@ -543,34 +573,6 @@ public:
         return (opcodetype)(OP_1+n-1);
     }
 
-    int FindAndDelete(const CScript& b)
-    {
-        int nFound = 0;
-        if (b.empty())
-            return nFound;
-        iterator pc = begin();
-        opcodetype opcode;
-        do
-        {
-            while (end() - pc >= (long)b.size() && memcmp(&pc[0], &b[0], b.size()) == 0)
-            {
-                pc = erase(pc, pc + b.size());
-                ++nFound;
-            }
-        }
-        while (GetOp(pc, opcode));
-        return nFound;
-    }
-    int Find(opcodetype op) const
-    {
-        int nFound = 0;
-        opcodetype opcode;
-        for (const_iterator pc = begin(); pc != end() && GetOp(pc, opcode);)
-            if (opcode == op)
-                ++nFound;
-        return nFound;
-    }
-
     /**
      * Pre-version-0.6, Bitcoin always counted CHECKMULTISIGs
      * as 20 sigops. With pay-to-script-hash, that changed:
@@ -586,10 +588,29 @@ public:
      */
     unsigned int GetSigOpCount(const CScript& scriptSig) const;
 
+    bool IsPayToPublicKeyHash() const;
+    bool IsPayToPublicKey() const;
+
     bool IsPayToScriptHash() const;
+    bool GetPushedData(CScript::const_iterator pc, std::vector<std::vector<unsigned char>>& vData) const;
+    bool IsOpReturn() const { return size() > 0 && (*this)[0] == OP_RETURN; }
+    bool GetOpretData(std::vector<std::vector<unsigned char>>& vData) const;
+
+    bool IsPayToCryptoCondition(CScript *ccSubScript, std::vector<std::vector<unsigned char>>& vSolutions) const;
+    bool IsPayToCryptoCondition(CScript *ccSubScript) const;
+    bool IsPayToCryptoCondition() const;
+    bool IsCoinImport() const;
+    bool MayAcceptCryptoCondition() const;
 
     /** Called by IsStandardTx and P2SH/BIP62 VerifyScript (which makes it consensus-critical). */
     bool IsPushOnly() const;
+
+    /** if the front of the script has check lock time verify. this is a fairly simple check.
+     * accepts NULL as parameter if unlockTime is not needed.
+     */
+    bool IsCheckLockTimeVerify(int64_t *unlockTime) const;
+
+    bool IsCheckLockTimeVerify() const;
 
     /**
      * Returns whether the script is guaranteed to fail at execution,
@@ -598,14 +619,15 @@ public:
      */
     bool IsUnspendable() const
     {
-        return (size() > 0 && *begin() == OP_RETURN);
+        return (size() > 0 && *begin() == OP_RETURN) || (size() > MAX_SCRIPT_SIZE);
     }
 
     std::string ToString() const;
+
     void clear()
     {
         // The default std::vector::clear() does not release memory.
-        std::vector<unsigned char>().swap(*this);
+        CScriptBase().swap(*this);
     }
 };
 

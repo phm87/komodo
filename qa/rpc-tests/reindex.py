@@ -1,14 +1,15 @@
 #!/usr/bin/env python2
 # Copyright (c) 2014 The Bitcoin Core developers
-# Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+# Copyright (c) 2019-2020 The Hush developers
+# Released under the GPLv3
 #
 # Test -reindex with CheckBlockIndex
 #
+
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
-import os.path
+from test_framework.util import assert_equal, initialize_chain_clean, \
+    start_node, stop_node, wait_bitcoinds
+
 
 class ReindexTest(BitcoinTestFramework):
 

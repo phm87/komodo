@@ -1,7 +1,22 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
+
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
 
 #include "db.h"
 
@@ -13,7 +28,7 @@
 
 #include <stdint.h>
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/stat.h>
 #endif
 
@@ -43,7 +58,7 @@ void CDBEnv::EnvShutdown()
     if (ret != 0)
         LogPrintf("CDBEnv::EnvShutdown: Error %d shutting down database environment: %s\n", ret, DbEnv::strerror(ret));
     if (!fMockDb)
-        DbEnv(0).remove(strPath.c_str(), 0);
+        DbEnv(u_int32_t{0}).remove(strPath.c_str(), 0);
 }
 
 void CDBEnv::Reset()
@@ -82,14 +97,15 @@ bool CDBEnv::Open(const boost::filesystem::path& pathIn)
     boost::filesystem::path pathLogDir = pathIn / "database";
     TryCreateDirectory(pathLogDir);
     boost::filesystem::path pathErrorFile = pathIn / "db.log";
-    LogPrintf("CDBEnv::Open: LogDir=%s ErrorFile=%s\n", pathLogDir.string(), pathErrorFile.string());
+    LogPrintf("CDBEnv::Open: LogDir=%s ErrorFile=%s pathIn.(%s)\n", pathLogDir.string(), pathErrorFile.string(),pathIn.string());
+    //fprintf(stderr,"strPath.(%s)\n",strPath.c_str());
 
     unsigned int nEnvFlags = 0;
     if (GetBoolArg("-privdb", true))
         nEnvFlags |= DB_PRIVATE;
 
     dbenv->set_lg_dir(pathLogDir.string().c_str());
-    dbenv->set_cachesize(0, 0x100000, 1); // 1 MiB should be enough for just the wallet
+    dbenv->set_cachesize(1, 0x100000, 1); // 1 MiB should be enough for just the wallet, Increased by 1 GB
     dbenv->set_lg_bsize(0x10000);
     dbenv->set_lg_max(1048576);
     dbenv->set_lk_max_locks(40000);
@@ -163,6 +179,55 @@ CDBEnv::VerifyResult CDBEnv::Verify(const std::string& strFile, bool (*recoverFu
     // Try to recover:
     bool fRecovered = (*recoverFunc)(*this, strFile);
     return (fRecovered ? RECOVER_OK : RECOVER_FAIL);
+}
+
+bool CDBEnv::Compact(const std::string& strFile)
+{
+    LOCK(cs_db);
+
+    DB_COMPACT dbcompact;
+    dbcompact.compact_fillpercent = 80;
+    dbcompact.compact_pages = DB_MAX_PAGES;
+    dbcompact.compact_timeout = 0;
+
+    DB_COMPACT *pdbcompact;
+    pdbcompact = &dbcompact;
+
+    int result = 1;
+    if (mapDb[strFile] != NULL) {
+        Db* pdb = mapDb[strFile];
+        result = pdb->compact(NULL, NULL, NULL, pdbcompact, DB_FREE_SPACE, NULL);
+        delete pdb;
+        mapDb[strFile] = NULL;
+
+      switch (result)
+      {
+        case DB_LOCK_DEADLOCK:
+          LogPrint("db","Deadlock %i\n", result);
+          break;
+        case DB_LOCK_NOTGRANTED:
+          LogPrint("db","Lock Not Granted %i\n", result);
+          break;
+        case DB_REP_HANDLE_DEAD:
+          LogPrint("db","Handle Dead %i\n", result);
+          break;
+        case DB_REP_LOCKOUT:
+          LogPrint("db","Rep Lockout %i\n", result);
+          break;
+        case EACCES:
+          LogPrint("db","Eacces %i\n", result);
+          break;
+        case EINVAL:
+          LogPrint("db","Error Invalid %i\n", result);
+          break;
+        case 0:
+          LogPrint("db","Wallet Compact Sucessful\n");
+          break;
+        default:
+          LogPrint("db","Compact result int %i\n", result);
+      }
+    }
+    return (result == 0);
 }
 
 bool CDBEnv::Salvage(const std::string& strFile, bool fAggressive, std::vector<CDBEnv::KeyValPair>& vResult)

@@ -1,22 +1,21 @@
 #!/usr/bin/env python2
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php
 
 # Exercise the wallet keypool, and interaction with wallet encryption/locking
 
 # Add python-bitcoinrpc to module search path:
+
+from test_framework.authproxy import JSONRPCException
+from test_framework.util import check_json_precision, initialize_chain, \
+    start_nodes, start_node, stop_nodes, wait_bitcoinds, bitcoind_processes
+
 import os
 import sys
-
-import json
 import shutil
-import subprocess
 import tempfile
 import traceback
-
-from test_framework.util import *
-
 
 def check_array_result(object_array, to_match, expected):
     """
@@ -98,7 +97,7 @@ def main():
             os.makedirs(options.tmpdir)
         initialize_chain(options.tmpdir)
 
-        nodes = start_nodes(1, options.tmpdir)
+        nodes = start_nodes(1, options.tmpdir, extra_args=[['-experimentalfeatures', '-developerencryptwallet']])
 
         run_test(nodes, options.tmpdir)
 

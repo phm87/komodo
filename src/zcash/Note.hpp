@@ -1,71 +1,147 @@
-#ifndef _ZCNOTE_H_
-#define _ZCNOTE_H_
+// Copyright (c) 2019-2020 The Hush developers
+
+#ifndef ZC_NOTE_H_
+#define ZC_NOTE_H_
 
 #include "uint256.h"
 #include "Zcash.h"
 #include "Address.hpp"
 #include "NoteEncryption.hpp"
 
+#include <array>
+#include <boost/optional.hpp>
+
 namespace libzcash {
 
-class Note {
+class BaseNote {
+protected:
+    uint64_t value_ = 0;
 public:
-    uint256 a_pk;
-    uint64_t value;
-    uint256 rho;
-    uint256 r;
+    BaseNote() {}
+    BaseNote(uint64_t value) : value_(value) {};
+    virtual ~BaseNote() {};
 
-    Note(uint256 a_pk, uint64_t value, uint256 rho, uint256 r)
-        : a_pk(a_pk), value(value), rho(rho), r(r) {}
-
-    Note();
-
-    uint256 cm() const;
-    uint256 nullifier(const SpendingKey& a_sk) const;
+    inline uint64_t value() const { return value_; };
 };
 
-class NotePlaintext {
+class SaplingNote : public BaseNote {
 public:
-    uint64_t value;
-    uint256 rho;
+    diversifier_t d;
+    uint256 pk_d;
     uint256 r;
-    boost::array<unsigned char, ZC_MEMO_SIZE> memo;
 
-    NotePlaintext() {}
+    SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 r)
+            : BaseNote(value), d(d), pk_d(pk_d), r(r) {}
 
-    NotePlaintext(const Note& note, boost::array<unsigned char, ZC_MEMO_SIZE> memo);
+    SaplingNote() {};
 
-    Note note(const PaymentAddress& addr) const;
+    SaplingNote(const SaplingPaymentAddress &address, uint64_t value);
+
+    virtual ~SaplingNote() {};
+
+    boost::optional<uint256> cm() const;
+    boost::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
+};
+
+class BaseNotePlaintext {
+protected:
+    uint64_t value_ = 0;
+    std::array<unsigned char, ZC_MEMO_SIZE> memo_;
+public:
+    BaseNotePlaintext() {}
+    BaseNotePlaintext(const BaseNote& note, std::array<unsigned char, ZC_MEMO_SIZE> memo)
+        : value_(note.value()), memo_(memo) {}
+    virtual ~BaseNotePlaintext() {}
+
+    inline uint64_t value() const { return value_; }
+    inline const std::array<unsigned char, ZC_MEMO_SIZE> & memo() const { return memo_; }
+};
+
+typedef std::pair<SaplingEncCiphertext, SaplingNoteEncryption> SaplingNotePlaintextEncryptionResult;
+
+class SaplingNotePlaintext : public BaseNotePlaintext {
+public:
+    diversifier_t d;
+    uint256 rcm;
+
+    SaplingNotePlaintext() {}
+
+    SaplingNotePlaintext(const SaplingNote& note, std::array<unsigned char, ZC_MEMO_SIZE> memo);
+
+    static boost::optional<SaplingNotePlaintext> decrypt(
+        const SaplingEncCiphertext &ciphertext,
+        const uint256 &ivk,
+        const uint256 &epk,
+        const uint256 &cmu
+    );
+
+    static boost::optional<SaplingNotePlaintext> decrypt(
+        const SaplingEncCiphertext &ciphertext,
+        const uint256 &epk,
+        const uint256 &esk,
+        const uint256 &pk_d,
+        const uint256 &cmu
+    );
+
+    boost::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
+
+    virtual ~SaplingNotePlaintext() {}
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        unsigned char leadingByte = 0x00;
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        unsigned char leadingByte = 0x01;
         READWRITE(leadingByte);
 
-        if (leadingByte != 0x00) {
-            throw std::ios_base::failure("lead byte of NotePlaintext is not recognized");
+        if (leadingByte != 0x01) {
+            throw std::ios_base::failure("lead byte of SaplingNotePlaintext is not recognized");
         }
 
-        READWRITE(value);
-        READWRITE(rho);
-        READWRITE(r);
-        READWRITE(memo);
+        READWRITE(d);           // 11 bytes
+        READWRITE(value_);      // 8 bytes
+        READWRITE(rcm);         // 32 bytes
+        READWRITE(memo_);       // 512 bytes
     }
 
-    static NotePlaintext decrypt(const ZCNoteDecryption& decryptor,
-                                 const ZCNoteDecryption::Ciphertext& ciphertext,
-                                 const uint256& ephemeralKey,
-                                 const uint256& h_sig,
-                                 unsigned char nonce
-                                );
-
-    ZCNoteEncryption::Ciphertext encrypt(ZCNoteEncryption& encryptor,
-                                         const uint256& pk_enc
-                                        ) const;
+    boost::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
 };
+
+class SaplingOutgoingPlaintext
+{
+public:
+    uint256 pk_d;
+    uint256 esk;
+
+    SaplingOutgoingPlaintext() {};
+
+    SaplingOutgoingPlaintext(uint256 pk_d, uint256 esk) : pk_d(pk_d), esk(esk) {}
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(pk_d);        // 8 bytes
+        READWRITE(esk);         // 8 bytes
+    }
+
+    static boost::optional<SaplingOutgoingPlaintext> decrypt(
+        const SaplingOutCiphertext &ciphertext,
+        const uint256& ovk,
+        const uint256& cv,
+        const uint256& cm,
+        const uint256& epk
+    );
+
+    SaplingOutCiphertext encrypt(
+        const uint256& ovk,
+        const uint256& cv,
+        const uint256& cm,
+        SaplingNoteEncryption& enc
+    ) const;
+};
+
 
 }
 
-#endif // _ZCNOTE_H_
+#endif // ZC_NOTE_H_

@@ -1,5 +1,7 @@
-#ifndef _ZCPROOF_H_
-#define _ZCPROOF_H_
+// Copyright (c) 2019-2020 The Hush developers
+
+#ifndef ZC_PROOF_H_
+#define ZC_PROOF_H_
 
 #include "serialize.h"
 #include "uint256.h"
@@ -16,16 +18,10 @@ private:
 public:
     Fq() : data() { }
 
-    template<typename libsnark_Fq>
-    Fq(libsnark_Fq element);
-
-    template<typename libsnark_Fq>
-    libsnark_Fq to_libsnark_fq() const;
-
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(data);
     }
 
@@ -49,16 +45,10 @@ private:
 public:
     Fq2() : data() { }
 
-    template<typename libsnark_Fq2>
-    Fq2(libsnark_Fq2 element);
-
-    template<typename libsnark_Fq2>
-    libsnark_Fq2 to_libsnark_fq2() const;
-
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(data);
     }
 
@@ -84,16 +74,10 @@ private:
 public:
     CompressedG1() : y_lsb(false), x() { }
 
-    template<typename libsnark_G1>
-    CompressedG1(libsnark_G1 point);
-
-    template<typename libsnark_G1>
-    libsnark_G1 to_libsnark_g1() const;
-
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         unsigned char leadingByte = G1_PREFIX_MASK;
 
         if (y_lsb) {
@@ -134,16 +118,10 @@ private:
 public:
     CompressedG2() : y_gt(false), x() { }
 
-    template<typename libsnark_G2>
-    CompressedG2(libsnark_G2 point);
-
-    template<typename libsnark_G2>
-    libsnark_G2 to_libsnark_g2() const;
-
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         unsigned char leadingByte = G2_PREFIX_MASK;
 
         if (y_gt) {
@@ -176,7 +154,7 @@ public:
 };
 
 // Compressed zkSNARK proof
-class ZCProof {
+class PHGRProof {
 private:
     CompressedG1 g_A;
     CompressedG1 g_A_prime;
@@ -188,23 +166,12 @@ private:
     CompressedG1 g_H;
 
 public:
-    ZCProof() : g_A(), g_A_prime(), g_B(), g_B_prime(), g_C(), g_C_prime(), g_K(), g_H() { }
-
-    // Produces a compressed proof using a libsnark zkSNARK proof
-    template<typename libsnark_proof>
-    ZCProof(const libsnark_proof& proof);
-
-    // Produces a libsnark zkSNARK proof out of this proof,
-    // or throws an exception if it is invalid.
-    template<typename libsnark_proof>
-    libsnark_proof to_libsnark_proof() const;
-
-    static ZCProof random_invalid();
+    PHGRProof() : g_A(), g_A_prime(), g_B(), g_B_prime(), g_C(), g_C_prime(), g_K(), g_H() { }
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(g_A);
         READWRITE(g_A_prime);
         READWRITE(g_B);
@@ -215,7 +182,7 @@ public:
         READWRITE(g_H);
     }
 
-    friend bool operator==(const ZCProof& a, const ZCProof& b)
+    friend bool operator==(const PHGRProof& a, const PHGRProof& b)
     {
         return (
             a.g_A == b.g_A &&
@@ -229,13 +196,49 @@ public:
         );
     }
 
-    friend bool operator!=(const ZCProof& a, const ZCProof& b)
+    friend bool operator!=(const PHGRProof& a, const PHGRProof& b)
     {
         return !(a == b);
     }
 };
 
+void initialize_curve_params();
+
+class ProofVerifier {
+private:
+    bool perform_verification;
+
+    ProofVerifier(bool perform_verification) : perform_verification(perform_verification) { }
+
+public:
+    // ProofVerifier should never be copied
+    ProofVerifier(const ProofVerifier&) = delete;
+    ProofVerifier& operator=(const ProofVerifier&) = delete;
+    ProofVerifier(ProofVerifier&&);
+    ProofVerifier& operator=(ProofVerifier&&);
+
+    // Creates a verification context that strictly verifies
+    // all proofs using libsnark's API.
+    static ProofVerifier Strict();
+
+    // Creates a verification context that performs no
+    // verification, used when avoiding duplicate effort
+    // such as during reindexing.
+    static ProofVerifier Disabled();
+
+    template <typename VerificationKey,
+              typename ProcessedVerificationKey,
+              typename PrimaryInput,
+              typename Proof
+              >
+    bool check(
+        const VerificationKey& vk,
+        const ProcessedVerificationKey& pvk,
+        const PrimaryInput& pi,
+        const Proof& p
+    );
+};
 
 }
 
-#endif // _ZCPROOF_H_
+#endif // ZC_PROOF_H_

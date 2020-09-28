@@ -1,7 +1,23 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2013 The Bitcoin Core developers
+// Copyright (c) 2009-2013 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
+
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
 
 #ifndef BITCOIN_WALLET_WALLETDB_H
 #define BITCOIN_WALLET_WALLETDB_H
@@ -11,6 +27,7 @@
 #include "key.h"
 #include "keystore.h"
 #include "zcash/Address.hpp"
+#include "zcash/zip32.h"
 
 #include <list>
 #include <stdint.h>
@@ -40,12 +57,49 @@ enum DBErrors
     DB_NEED_REWRITE
 };
 
+/* simple hd chain data model */
+class CHDChain
+{
+public:
+    static const int VERSION_HD_BASE = 1;
+    static const int CURRENT_VERSION = VERSION_HD_BASE;
+    int nVersion;
+    uint256 seedFp;
+    int64_t nCreateTime; // 0 means unknown
+    uint32_t saplingAccountCounter;
+
+    CHDChain() { SetNull(); }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action)
+    {
+        READWRITE(nVersion);
+        READWRITE(seedFp);
+        READWRITE(nCreateTime);
+        READWRITE(saplingAccountCounter);
+    }
+
+    void SetNull()
+    {
+        nVersion = CHDChain::CURRENT_VERSION;
+        seedFp.SetNull();
+        nCreateTime = 0;
+        saplingAccountCounter = 0;
+    }
+};
+
 class CKeyMetadata
 {
 public:
-    static const int CURRENT_VERSION=1;
+    static const int VERSION_BASIC=1;
+    static const int VERSION_WITH_HDDATA=10;
+    static const int CURRENT_VERSION=VERSION_WITH_HDDATA;
     int nVersion;
     int64_t nCreateTime; // 0 means unknown
+    std::string hdKeypath; //optional HD/zip32 keypath
+    uint256 seedFp;
 
     CKeyMetadata()
     {
@@ -53,23 +107,29 @@ public:
     }
     CKeyMetadata(int64_t nCreateTime_)
     {
-        nVersion = CKeyMetadata::CURRENT_VERSION;
+        SetNull();
         nCreateTime = nCreateTime_;
     }
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(this->nVersion);
-        nVersion = this->nVersion;
         READWRITE(nCreateTime);
+        if (this->nVersion >= VERSION_WITH_HDDATA)
+        {
+            READWRITE(hdKeypath);
+            READWRITE(seedFp);
+        }
     }
 
     void SetNull()
     {
         nVersion = CKeyMetadata::CURRENT_VERSION;
         nCreateTime = 0;
+        hdKeypath.clear();
+        seedFp.SetNull();
     }
 };
 
@@ -130,11 +190,24 @@ public:
     DBErrors LoadWallet(CWallet* pwallet);
     DBErrors FindWalletTx(CWallet* pwallet, std::vector<uint256>& vTxHash, std::vector<CWalletTx>& vWtx);
     DBErrors ZapWalletTx(CWallet* pwallet, std::vector<CWalletTx>& vWtx);
+    static bool Compact(CDBEnv& dbenv, const std::string& strFile);
     static bool Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKeys);
     static bool Recover(CDBEnv& dbenv, const std::string& filename);
 
+    bool WriteHDSeed(const HDSeed& seed);
+    bool WriteCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret);
+    //! write the hdchain model (external chain child index counter)
+    bool WriteHDChain(const CHDChain& chain);
+
     /// Write spending key to wallet database, where key is payment address and value is spending key.
-    bool WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::SpendingKey& key, const CKeyMetadata &keyMeta);
+    bool WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
+                          const libzcash::SaplingExtendedSpendingKey &key,
+                          const CKeyMetadata  &keyMeta);
+    bool WriteSaplingPaymentAddress(const libzcash::SaplingPaymentAddress &addr,
+                                    const libzcash::SaplingIncomingViewingKey &ivk);
+    bool WriteCryptedSaplingZKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
+                          const std::vector<unsigned char>& vchCryptedSecret,
+                          const CKeyMetadata &keyMeta);
 
 private:
     CWalletDB(const CWalletDB&);

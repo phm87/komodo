@@ -1,6 +1,9 @@
-#ifndef ZCINCREMENTALMERKLETREE_H_
-#define ZCINCREMENTALMERKLETREE_H_
+// Copyright (c) 2019-2020 The Hush developers
 
+#ifndef ZC_INCREMENTALMERKLETREE_H_
+#define ZC_INCREMENTALMERKLETREE_H_
+
+#include <array>
 #include <deque>
 #include <boost/optional.hpp>
 #include <boost/static_assert.hpp>
@@ -9,6 +12,7 @@
 #include "serialize.h"
 
 #include "Zcash.h"
+#include "zcash/util.h"
 
 namespace libzcash {
 
@@ -20,9 +24,30 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(authentication_path);
-        READWRITE(index);
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        std::vector<std::vector<unsigned char>> pathBytes;
+        uint64_t indexInt;
+        if (ser_action.ForRead()) {
+            READWRITE(pathBytes);
+            READWRITE(indexInt);
+            MerklePath &us = *(const_cast<MerklePath*>(this));
+            for (size_t i = 0; i < pathBytes.size(); i++) {
+                us.authentication_path.push_back(convertBytesVectorToVector(pathBytes[i]));
+                us.index.push_back((indexInt >> ((pathBytes.size() - 1) - i)) & 1);
+            }
+        } else {
+            assert(authentication_path.size() == index.size());
+            pathBytes.resize(authentication_path.size());
+            for (size_t i = 0; i < authentication_path.size(); i++) {
+                pathBytes[i].resize((authentication_path[i].size()+7)/8);
+                for (unsigned int p = 0; p < authentication_path[i].size(); p++) {
+                    pathBytes[i][p / 8] |= authentication_path[i][p] << (7-(p % 8));
+                }
+            }
+            indexInt = convertVectorToInt(index);
+            READWRITE(pathBytes);
+            READWRITE(indexInt);
+        }
     }
 
     MerklePath() { }
@@ -34,20 +59,15 @@ public:
 template<size_t Depth, typename Hash>
 class EmptyMerkleRoots {
 public:
-    EmptyMerkleRoots() {
-        empty_roots.at(0) = Hash();
-        for (size_t d = 1; d <= Depth; d++) {
-            empty_roots.at(d) = Hash::combine(empty_roots.at(d-1), empty_roots.at(d-1));
-        }
-    }
-    Hash empty_root(size_t depth) {
-        return empty_roots.at(depth);
+    EmptyMerkleRoots() { }
+    Hash empty_root(size_t depth) const {
+        return Hash::EmptyRoot(depth);
     }
     template <size_t D, typename H>
     friend bool operator==(const EmptyMerkleRoots<D, H>& a,
                            const EmptyMerkleRoots<D, H>& b);
 private:
-    boost::array<Hash, Depth+1> empty_roots;
+    std::array<Hash, Depth+1> empty_roots;
 };
 
 template<size_t Depth, typename Hash>
@@ -75,10 +95,13 @@ public:
                parents.size() * 32; // parents
     }
 
+    size_t size() const;
+
     void append(Hash obj);
     Hash root() const {
         return root(Depth, std::deque<Hash>());
     }
+    Hash last() const;
 
     IncrementalWitness<Depth, Hash> witness() const {
         return IncrementalWitness<Depth, Hash>(*this);
@@ -87,7 +110,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(left);
         READWRITE(right);
         READWRITE(parents);
@@ -138,6 +161,16 @@ public:
         return tree.path(partial_path());
     }
 
+    // Return the element being witnessed (should be a note
+    // commitment!)
+    Hash element() const {
+        return tree.last();
+    }
+
+    uint64_t position() const {
+        return tree.size() - 1;
+    }
+
     Hash root() const {
         return tree.root(Depth, partial_path());
     }
@@ -147,7 +180,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(tree);
         READWRITE(filled);
         READWRITE(cursor);
@@ -163,7 +196,7 @@ private:
     IncrementalMerkleTree<Depth, Hash> tree;
     std::vector<Hash> filled;
     boost::optional<IncrementalMerkleTree<Depth, Hash>> cursor;
-    size_t cursor_depth;
+    size_t cursor_depth = 0;
     std::deque<Hash> partial_path() const;
     IncrementalWitness(IncrementalMerkleTree<Depth, Hash> tree) : tree(tree) {}
 };
@@ -182,16 +215,48 @@ public:
     SHA256Compress() : uint256() {}
     SHA256Compress(uint256 contents) : uint256(contents) { }
 
-    static SHA256Compress combine(const SHA256Compress& a, const SHA256Compress& b);
+    static SHA256Compress combine(
+        const SHA256Compress& a,
+        const SHA256Compress& b,
+        size_t depth
+    );
+
+    static SHA256Compress uncommitted() {
+        return SHA256Compress();
+    }
+    static SHA256Compress EmptyRoot(size_t);
 };
+
+class PedersenHash : public uint256 {
+public:
+    PedersenHash() : uint256() {}
+    PedersenHash(uint256 contents) : uint256(contents) { }
+
+    static PedersenHash combine(
+        const PedersenHash& a,
+        const PedersenHash& b,
+        size_t depth
+    );
+
+    static PedersenHash uncommitted();
+    static PedersenHash EmptyRoot(size_t);
+};
+
+template<size_t Depth, typename Hash>
+EmptyMerkleRoots<Depth, Hash> IncrementalMerkleTree<Depth, Hash>::emptyroots;
 
 } // end namespace `libzcash`
 
-typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256Compress> ZCIncrementalMerkleTree;
-typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256Compress> ZCTestingIncrementalMerkleTree;
+typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256Compress> SproutMerkleTree;
+typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256Compress> SproutTestingMerkleTree;
 
-typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256Compress> ZCIncrementalWitness;
-typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256Compress> ZCTestingIncrementalWitness;
+typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256Compress> SproutWitness;
+typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256Compress> SproutTestingWitness;
 
-#endif /* ZCINCREMENTALMERKLETREE_H_ */
+typedef libzcash::IncrementalMerkleTree<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::PedersenHash> SaplingMerkleTree;
+typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::PedersenHash> SaplingTestingMerkleTree;
 
+typedef libzcash::IncrementalWitness<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::PedersenHash> SaplingWitness;
+typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::PedersenHash> SaplingTestingWitness;
+
+#endif /* ZC_INCREMENTALMERKLETREE_H_ */

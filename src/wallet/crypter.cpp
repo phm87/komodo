@@ -1,11 +1,28 @@
 // Copyright (c) 2009-2013 The Bitcoin Core developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
+
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
 
 #include "crypter.h"
 
 #include "script/script.h"
 #include "script/standard.h"
+#include "streams.h"
 #include "util.h"
 
 #include <string>
@@ -13,6 +30,8 @@
 #include <boost/foreach.hpp>
 #include <openssl/aes.h>
 #include <openssl/evp.h>
+
+using namespace libzcash;
 
 bool CCrypter::SetKeyFromPassphrase(const SecureString& strKeyData, const std::vector<unsigned char>& chSalt, const unsigned int nRounds, const unsigned int nDerivationMethod)
 {
@@ -58,15 +77,14 @@ bool CCrypter::Encrypt(const CKeyingMaterial& vchPlaintext, std::vector<unsigned
     int nCLen = nLen + AES_BLOCK_SIZE, nFLen = 0;
     vchCiphertext = std::vector<unsigned char> (nCLen);
 
-    EVP_CIPHER_CTX ctx;
-
     bool fOk = true;
 
-    EVP_CIPHER_CTX_init(&ctx);
-    if (fOk) fOk = EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, chKey, chIV) != 0;
-    if (fOk) fOk = EVP_EncryptUpdate(&ctx, &vchCiphertext[0], &nCLen, &vchPlaintext[0], nLen) != 0;
-    if (fOk) fOk = EVP_EncryptFinal_ex(&ctx, (&vchCiphertext[0]) + nCLen, &nFLen) != 0;
-    EVP_CIPHER_CTX_cleanup(&ctx);
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    assert(ctx);
+    if (fOk) fOk = EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, chKey, chIV) != 0;
+    if (fOk) fOk = EVP_EncryptUpdate(ctx, &vchCiphertext[0], &nCLen, &vchPlaintext[0], nLen) != 0;
+    if (fOk) fOk = EVP_EncryptFinal_ex(ctx, (&vchCiphertext[0]) + nCLen, &nFLen) != 0;
+    EVP_CIPHER_CTX_free(ctx);
 
     if (!fOk) return false;
 
@@ -85,15 +103,14 @@ bool CCrypter::Decrypt(const std::vector<unsigned char>& vchCiphertext, CKeyingM
 
     vchPlaintext = CKeyingMaterial(nPLen);
 
-    EVP_CIPHER_CTX ctx;
-
     bool fOk = true;
 
-    EVP_CIPHER_CTX_init(&ctx);
-    if (fOk) fOk = EVP_DecryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, chKey, chIV) != 0;
-    if (fOk) fOk = EVP_DecryptUpdate(&ctx, &vchPlaintext[0], &nPLen, &vchCiphertext[0], nLen) != 0;
-    if (fOk) fOk = EVP_DecryptFinal_ex(&ctx, (&vchPlaintext[0]) + nPLen, &nFLen) != 0;
-    EVP_CIPHER_CTX_cleanup(&ctx);
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    assert(ctx);
+    if (fOk) fOk = EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, chKey, chIV) != 0;
+    if (fOk) fOk = EVP_DecryptUpdate(ctx, &vchPlaintext[0], &nPLen, &vchCiphertext[0], nLen) != 0;
+    if (fOk) fOk = EVP_DecryptFinal_ex(ctx, (&vchPlaintext[0]) + nPLen, &nFLen) != 0;
+    EVP_CIPHER_CTX_free(ctx);
 
     if (!fOk) return false;
 
@@ -107,7 +124,7 @@ static bool EncryptSecret(const CKeyingMaterial& vMasterKey, const CKeyingMateri
     CCrypter cKeyCrypter;
     std::vector<unsigned char> chIV(WALLET_CRYPTO_KEY_SIZE);
     memcpy(&chIV[0], &nIV, WALLET_CRYPTO_KEY_SIZE);
-    if(!cKeyCrypter.SetKey(vMasterKey, chIV))
+    if (!cKeyCrypter.SetKey(vMasterKey, chIV))
         return false;
     return cKeyCrypter.Encrypt(*((const CKeyingMaterial*)&vchPlaintext), vchCiphertext);
 }
@@ -117,15 +134,32 @@ static bool DecryptSecret(const CKeyingMaterial& vMasterKey, const std::vector<u
     CCrypter cKeyCrypter;
     std::vector<unsigned char> chIV(WALLET_CRYPTO_KEY_SIZE);
     memcpy(&chIV[0], &nIV, WALLET_CRYPTO_KEY_SIZE);
-    if(!cKeyCrypter.SetKey(vMasterKey, chIV))
+    if (!cKeyCrypter.SetKey(vMasterKey, chIV))
         return false;
     return cKeyCrypter.Decrypt(vchCiphertext, *((CKeyingMaterial*)&vchPlaintext));
+}
+
+static bool DecryptHDSeed(
+    const CKeyingMaterial& vMasterKey,
+    const std::vector<unsigned char>& vchCryptedSecret,
+    const uint256& seedFp,
+    HDSeed& seed)
+{
+    CKeyingMaterial vchSecret;
+
+    // Use seed's fingerprint as IV
+    // TODO: Handle IV properly when we make encryption a supported feature
+    if(!DecryptSecret(vMasterKey, vchCryptedSecret, seedFp, vchSecret))
+        return false;
+
+    seed = HDSeed(vchSecret);
+    return seed.Fingerprint() == seedFp;
 }
 
 static bool DecryptKey(const CKeyingMaterial& vMasterKey, const std::vector<unsigned char>& vchCryptedSecret, const CPubKey& vchPubKey, CKey& key)
 {
     CKeyingMaterial vchSecret;
-    if(!DecryptSecret(vMasterKey, vchCryptedSecret, vchPubKey.GetHash(), vchSecret))
+    if (!DecryptSecret(vMasterKey, vchCryptedSecret, vchPubKey.GetHash(), vchSecret))
         return false;
 
     if (vchSecret.size() != 32)
@@ -135,12 +169,30 @@ static bool DecryptKey(const CKeyingMaterial& vMasterKey, const std::vector<unsi
     return key.VerifyPubKey(vchPubKey);
 }
 
+
+static bool DecryptSaplingSpendingKey(const CKeyingMaterial& vMasterKey,
+                               const std::vector<unsigned char>& vchCryptedSecret,
+                               const libzcash::SaplingExtendedFullViewingKey& extfvk,
+                               libzcash::SaplingExtendedSpendingKey& sk)
+{
+    CKeyingMaterial vchSecret;
+    if (!DecryptSecret(vMasterKey, vchCryptedSecret, extfvk.fvk.GetFingerprint(), vchSecret))
+        return false;
+
+    if (vchSecret.size() != ZIP32_XSK_SIZE)
+        return false;
+
+    CSecureDataStream ss(vchSecret, SER_NETWORK, PROTOCOL_VERSION);
+    ss >> sk;
+    return sk.expsk.full_viewing_key() == extfvk.fvk;
+}
+
 bool CCryptoKeyStore::SetCrypted()
 {
-    LOCK(cs_KeyStore);
+    LOCK2(cs_KeyStore, cs_SpendingKeyStore);
     if (fUseCrypto)
         return true;
-    if (!mapKeys.empty())
+    if (!(mapKeys.empty() && mapSaplingSpendingKeys.empty()))
         return false;
     fUseCrypto = true;
     return true;
@@ -163,12 +215,21 @@ bool CCryptoKeyStore::Lock()
 bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
 {
     {
-        LOCK(cs_KeyStore);
+        LOCK2(cs_KeyStore, cs_SpendingKeyStore);
         if (!SetCrypted())
             return false;
 
         bool keyPass = false;
         bool keyFail = false;
+        if (!cryptedHDSeed.first.IsNull()) {
+            HDSeed seed;
+            if (!DecryptHDSeed(vMasterKeyIn, cryptedHDSeed.second, cryptedHDSeed.first, seed))
+            {
+                keyFail = true;
+            } else {
+                keyPass = true;
+            }
+        }
         CryptedKeyMap::const_iterator mi = mapCryptedKeys.begin();
         for (; mi != mapCryptedKeys.end(); ++mi)
         {
@@ -184,9 +245,24 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
             if (fDecryptionThoroughlyChecked)
                 break;
         }
+        CryptedSaplingSpendingKeyMap::const_iterator miSapling = mapCryptedSaplingSpendingKeys.begin();
+        for (; miSapling != mapCryptedSaplingSpendingKeys.end(); ++miSapling)
+        {
+            const libzcash::SaplingExtendedFullViewingKey &extfvk = (*miSapling).first;
+            const std::vector<unsigned char> &vchCryptedSecret = (*miSapling).second;
+            libzcash::SaplingExtendedSpendingKey sk;
+            if (!DecryptSaplingSpendingKey(vMasterKeyIn, vchCryptedSecret, extfvk, sk))
+            {
+                keyFail = true;
+                break;
+            }
+            keyPass = true;
+            if (fDecryptionThoroughlyChecked)
+                break;
+        }
         if (keyPass && keyFail)
         {
-            LogPrintf("The wallet is probably corrupted: Some keys decrypt but not all.\n");
+            LogPrintf("Oh shit! The wallet is probably corrupted: Some keys decrypt but not all.\n");
             assert(false);
         }
         if (keyFail || !keyPass)
@@ -196,6 +272,73 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
     }
     NotifyStatusChanged(this);
     return true;
+}
+
+bool CCryptoKeyStore::SetHDSeed(const HDSeed& seed)
+{
+    {
+        LOCK(cs_SpendingKeyStore);
+        if (!IsCrypted()) {
+            return CBasicKeyStore::SetHDSeed(seed);
+        }
+
+        if (IsLocked())
+            return false;
+
+        std::vector<unsigned char> vchCryptedSecret;
+        // Use seed's fingerprint as IV
+        // TODO: Handle this properly when we make encryption a supported feature
+        auto seedFp = seed.Fingerprint();
+        if (!EncryptSecret(vMasterKey, seed.RawSeed(), seedFp, vchCryptedSecret))
+            return false;
+
+        // This will call into CWallet to store the crypted seed to disk
+        if (!SetCryptedHDSeed(seedFp, vchCryptedSecret))
+            return false;
+    }
+    return true;
+}
+
+bool CCryptoKeyStore::SetCryptedHDSeed(
+    const uint256& seedFp,
+    const std::vector<unsigned char>& vchCryptedSecret)
+{
+    {
+        LOCK(cs_SpendingKeyStore);
+        if (!IsCrypted()) {
+            return false;
+        }
+
+        if (!cryptedHDSeed.first.IsNull()) {
+            // Don't allow an existing seed to be changed. We can maybe relax this
+            // restriction later once we have worked out the UX implications.
+            return false;
+        }
+
+        cryptedHDSeed = std::make_pair(seedFp, vchCryptedSecret);
+    }
+    return true;
+}
+
+bool CCryptoKeyStore::HaveHDSeed() const
+{
+    LOCK(cs_SpendingKeyStore);
+    if (!IsCrypted())
+        return CBasicKeyStore::HaveHDSeed();
+
+    return !cryptedHDSeed.second.empty();
+}
+
+bool CCryptoKeyStore::GetHDSeed(HDSeed& seedOut) const
+{
+    LOCK(cs_SpendingKeyStore);
+    if (!IsCrypted())
+        return CBasicKeyStore::GetHDSeed(seedOut);
+
+    if (cryptedHDSeed.second.empty())
+        return false;
+
+    return DecryptHDSeed(vMasterKey, cryptedHDSeed.second, cryptedHDSeed.first, seedOut);
 }
 
 bool CCryptoKeyStore::AddKeyPubKey(const CKey& key, const CPubKey &pubkey)
@@ -267,26 +410,129 @@ bool CCryptoKeyStore::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) co
     return false;
 }
 
+bool CCryptoKeyStore::AddSaplingSpendingKey(
+    const libzcash::SaplingExtendedSpendingKey &sk,
+    const libzcash::SaplingPaymentAddress &defaultAddr)
+{
+    {
+        LOCK(cs_SpendingKeyStore);
+        if (!IsCrypted()) {
+            return CBasicKeyStore::AddSaplingSpendingKey(sk, defaultAddr);
+        }
+
+        if (IsLocked()) {
+            return false;
+        }
+
+        std::vector<unsigned char> vchCryptedSecret;
+        CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << sk;
+        CKeyingMaterial vchSecret(ss.begin(), ss.end());
+        auto extfvk = sk.ToXFVK();
+        if (!EncryptSecret(vMasterKey, vchSecret, extfvk.fvk.GetFingerprint(), vchCryptedSecret)) {
+            return false;
+        }
+
+        if (!AddCryptedSaplingSpendingKey(extfvk, vchCryptedSecret, defaultAddr)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CCryptoKeyStore::AddCryptedSaplingSpendingKey(
+    const libzcash::SaplingExtendedFullViewingKey &extfvk,
+    const std::vector<unsigned char> &vchCryptedSecret,
+    const libzcash::SaplingPaymentAddress &defaultAddr)
+{
+    {
+        LOCK(cs_SpendingKeyStore);
+        if (!SetCrypted()) {
+            return false;
+        }
+
+        // if SaplingFullViewingKey is not in SaplingFullViewingKeyMap, add it
+        if (!AddSaplingFullViewingKey(extfvk.fvk, defaultAddr)) {
+            return false;
+        }
+
+        mapCryptedSaplingSpendingKeys[extfvk] = vchCryptedSecret;
+    }
+    return true;
+}
+
+bool CCryptoKeyStore::GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingExtendedSpendingKey &skOut) const
+{
+    {
+        LOCK(cs_SpendingKeyStore);
+        if (!IsCrypted())
+            return CBasicKeyStore::GetSaplingSpendingKey(fvk, skOut);
+
+        for (auto entry : mapCryptedSaplingSpendingKeys) {
+            if (entry.first.fvk == fvk) {
+                const std::vector<unsigned char> &vchCryptedSecret = entry.second;
+                return DecryptSaplingSpendingKey(vMasterKey, vchCryptedSecret, entry.first, skOut);
+            }
+        }
+    }
+    return false;
+}
+
 bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
 {
     {
-        LOCK(cs_KeyStore);
+        LOCK2(cs_KeyStore, cs_SpendingKeyStore);
         if (!mapCryptedKeys.empty() || IsCrypted())
             return false;
 
         fUseCrypto = true;
+        if (!hdSeed.IsNull()) {
+            {
+                std::vector<unsigned char> vchCryptedSecret;
+                // Use seed's fingerprint as IV
+                // TODO: Handle this properly when we make encryption a supported feature
+                auto seedFp = hdSeed.Fingerprint();
+                if (!EncryptSecret(vMasterKeyIn, hdSeed.RawSeed(), seedFp, vchCryptedSecret)) {
+                    return false;
+                }
+                // This will call into CWallet to store the crypted seed to disk
+                if (!SetCryptedHDSeed(seedFp, vchCryptedSecret)) {
+                    return false;
+                }
+            }
+            hdSeed = HDSeed();
+        }
         BOOST_FOREACH(KeyMap::value_type& mKey, mapKeys)
         {
             const CKey &key = mKey.second;
             CPubKey vchPubKey = key.GetPubKey();
             CKeyingMaterial vchSecret(key.begin(), key.end());
             std::vector<unsigned char> vchCryptedSecret;
-            if (!EncryptSecret(vMasterKeyIn, vchSecret, vchPubKey.GetHash(), vchCryptedSecret))
+            if (!EncryptSecret(vMasterKeyIn, vchSecret, vchPubKey.GetHash(), vchCryptedSecret)) {
                 return false;
-            if (!AddCryptedKey(vchPubKey, vchCryptedSecret))
+            }
+            if (!AddCryptedKey(vchPubKey, vchCryptedSecret)) {
                 return false;
+            }
         }
         mapKeys.clear();
+        //! Sapling key support
+        BOOST_FOREACH(SaplingSpendingKeyMap::value_type& mSaplingSpendingKey, mapSaplingSpendingKeys)
+        {
+            const auto &sk = mSaplingSpendingKey.second;
+            CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+            ss << sk;
+            CKeyingMaterial vchSecret(ss.begin(), ss.end());
+            auto extfvk = sk.ToXFVK();
+            std::vector<unsigned char> vchCryptedSecret;
+            if (!EncryptSecret(vMasterKeyIn, vchSecret, extfvk.fvk.GetFingerprint(), vchCryptedSecret)) {
+                return false;
+            }
+            if (!AddCryptedSaplingSpendingKey(extfvk, vchCryptedSecret, sk.DefaultAddress())) {
+                return false;
+            }
+        }
+        mapSaplingSpendingKeys.clear();
     }
     return true;
 }

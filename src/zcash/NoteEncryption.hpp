@@ -1,20 +1,93 @@
-/*
-See the Zcash protocol specification for more information.
-https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
-*/
+// Copyright (c) 2019-2020 The Hush developers
 
 #ifndef ZC_NOTE_ENCRYPTION_H_
 #define ZC_NOTE_ENCRYPTION_H_
 
-#include <boost/array.hpp>
 #include "uint256.h"
 #include "uint252.h"
 
 #include "zcash/Zcash.h"
+#include "zcash/Address.hpp"
+
+#include <array>
 
 namespace libzcash {
 
-#define NOTEENCRYPTION_AUTH_BYTES 16
+// Ciphertext for the recipient to decrypt
+typedef std::array<unsigned char, ZC_SAPLING_ENCCIPHERTEXT_SIZE> SaplingEncCiphertext;
+typedef std::array<unsigned char, ZC_SAPLING_ENCPLAINTEXT_SIZE> SaplingEncPlaintext;
+
+// Ciphertext for outgoing viewing key to decrypt
+typedef std::array<unsigned char, ZC_SAPLING_OUTCIPHERTEXT_SIZE> SaplingOutCiphertext;
+typedef std::array<unsigned char, ZC_SAPLING_OUTPLAINTEXT_SIZE> SaplingOutPlaintext;
+
+//! This is not a thread-safe API.
+class SaplingNoteEncryption {
+protected:
+    // Ephemeral public key
+    uint256 epk;
+
+    // Ephemeral secret key
+    uint256 esk;
+
+    bool already_encrypted_enc;
+    bool already_encrypted_out;
+
+    SaplingNoteEncryption(uint256 epk, uint256 esk) : epk(epk), esk(esk), already_encrypted_enc(false), already_encrypted_out(false) {
+
+    }
+
+public:
+
+    static boost::optional<SaplingNoteEncryption> FromDiversifier(diversifier_t d);
+
+    boost::optional<SaplingEncCiphertext> encrypt_to_recipient(
+        const uint256 &pk_d,
+        const SaplingEncPlaintext &message
+    );
+
+    SaplingOutCiphertext encrypt_to_ourselves(
+        const uint256 &ovk,
+        const uint256 &cv,
+        const uint256 &cm,
+        const SaplingOutPlaintext &message
+    );
+
+    uint256 get_epk() const {
+        return epk;
+    }
+
+    uint256 get_esk() const {
+        return esk;
+    }
+};
+
+// Attempts to decrypt a Sapling note. This will not check that the contents
+// of the ciphertext are correct.
+boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
+    const SaplingEncCiphertext &ciphertext,
+    const uint256 &ivk,
+    const uint256 &epk
+);
+
+// Attempts to decrypt a Sapling note using outgoing plaintext.
+// This will not check that the contents of the ciphertext are correct.
+boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
+    const SaplingEncCiphertext &ciphertext,
+    const uint256 &epk,
+    const uint256 &esk,
+    const uint256 &pk_d
+);
+
+// Attempts to decrypt a Sapling note. This will not check that the contents
+// of the ciphertext are correct.
+boost::optional<SaplingOutPlaintext> AttemptSaplingOutDecryption(
+    const SaplingOutCiphertext &ciphertext,
+    const uint256 &ovk,
+    const uint256 &cv,
+    const uint256 &cm,
+    const uint256 &epk
+);
 
 template<size_t MLEN>
 class NoteEncryption {
@@ -26,10 +99,15 @@ protected:
     uint256 hSig;
 
 public:
-    typedef boost::array<unsigned char, CLEN> Ciphertext;
-    typedef boost::array<unsigned char, MLEN> Plaintext;
+    typedef std::array<unsigned char, CLEN> Ciphertext;
+    typedef std::array<unsigned char, MLEN> Plaintext;
 
     NoteEncryption(uint256 hSig);
+
+    // Gets the ephemeral secret key
+    uint256 get_esk() {
+        return esk;
+    }
 
     // Gets the ephemeral public key
     uint256 get_epk() {
@@ -58,8 +136,8 @@ protected:
     uint256 pk_enc;
 
 public:
-    typedef boost::array<unsigned char, CLEN> Ciphertext;
-    typedef boost::array<unsigned char, MLEN> Plaintext;
+    typedef std::array<unsigned char, CLEN> Ciphertext;
+    typedef std::array<unsigned char, MLEN> Plaintext;
 
     NoteDecryption() { }
     NoteDecryption(uint256 sk_enc);
@@ -81,6 +159,12 @@ public:
 
 uint256 random_uint256();
 uint252 random_uint252();
+
+class note_decryption_failed : public std::runtime_error {
+public:
+    note_decryption_failed() : std::runtime_error("Could not decrypt message") { }
+};
+
 
 }
 

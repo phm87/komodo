@@ -1,7 +1,23 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
+
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
 
 #include "keystore.h"
 
@@ -21,6 +37,35 @@ bool CKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) const
 
 bool CKeyStore::AddKey(const CKey &key) {
     return AddKeyPubKey(key, key.GetPubKey());
+}
+
+bool CBasicKeyStore::SetHDSeed(const HDSeed& seed)
+{
+    LOCK(cs_SpendingKeyStore);
+    if (!hdSeed.IsNull()) {
+        // Don't allow an existing seed to be changed. We can maybe relax this
+        // restriction later once we have worked out the UX implications.
+        return false;
+    }
+    hdSeed = seed;
+    return true;
+}
+
+bool CBasicKeyStore::HaveHDSeed() const
+{
+    LOCK(cs_SpendingKeyStore);
+    return !hdSeed.IsNull();
+}
+
+bool CBasicKeyStore::GetHDSeed(HDSeed& seedOut) const
+{
+    LOCK(cs_SpendingKeyStore);
+    if (hdSeed.IsNull()) {
+        return false;
+    } else {
+        seedOut = hdSeed;
+        return true;
+    }
 }
 
 bool CBasicKeyStore::AddKeyPubKey(const CKey& key, const CPubKey &pubkey)
@@ -84,11 +129,95 @@ bool CBasicKeyStore::HaveWatchOnly() const
     return (!setWatchOnly.empty());
 }
 
-bool CBasicKeyStore::AddSpendingKey(const libzcash::SpendingKey &sk)
+//! Sapling 
+bool CBasicKeyStore::AddSaplingSpendingKey(
+    const libzcash::SaplingExtendedSpendingKey &sk,
+    const libzcash::SaplingPaymentAddress &defaultAddr)
 {
     LOCK(cs_SpendingKeyStore);
-    auto address = sk.address();
-    mapSpendingKeys[address] = sk;
-    mapNoteDecryptors.insert(std::make_pair(address, ZCNoteDecryption(sk.viewing_key())));
+    auto fvk = sk.expsk.full_viewing_key();
+
+    // if SaplingFullViewingKey is not in SaplingFullViewingKeyMap, add it
+    if (!AddSaplingFullViewingKey(fvk, defaultAddr)) {
+        return false;
+    }
+
+    mapSaplingSpendingKeys[fvk] = sk;
+
     return true;
+}
+
+
+bool CBasicKeyStore::AddSaplingFullViewingKey(
+    const libzcash::SaplingFullViewingKey &fvk,
+    const libzcash::SaplingPaymentAddress &defaultAddr)
+{
+    LOCK(cs_SpendingKeyStore);
+    auto ivk = fvk.in_viewing_key();
+    mapSaplingFullViewingKeys[ivk] = fvk;
+
+    return CBasicKeyStore::AddSaplingIncomingViewingKey(ivk, defaultAddr);
+}
+
+// This function updates the wallet's internal address->ivk map. 
+// If we add an address that is already in the map, the map will
+// remain unchanged as each address only has one ivk.
+bool CBasicKeyStore::AddSaplingIncomingViewingKey(
+    const libzcash::SaplingIncomingViewingKey &ivk,
+    const libzcash::SaplingPaymentAddress &addr)
+{
+    LOCK(cs_SpendingKeyStore);
+
+    // Add addr -> SaplingIncomingViewing to SaplingIncomingViewingKeyMap
+    mapSaplingIncomingViewingKeys[addr] = ivk;
+
+    return true;
+}
+
+
+
+bool CBasicKeyStore::HaveSaplingFullViewingKey(const libzcash::SaplingIncomingViewingKey &ivk) const
+{
+    LOCK(cs_SpendingKeyStore);
+    return mapSaplingFullViewingKeys.count(ivk) > 0;
+}
+
+bool CBasicKeyStore::HaveSaplingIncomingViewingKey(const libzcash::SaplingPaymentAddress &addr) const
+{
+    LOCK(cs_SpendingKeyStore);
+    return mapSaplingIncomingViewingKeys.count(addr) > 0;
+}
+
+bool CBasicKeyStore::GetSaplingFullViewingKey(const libzcash::SaplingIncomingViewingKey &ivk,
+                                   libzcash::SaplingFullViewingKey &fvkOut) const
+{
+    LOCK(cs_SpendingKeyStore);
+    SaplingFullViewingKeyMap::const_iterator mi = mapSaplingFullViewingKeys.find(ivk);
+    if (mi != mapSaplingFullViewingKeys.end()) {
+        fvkOut = mi->second;
+        return true;
+    }
+    return false;
+}
+
+bool CBasicKeyStore::GetSaplingIncomingViewingKey(const libzcash::SaplingPaymentAddress &addr,
+                                   libzcash::SaplingIncomingViewingKey &ivkOut) const
+{
+    LOCK(cs_SpendingKeyStore);
+    SaplingIncomingViewingKeyMap::const_iterator mi = mapSaplingIncomingViewingKeys.find(addr);
+    if (mi != mapSaplingIncomingViewingKeys.end()) {
+        ivkOut = mi->second;
+        return true;
+    }
+    return false;
+}
+
+bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymentAddress &addr, 
+                                    libzcash::SaplingExtendedSpendingKey &extskOut) const {
+    libzcash::SaplingIncomingViewingKey ivk;
+    libzcash::SaplingFullViewingKey fvk;
+
+    return GetSaplingIncomingViewingKey(addr, ivk) &&
+            GetSaplingFullViewingKey(ivk, fvk) &&
+            GetSaplingSpendingKey(fvk, extskOut);
 }

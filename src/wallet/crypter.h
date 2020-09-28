@@ -1,13 +1,32 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019-2020 The Hush developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
+
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
 
 #ifndef BITCOIN_WALLET_CRYPTER_H
 #define BITCOIN_WALLET_CRYPTER_H
 
 #include "keystore.h"
 #include "serialize.h"
+#include "streams.h"
 #include "support/allocators/secure.h"
+#include "zcash/Address.hpp"
+#include "zcash/zip32.h"
 
 class uint256;
 
@@ -46,7 +65,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(vchCryptedKey);
         READWRITE(vchSalt);
         READWRITE(nDerivationMethod);
@@ -65,6 +84,18 @@ public:
 };
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;
+
+class CSecureDataStream : public CBaseDataStream<CKeyingMaterial>
+{
+public:
+    explicit CSecureDataStream(int nTypeIn, int nVersionIn) : CBaseDataStream(nTypeIn, nVersionIn) { }
+
+    CSecureDataStream(const_iterator pbegin, const_iterator pend, int nTypeIn, int nVersionIn) :
+            CBaseDataStream(pbegin, pend, nTypeIn, nVersionIn) { }
+
+    CSecureDataStream(const vector_type& vchIn, int nTypeIn, int nVersionIn) :
+            CBaseDataStream(vchIn, nTypeIn, nVersionIn) { }
+};
 
 /** Encryption/decryption context with key information */
 class CCrypter
@@ -113,11 +144,14 @@ public:
 class CCryptoKeyStore : public CBasicKeyStore
 {
 private:
+    std::pair<uint256, std::vector<unsigned char>> cryptedHDSeed;
     CryptedKeyMap mapCryptedKeys;
+    //CryptedSproutSpendingKeyMap mapCryptedSproutSpendingKeys;
+    CryptedSaplingSpendingKeyMap mapCryptedSaplingSpendingKeys;
 
     CKeyingMaterial vMasterKey;
 
-    //! if fUseCrypto is true, mapKeys must be empty
+    //! if fUseCrypto is true, mapKeys, mapSproutSpendingKeys, and mapSaplingSpendingKeys must be empty
     //! if fUseCrypto is false, vMasterKey must be empty
     bool fUseCrypto;
 
@@ -156,6 +190,11 @@ public:
 
     bool Lock();
 
+    virtual bool SetCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+    bool SetHDSeed(const HDSeed& seed);
+    bool HaveHDSeed() const;
+    bool GetHDSeed(HDSeed& seedOut) const;
+
     virtual bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
     bool HaveKey(const CKeyID &address) const
@@ -185,6 +224,30 @@ public:
             mi++;
         }
     }
+    //! Sapling 
+    virtual bool AddCryptedSaplingSpendingKey(
+        const libzcash::SaplingExtendedFullViewingKey &extfvk,
+        const std::vector<unsigned char> &vchCryptedSecret,
+        const libzcash::SaplingPaymentAddress &defaultAddr);
+    bool AddSaplingSpendingKey(
+        const libzcash::SaplingExtendedSpendingKey &sk,
+        const libzcash::SaplingPaymentAddress &defaultAddr);
+    bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const
+    {
+        {
+            LOCK(cs_SpendingKeyStore);
+            if (!IsCrypted())
+                return CBasicKeyStore::HaveSaplingSpendingKey(fvk);
+            for (auto entry : mapCryptedSaplingSpendingKeys) {
+                if (entry.first.fvk == fvk) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingExtendedSpendingKey &skOut) const;
+
 
     /**
      * Wallet status (encrypted, locked) changed.

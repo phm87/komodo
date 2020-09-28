@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+# Copyright (c) 2019-2020 The Hush developers
+# Released under the GPLv3
+
+from __future__ import print_function
+
 '''
 Run this script inside of src/ and it will look for all the files
 that were changed this year that still have the last year in the
@@ -22,7 +27,7 @@ import time
 
 year = time.gmtime()[0]
 last_year = year - 1
-command = "perl -pi -e 's/%s The Bitcoin/%s The Bitcoin/' %s"
+command = "perl -pi -e 's/%s The Hush/%s The Hush/' %s"
 listFilesCommand = "find . | grep %s"
 
 extensions = [".cpp",".h"]
@@ -46,7 +51,7 @@ for extension in extensions:
       filePath = os.getcwd() + filePath
       modifiedTime = getLastGitModifiedDate(filePath)
       if len(modifiedTime) > 0 and str(year) in modifiedTime:
-        print n,"Last Git Modified: ", modifiedTime, " - ", filePath
+        print(n, "Last Git Modified: ", modifiedTime, " - ", filePath)
         os.popen(command % (last_year,year,filePath))
         n = n + 1
 

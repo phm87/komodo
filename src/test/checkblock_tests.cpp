@@ -1,12 +1,13 @@
 // Copyright (c) 2013-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
 
 #include "clientversion.h"
 #include "consensus/validation.h"
 #include "main.h"
 #include "test/test_bitcoin.h"
 #include "utiltime.h"
+#include "zcash/Proof.hpp"
 
 #include <cstdio>
 
@@ -56,7 +57,8 @@ BOOST_AUTO_TEST_CASE(May15)
 
         // After May 15'th, big blocks are OK:
         forkingBlock.nTime = tMay15; // Invalidates PoW
-        BOOST_CHECK(CheckBlock(forkingBlock, state, false, false));
+        auto verifier = libzcash::ProofVerifier::Strict();
+        BOOST_CHECK(CheckBlock(forkingBlock, state, verifier, false, false));
     }
 
     SetMockTime(0);

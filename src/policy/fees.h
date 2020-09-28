@@ -1,7 +1,23 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php
+
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef BITCOIN_POLICYESTIMATOR_H
 #define BITCOIN_POLICYESTIMATOR_H
 
@@ -28,7 +44,7 @@ class CTxMemPoolEntry;
  * included in blocks before transactions of lower fee/priority.   So for
  * example if you wanted to know what fee you should put on a transaction to
  * be included in a block within the next 5 blocks, you would start by looking
- * at the bucket with with the highest fee transactions and verifying that a
+ * at the bucket with the highest fee transactions and verifying that a
  * sufficiently high percentage of them were confirmed within 5 blocks and
  * then you would look at the next highest fee bucket, and so on, stopping at
  * the last bucket to pass the test.   The average fee of transactions in this
@@ -66,11 +82,16 @@ class CTxMemPoolEntry;
  * they've been outstanding.
  */
 
+/** Decay of .998 is a half-life of 346 blocks or about 2.4 days */
+static const double DEFAULT_DECAY = .998;
+
 /**
  * We will instantiate two instances of this class, one to track transactions
- * that were included in a block due to fee, and one for tx's included due to
+ * that were included in a block due to fee, and one for txs included due to
  * priority.  We will lump transactions into a bucket according to their approximate
- * fee or priority and then track how long it took for those txs to be included in a block
+ * fee or priority and then track how long it took for those txs to be included
+ * in a block. There is always a bucket into which any given double value
+ * (representing a fee or priority) falls.
  *
  * The tracking of unconfirmed (mempool) transactions is completely independent of the
  * historical tracking of transactions that have been confirmed in a block.
@@ -95,7 +116,7 @@ private:
     // and calcuate the totals for the current block to update the moving averages
     std::vector<std::vector<int> > curBlockConf; // curBlockConf[Y][X]
 
-    // Sum the total priority/fee of all tx's in each bucket
+    // Sum the total priority/fee of all txs in each bucket
     // Track the historical moving average of this total over blocks
     std::vector<double> avg;
     // and calculate the total for the current block to update the moving average
@@ -105,7 +126,7 @@ private:
     // Combine the total value with the tx counts to calculate the avg fee/priority per bucket
 
     std::string dataTypeString;
-    double decay;
+    double decay = DEFAULT_DECAY;
 
     // Mempool counts of outstanding transactions
     // For each bucket X, track the number of transactions in the mempool
@@ -115,9 +136,11 @@ private:
     std::vector<int> oldUnconfTxs;
 
 public:
+    unsigned int FindBucketIndex(double val);
     /**
      * Initialize the data structures.  This is called by BlockPolicyEstimator's
-     * constructor with default values.
+     * constructor with default values.  A final bucket is created implicitly for
+     * values greater than the last upper limit in defaultBuckets.
      * @param defaultBuckets contains the upper limits for the bucket boundaries
      * @param maxConfirms max number of confirms to track
      * @param decay how much to decay the historical moving average per block
@@ -179,9 +202,6 @@ public:
 /** Track confirm delays up to 25 blocks, can't estimate beyond that */
 static const unsigned int MAX_BLOCK_CONFIRMS = 25;
 
-/** Decay of .998 is a half-life of 346 blocks or about 2.4 days */
-static const double DEFAULT_DECAY = .998;
-
 /** Require greater than 85% of X fee transactions to be confirmed within Y blocks for X to be big enough */
 static const double MIN_SUCCESS_PCT = .85;
 static const double UNLIKELY_PCT = .5;
@@ -210,7 +230,7 @@ static const double FEE_SPACING = 1.1;
 static const double PRI_SPACING = 2;
 
 /**
- *  We want to be able to estimate fees or priorities that are needed on tx's to be included in
+ *  We want to be able to estimate fees or priorities that are needed on txs to be included in
  * a certain number of blocks.  Every time a block is added to the best chain, this class records
  * stats on the transactions included in that block
  */

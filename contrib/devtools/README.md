@@ -1,5 +1,5 @@
-Contents
-===========
+# Contrib Devtools
+
 This directory contains tools for developers working on this repository.
 
 github-merge.sh
@@ -80,6 +80,12 @@ It will do the following automatically:
 - add missing translations to the build system (TODO)
 
 See doc/translation-process.md for more information.
+
+gen-manpages.sh
+===============
+
+A small script to automatically create manpages in ../../doc/man by running the release binaries with the -help option.
+This requires help2man which can be found at: https://www.gnu.org/software/help2man/
 
 git-subtree-check.sh
 ====================

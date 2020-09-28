@@ -1,5 +1,21 @@
+// Copyright (c) 2019-2020 The Hush developers
 // Copyright (c) 2016 The Zcash developers
 // Original code from: https://gist.github.com/laanwj/0e689cfa37b52bcbbb44
+
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
 
 /*
 
@@ -27,7 +43,7 @@ Modify the alert parameters, id and message found in this file.
 
 Build and run with -sendalert or -printalert.
 
-./zcashd -printtoconsole -sendalert
+./hushd -printtoconsole -sendalert
 
 One minute after starting up, the alert will be broadcast. It is then
 flooded through the network until the nRelayUntil time, and will be
@@ -59,9 +75,9 @@ void ThreadSendAlert()
     if (!mapArgs.count("-sendalert") && !mapArgs.count("-printalert"))
         return;
 
+    //TODO: wait until KOMODO_IN_SYNC
     MilliSleep(60*1000); // Wait a minute so we get connected
 
-    //
     // Alerts are relayed around the network until nRelayUntil, flood
     // filling to every node.
     // After the relay time is past, new nodes are told about alerts
@@ -71,26 +87,37 @@ void ThreadSendAlert()
     //
     CAlert alert;
     alert.nRelayUntil   = GetTime() + 15 * 60;
-    alert.nExpiration   = GetTime() + 365 * 60 * 60;
-    alert.nID           = 1000;  // use https://github.com/zcash/zcash/wiki/specification#assigned-numbers to keep track of alert IDs
-    alert.nCancel       = 0;   // cancels previous messages up to this ID number
+    alert.nExpiration   = GetTime() + 10 * 365 * 24 * 60 * 60;
+    alert.nID           = 1005;  // HUSH3 has never had any alert id's
+    alert.nCancel       = 1004;  // cancels previous messages up to this ID number
 
     // These versions are protocol versions
-    // 70002 : 0.11.2.*
-    alert.nMinVer       = 70002;
-    alert.nMaxVer       = 70002;
+    // 170002 : 1.0.0
+    alert.nMinVer       = 170002;
+    alert.nMaxVer       = 170004;
 
     //
-    // main.cpp: 
+    // main.cpp:
     //  1000 for Misc warnings like out of disk space and clock is wrong
-    //  2000 for longer invalid proof-of-work chain 
+    //  2000 for longer invalid proof-of-work chain
     //  Higher numbers mean higher priority
-    alert.nPriority     = 5000;
+    //  4000 or higher will put the RPC into safe mode
+    alert.nPriority     = 4000;
     alert.strComment    = "";
-    alert.strStatusBar  = "URGENT: Upgrade required: see https://z.cash";
+    alert.strStatusBar  = "Your client version has degraded networking behavior. Please update to the most recent version of Hush (3.5.0 or later).";
+    alert.strRPCError   = alert.strStatusBar;
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:
-    // alert.setSubVer.insert(std::string("/Satoshi:0.7.2/"));
+    // alert.setSubVer.insert(std::string("/MagicBean:0.7.2/"));
+    const std::vector<std::string> useragents = {}; //{"MagicBean", "BeanStalk", "AppleSeed" };
+
+    BOOST_FOREACH(const std::string& useragent, useragents) {
+    }
+
+    // Sanity check
+    assert(alert.strComment.length() <= 65536); // max length in alert.h
+    assert(alert.strStatusBar.length() <= 256);
+    assert(alert.strRPCError.length() <= 256);
 
     // Sign
     const CChainParams& chainparams = Params();

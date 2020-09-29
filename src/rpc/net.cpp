@@ -543,7 +543,7 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
     obj.push_back(Pair("localservices",       strprintf("%016x", nLocalServices)));
     obj.push_back(Pair("timeoffset",    0));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
-    obj.push_back(Pair("tls_connections", std::count_if(vNodes.begin(), vNodes.end(), [](CNode* n) {return n->ssl != NULL;})));
+    obj.push_back(Pair("tls_connections", (int)std::count_if(vNodes.begin(), vNodes.end(), [](CNode* n) {return n->ssl != NULL;})));
     obj.push_back(Pair("networks",      GetNetworksInfo()));
     obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
     UniValue localAddresses(UniValue::VARR);

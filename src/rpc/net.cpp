@@ -80,19 +80,6 @@ UniValue ping(const UniValue& params, bool fHelp, const CPubKey& mypk)
     return NullUniValue;
 }
 
-static void CopyNodeStats(std::vector<CNodeStats>& vstats)
-{
-    vstats.clear();
-
-    LOCK(cs_vNodes);
-    vstats.reserve(vNodes.size());
-    BOOST_FOREACH(CNode* pnode, vNodes) {
-        CNodeStats stats;
-        pnode->copyStats(stats);
-        vstats.push_back(stats);
-    }
-}
-
 UniValue getpeerinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)
@@ -149,6 +136,11 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
         obj.push_back(Pair("addr", stats.addrName));
         if (!(stats.addrLocal.empty()))
             obj.push_back(Pair("addrlocal", stats.addrLocal));
+        // if (stats.addrBind.IsValid())
+        //     obj.push_back(Pair("addrbind", stats.addrBind.ToString()));
+        if (stats.m_mapped_as != 0) {
+            obj.push_back(Pair("mapped_as", uint64_t(stats.m_mapped_as)));
+        }
         obj.push_back(Pair("services", strprintf("%016x", stats.nServices)));
         obj.push_back(Pair("tls_established", stats.fTLSEstablished));
         obj.push_back(Pair("lastsend", stats.nLastSend));
@@ -156,7 +148,7 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
         obj.push_back(Pair("bytessent", stats.nSendBytes));
         obj.push_back(Pair("bytesrecv", stats.nRecvBytes));
         obj.push_back(Pair("conntime", stats.nTimeConnected));
-        obj.push_back(Pair("timeoffset", 0));
+        obj.push_back(Pair("timeoffset",    0));
         obj.push_back(Pair("pingtime", stats.dPingTime));
         if (stats.dPingWait > 0.0)
             obj.push_back(Pair("pingwait", stats.dPingWait));
@@ -338,6 +330,7 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp, const CPubKey& myp
             + HelpExampleCli("getaddednodeinfo", "true \"192.168.0.201\"")
             + HelpExampleRpc("getaddednodeinfo", "true, \"192.168.0.201\"")
         );
+
     bool fDns = params[0].get_bool();
 
     list<string> laddedNodes(0);

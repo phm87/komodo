@@ -120,7 +120,7 @@ int TLSManager::waitFor(SSLConnectionRoutine eRoutine, SOCKET hSocket, SSL* ssl,
  */
 SSL* TLSManager::connect(SOCKET hSocket, const CAddress& addrConnect)
 {
-    LogPrint("net", "TLS: establishing connection (tid = %X), (peerid = %s)\n", pthread_self(), addrConnect.ToString());
+    LogPrint("net", "TLS: establishing connection tid=%X peerid=%s\n", pthread_self(), addrConnect.ToString());
 
     SSL* ssl = NULL;
     bool bConnectedTLS = false;
@@ -136,7 +136,7 @@ SSL* TLSManager::connect(SOCKET hSocket, const CAddress& addrConnect)
     if (bConnectedTLS) {
         LogPrintf("TLS: connection to %s has been established. Using cipher: %s\n", addrConnect.ToString(), SSL_get_cipher(ssl));
     } else {
-        LogPrintf("TLS: %s: %s: TLS connection to %s failed\n", __FILE__, __func__, addrConnect.ToString());
+        LogPrintf("TLS: %s: TLS connection to %s failed\n", __func__, addrConnect.ToString());
 
         if (ssl) {
             SSL_free(ssl);
@@ -185,18 +185,20 @@ SSL_CTX* TLSManager::initCtx(
 
         if (SSL_CTX_use_certificate_file(tlsCtx, certificateFile.string().c_str(), SSL_FILETYPE_PEM) > 0) {
             if (SSL_CTX_use_PrivateKey_file(tlsCtx, privateKeyFile.string().c_str(), SSL_FILETYPE_PEM) > 0) {
-                if (SSL_CTX_check_private_key(tlsCtx))
+                if (SSL_CTX_check_private_key(tlsCtx)) {
                     bInitialized = true;
-                else
+                } else {
                     LogPrintf("TLS: ERROR: %s: %s: private key does not match the certificate public key\n", __FILE__, __func__);
+                }
             } else
                 LogPrintf("TLS: ERROR: %s: %s: failed to use privateKey file\n", __FILE__, __func__);
         } else {
             LogPrintf("TLS: ERROR: %s: %s: failed to use certificate file\n", __FILE__, __func__);
             ERR_print_errors_fp(stderr);
         }
-    } else
+    } else {
         LogPrintf("TLS: ERROR: %s: %s: failed to create TLS context\n", __FILE__, __func__);
+    }
 
     if (!bInitialized) {
         if (tlsCtx) {
@@ -206,14 +208,25 @@ SSL_CTX* TLSManager::initCtx(
     }
 
     SSL_CTX_set_cipher_list(tlsCtx, ""); // removes all <= TLS1.2 ciphers
-    SSL_CTX_set_ciphersuites(tlsCtx, "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"); // default is "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
+    // default is "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
+    // Nodes will randomly choose to prefer one suite or the other, to create diversity on the network
+    // and not be in the situation where all nodes have the same list so the first is always used
+    if(GetRand(100) > 50) {
+        LogPrintf("%s: Preferring TLS_AES256-GCM-SHA384\n", __func__);
+        SSL_CTX_set_ciphersuites(tlsCtx, "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256");
+    } else {
+        LogPrintf("%s: Preferring TLS_CHACHA20-POLY1305\n", __func__);
+        SSL_CTX_set_ciphersuites(tlsCtx, "TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384");
+    }
 
+    /*
     STACK_OF(SSL_CIPHER) *sk = SSL_CTX_get_ciphers(tlsCtx);
     for (int i = 0; i < sk_SSL_CIPHER_num(sk); i++)
     {
         const SSL_CIPHER *c = sk_SSL_CIPHER_value(sk, i);
-        LogPrintf("DEBUG TLS: AVAILABLE CIPHER %s\n", SSL_CIPHER_get_name(c));
+        LogPrintf("%s: AVAILABLE CIPHER %s\n", __func__, SSL_CIPHER_get_name(c));
     }
+    */
 
     return tlsCtx;
 }
@@ -448,7 +461,6 @@ bool TLSManager::initialize()
     bool bInitializationStatus = false;
     
     // Initialization routines for the OpenSSL library
-    //
     SSL_load_error_strings();
     ERR_load_crypto_strings();
     OpenSSL_add_ssl_algorithms(); // OpenSSL_add_ssl_algorithms() always returns "1", so it is safe to discard the return value.
@@ -456,41 +468,40 @@ bool TLSManager::initialize()
     namespace fs = boost::filesystem;
     fs::path certFile = GetArg("-tlscertpath", "");
     if (!fs::exists(certFile))
-            certFile = (GetDataDir() / TLS_CERT_FILE_NAME);
+        certFile = (GetDataDir() / TLS_CERT_FILE_NAME);
     
     fs::path privKeyFile = GetArg("-tlskeypath", "");
-    if (!fs::exists(privKeyFile))
-            privKeyFile = (GetDataDir() / TLS_KEY_FILE_NAME);
+    if (!fs::exists(privKeyFile)) {
+        privKeyFile = (GetDataDir() / TLS_KEY_FILE_NAME);
+    }
     
     std::vector<fs::path> trustedDirs;
     fs::path trustedDir = GetArg("-tlstrustdir", "");
-    if (fs::exists(trustedDir))
+    if (fs::exists(trustedDir)) {
         // Use only the specified trusted directory
         trustedDirs.push_back(trustedDir);
-    else
+    } else {
         // If specified directory can't be used, then setting the default trusted directories
         trustedDirs = GetDefaultTrustedDirectories();
+    }
 
     for (fs::path dir : trustedDirs)
         LogPrintf("TLS: trusted directory '%s' will be used\n", dir.string().c_str());
 
     // Initialization of the server and client contexts
-    //
     if ((tls_ctx_server = TLSManager::initCtx(SERVER_CONTEXT, privKeyFile, certFile, trustedDirs)))
     {
         if ((tls_ctx_client = TLSManager::initCtx(CLIENT_CONTEXT, privKeyFile, certFile, trustedDirs)))
         {
             LogPrint("net", "TLS: contexts are initialized\n");
             bInitializationStatus = true;
-        }
-        else
-        {
+        } else {
             LogPrintf("TLS: ERROR: %s: %s: failed to initialize TLS client context\n", __FILE__, __func__);
             SSL_CTX_free (tls_ctx_server);
         }
-    }
-    else
+    } else {
         LogPrintf("TLS: ERROR: %s: %s: failed to initialize TLS server context\n", __FILE__, __func__);
+    }
 
     return bInitializationStatus;
 }

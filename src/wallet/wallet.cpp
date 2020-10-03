@@ -2819,8 +2819,8 @@ void CWallet::ReacceptWalletTransactions()
 bool CWalletTx::RelayWalletTransaction()
 {
     int64_t nNow = GetTime();
-    if(fZdebug)
-      LogPrintf("%s: now=%li\n",__func__,nNow);
+    //if(fZdebug)
+    //  LogPrintf("%s: now=%li\n",__func__,nNow);
     if ( pwallet == 0 )
     {
         //fprintf(stderr,"unexpected null pwallet in RelayWalletTransaction\n");

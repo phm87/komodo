@@ -202,6 +202,16 @@ SSL_CTX* TLSManager::initCtx(
         }
     }
 
+    SSL_CTX_set_cipher_list(tlsCtx, ""); // removes all <= TLS1.2 ciphers
+    SSL_CTX_set_ciphersuites(tlsCtx, "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"); // default is "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
+
+    STACK_OF(SSL_CIPHER) *sk = SSL_CTX_get_ciphers(tlsCtx);
+    for (int i = 0; i < sk_SSL_CIPHER_num(sk); i++)
+    {
+        const SSL_CIPHER *c = sk_SSL_CIPHER_value(sk, i);
+        LogPrintf("DEBUG TLS: AVAILABLE CIPHER %s\n", SSL_CIPHER_get_name(c));
+    }
+
     return tlsCtx;
 }
 /**

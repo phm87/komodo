@@ -1083,7 +1083,7 @@ void CWallet::BuildWitnessCache(const CBlockIndex* pindex, bool witnessOnly)
   CBlockIndex* pblockindex = chainActive[startHeight];
   int height = chainActive.Height();
   if(fZdebug)
-    LogPrintf("%s: height=%d, startHeight=%\n", __func__, height, startHeight);
+    LogPrintf("%s: height=%d, startHeight=%d\n", __func__, height, startHeight);
 
   while (pblockindex) {
 

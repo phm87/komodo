@@ -1018,7 +1018,7 @@ int CWallet::VerifyAndSetInitialWitness(const CBlockIndex* pindex, bool witnessO
         pblockindex = chainActive[wtxHeight];
         ::ClearSingleNoteWitnessCache(nd);
 
-        LogPrintf("Setting Initial Sapling Witness for tx %s, %i of %i\n", wtxHash.ToString(), nWitnessTxIncrement, nWitnessTotalTxCount);
+        LogPrintf("%s: Setting Initial Sapling Witness for tx %s, %i of %i\n", __func__, wtxHash.ToString(), nWitnessTxIncrement, nWitnessTotalTxCount);
 
         SaplingMerkleTree saplingTree;
         blockRoot = pblockindex->pprev->hashFinalSaplingRoot;
@@ -1063,6 +1063,8 @@ int CWallet::VerifyAndSetInitialWitness(const CBlockIndex* pindex, bool witnessO
     }
   }
 
+  if(fZdebug)
+    LogPrintf("%s: nMinimumHeight=%d\n",__func__, nMinimumHeight);
   return nMinimumHeight;
 }
 
@@ -1077,10 +1079,11 @@ void CWallet::BuildWitnessCache(const CBlockIndex* pindex, bool witnessOnly)
     return;
   }
 
-  uint256 sproutRoot;
   uint256 saplingRoot;
   CBlockIndex* pblockindex = chainActive[startHeight];
   int height = chainActive.Height();
+  if(fZdebug)
+    LogPrintf("%s: height=%d, startHeight=%d\n", __func__, height, startHeight);
 
   while (pblockindex) {
 
@@ -2816,8 +2819,8 @@ void CWallet::ReacceptWalletTransactions()
 bool CWalletTx::RelayWalletTransaction()
 {
     int64_t nNow = GetTime();
-    if(fZdebug)
-      LogPrintf("%s: now=%li\n",__func__,nNow);
+    //if(fZdebug)
+    //  LogPrintf("%s: now=%li\n",__func__,nNow);
     if ( pwallet == 0 )
     {
         //fprintf(stderr,"unexpected null pwallet in RelayWalletTransaction\n");

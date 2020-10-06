@@ -126,6 +126,9 @@ enum BindFlags {
 };
 
 static const char* FEE_ESTIMATES_FILENAME="fee_estimates.dat";
+
+static const char* DEFAULT_ASMAP_FILENAME="ip_asn.map";
+
 CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
 
 //////////////////////////////////////////////////////////////////////////////
@@ -399,6 +402,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-zindex", strprintf(_("Maintain extra statistics about shielded transactions and payments (default: %u)"), 0));
     strUsage += HelpMessageGroup(_("Connection options:"));
     strUsage += HelpMessageOpt("-addnode=<ip>", _("Add a node to connect to and attempt to keep the connection open"));
+    strUsage += HelpMessageOpt("-asmap=<file>", strprintf("Specify asn mapping used for bucketing of the peers (default: %s). Relative paths will be prefixed by the net-specific datadir location.", DEFAULT_ASMAP_FILENAME));
     strUsage += HelpMessageOpt("-banscore=<n>", strprintf(_("Threshold for disconnecting misbehaving peers (default: %u)"), 100));
     strUsage += HelpMessageOpt("-bantime=<n>", strprintf(_("Number of seconds to keep misbehaving peers from reconnecting (default: %u)"), 86400));
     strUsage += HelpMessageOpt("-bind=<addr>", _("Bind to given address and always listen on it. Use [host]:port notation for IPv6"));
@@ -426,6 +430,11 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-timeout=<n>", strprintf(_("Specify connection timeout in milliseconds (minimum: 1, default: %d)"), DEFAULT_CONNECT_TIMEOUT));
     strUsage += HelpMessageOpt("-torcontrol=<ip>:<port>", strprintf(_("Tor control port to use if onion listening enabled (default: %s)"), DEFAULT_TOR_CONTROL));
     strUsage += HelpMessageOpt("-torpassword=<pass>", _("Tor control port password (default: empty)"));
+    strUsage += HelpMessageOpt("-tls=<option>", _("Specify TLS usage (default: 1 => enabled and preferred, yet compatible); other options are -tls=0 to disable TLS and -tls=only to enforce it"));
+    strUsage += HelpMessageOpt("-tlskeypath=<path>", _("Full path to a private key"));
+    strUsage += HelpMessageOpt("-tlskeypwd=<password>", _("Password for a private key encryption (default: not set, i.e. private key will be stored unencrypted)"));
+    strUsage += HelpMessageOpt("-tlscertpath=<path>", _("Full path to a certificate"));
+    strUsage += HelpMessageOpt("-tlstrustdir=<path>", _("Full path to a trusted certificates directory"));
     strUsage += HelpMessageOpt("-whitebind=<addr>", _("Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6"));
     strUsage += HelpMessageOpt("-whitelist=<netmask>", _("Whitelist peers connecting from the given netmask or IP address. Can be specified multiple times.") +
         " " + _("Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway"));
@@ -736,7 +745,7 @@ bool InitSanityCheck(void)
     if (!glibc_sanity_test() || !glibcxx_sanity_test()) {
 		fprintf(stderr,"%s: glibc insanity!\n", __FUNCTION__);
         return false;
-	}
+}
 
     return true;
 }
@@ -801,8 +810,8 @@ static void ZC_LoadParams(
        if (files_exist(sapling_spend, sapling_output)) {
             LogPrintf("Found sapling params in /usr/share/hush\n");
             found=true;
-       }
-    }
+                    }
+                }
 
     if (!found) {
         // Try ..
@@ -811,8 +820,8 @@ static void ZC_LoadParams(
         if (files_exist(sapling_spend, sapling_output)) {
             LogPrintf("Found sapling params in ..\n");
             found = true;
+                }
         }
-    }
 
     if (!found) {
         // This will catch the case of any external software (i.e. GUI wallets) needing params and installed in same dir as hush3.git
@@ -821,7 +830,7 @@ static void ZC_LoadParams(
         if (files_exist(sapling_spend, sapling_output)) {
             LogPrintf("Found sapling params in ../hush3\n");
             found = true;
-        }
+    }
     }
 
     if (!found) {
@@ -831,7 +840,7 @@ static void ZC_LoadParams(
         if (files_exist(sapling_spend, sapling_output)) {
             LogPrintf("Found sapling params in /Applications/Contents/MacOS\n");
             found = true;
-        }
+    }
     }
 
     if (!found) {
@@ -841,7 +850,7 @@ static void ZC_LoadParams(
         if (files_exist(sapling_spend, sapling_output)) {
             LogPrintf("Found sapling params in /Applications/Contents/MacOS\n");
             found = true;
-        }
+}
     }
 
     if (!found) {
@@ -853,7 +862,7 @@ static void ZC_LoadParams(
             LogPrintf("Found sapling params in ~/.zcash\n");
             found = true;
         }
-    }
+}
 
     if (!found) {
         // No Sapling params, at least we tried
@@ -891,7 +900,7 @@ static void ZC_LoadParams(
 
     static_assert( sizeof(boost::filesystem::path::value_type) == sizeof(codeunit), "librustzcash not configured correctly");
 
-    auto sapling_spend_str  = sapling_spend.native();
+    auto sapling_spend_str = sapling_spend.native();
     auto sapling_output_str = sapling_output.native();
 
     LogPrintf("Loading Sapling (Spend) parameters from %s\n", sapling_spend.string().c_str());
@@ -1024,13 +1033,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 			fprintf(stderr,"%s zmerge error\n", __FUNCTION__);
             return InitError(_("RPC method z_mergetoaddress requires -experimentalfeatures."));
         }
-    } 
+    }
 	//fprintf(stderr,"%s tik2\n", __FUNCTION__);
 
     // Set this early so that parameter interactions go to console
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
-    fLogTimestamps  = GetBoolArg("-logtimestamps", true);
-    fLogIPs         = GetBoolArg("-logips", false);
+    fLogTimestamps = GetBoolArg("-logtimestamps", true);
+    fLogIPs = GetBoolArg("-logips", false);
 
 
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
@@ -1077,6 +1086,31 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         // if an explicit public IP is specified, do not try to find others
         if (SoftSetBoolArg("-discover", false))
             LogPrintf("%s: parameter interaction: -externalip set -> setting -discover=0\n", __func__);
+    }
+
+    // Read asmap file if configured
+    if (mapArgs.count("-asmap")) {
+        fs::path asmap_path = fs::path(GetArg("-asmap", ""));
+        if (asmap_path.empty()) {
+            asmap_path = DEFAULT_ASMAP_FILENAME;
+        }
+        if (!asmap_path.is_absolute()) {
+            asmap_path = GetDataDir() / asmap_path;
+        }
+        if (!fs::exists(asmap_path)) {
+            InitError(strprintf(_("Could not find asmap file %s"), asmap_path));
+            return false;
+        }
+        std::vector<bool> asmap = CAddrMan::DecodeAsmap(asmap_path);
+        if (asmap.size() == 0) {
+            InitError(strprintf(_("Could not parse asmap file %s"), asmap_path));
+            return false;
+        }
+        const uint256 asmap_version = SerializeHash(asmap);
+        addrman.m_asmap = std::move(asmap); // //node.connman->SetAsmap(std::move(asmap));
+        LogPrintf("Using asmap version %s for IP bucketing\n", asmap_version.ToString());
+    } else {
+        LogPrintf("Using /16 prefix for IP bucketing\n");
     }
 
     if (GetBoolArg("-salvagewallet", false)) {
@@ -1525,7 +1559,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // -proxy sets a proxy for all outgoing network traffic
     // -noproxy (or -proxy=0) as well as the empty string can be used to not set a proxy, this is the default
     std::string proxyArg = GetArg("-proxy", "");
-    SetLimited(NET_TOR);
+    SetLimited(NET_ONION);
     if (proxyArg != "" && proxyArg != "0") {
         proxyType addrProxy = proxyType(CService(proxyArg, 9050), proxyRandomize);
         if (!addrProxy.IsValid())
@@ -1533,9 +1567,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
         SetProxy(NET_IPV4, addrProxy);
         SetProxy(NET_IPV6, addrProxy);
-        SetProxy(NET_TOR, addrProxy);
+        SetProxy(NET_ONION, addrProxy);
         SetNameProxy(addrProxy);
-        SetLimited(NET_TOR, false); // by default, -proxy sets onion as reachable, unless -noonion later
+        SetLimited(NET_ONION, false); // by default, -proxy sets onion as reachable, unless -noonion later
     }
 	//fprintf(stderr,"%s tik20\n", __FUNCTION__);
 
@@ -1545,19 +1579,19 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     std::string onionArg = GetArg("-onion", "");
     if (onionArg != "") {
         if (onionArg == "0") { // Handle -noonion/-onion=0
-            SetLimited(NET_TOR); // set onions as unreachable
+            SetLimited(NET_ONION); // set onions as unreachable
         } else {
             proxyType addrOnion = proxyType(CService(onionArg, 9050), proxyRandomize);
             if (!addrOnion.IsValid())
                 return InitError(strprintf(_("Invalid -onion address: '%s'"), onionArg));
-            SetProxy(NET_TOR, addrOnion);
-            SetLimited(NET_TOR, false);
+            SetProxy(NET_ONION, addrOnion);
+            SetLimited(NET_ONION, false);
         }
     }
 
     // see Step 2: parameter interactions for more information about these
-    fListen     = GetBoolArg("-listen", DEFAULT_LISTEN);
-    fDiscover   = GetBoolArg("-discover", true);
+    fListen = GetBoolArg("-listen", DEFAULT_LISTEN);
+    fDiscover = GetBoolArg("-discover", true);
     fNameLookup = GetBoolArg("-dns", true);
 
 	//fprintf(stderr,"%s tik22\n", __FUNCTION__);
@@ -1602,6 +1636,24 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     BOOST_FOREACH(const std::string& strDest, mapMultiArgs["-seednode"])
         AddOneShot(strDest);
+
+    if (mapArgs.count("-tlskeypath")) {
+        boost::filesystem::path pathTLSKey(GetArg("-tlskeypath", ""));
+    if (!boost::filesystem::exists(pathTLSKey))
+         return InitError(strprintf(_("Cannot find TLS key file: '%s'"), pathTLSKey.string()));
+    }
+
+    if (mapArgs.count("-tlscertpath")) {
+        boost::filesystem::path pathTLSCert(GetArg("-tlscertpath", ""));
+    if (!boost::filesystem::exists(pathTLSCert))
+        return InitError(strprintf(_("Cannot find TLS cert file: '%s'"), pathTLSCert.string()));
+    }
+
+    if (mapArgs.count("-tlstrustdir")) {
+        boost::filesystem::path pathTLSTrustredDir(GetArg("-tlstrustdir", ""));
+        if (!boost::filesystem::exists(pathTLSTrustredDir))
+            return InitError(strprintf(_("Cannot find trusted certificates directory: '%s'"), pathTLSTrustredDir.string()));
+        }
 
 #if ENABLE_ZMQ
     pzmqNotificationInterface = CZMQNotificationInterface::CreateWithArguments(mapArgs);
@@ -2119,7 +2171,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             LOCK(cs_main);
             fHaveGenesis = (chainActive.Tip() != NULL);
             MilliSleep(10);
-        }
+    }
 
         if (!fHaveGenesis) {
             MilliSleep(10);

@@ -4,7 +4,7 @@
 
 To install a Debian package:
 
-	dpkg -i hush-3.2.0-amd4.deb
+	dpkg -i hush-3.5.0-amd4.deb
 
 To uninstall:
 

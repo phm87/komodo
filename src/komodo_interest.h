@@ -24,9 +24,9 @@ extern int64_t MAX_MONEY;
 extern uint8_t NOTARY_PUBKEY33[];
 
 #ifdef notanymore
-uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
+int64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
 {
-    static uint64_t *interests; static int32_t maxheight;
+    static int64_t *interests; static int32_t maxheight;
     uint64_t total; int32_t ind,incr = 10000;
     // need to make interests persistent before 2030, or just hardfork interest/mining rewards disable after MAX_MONEY is exceeded
     return(0);
@@ -35,11 +35,11 @@ uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
         if ( interests == 0 )
         {
             maxheight = height + incr;
-            interests = (uint64_t *)calloc(maxheight,sizeof(*interests) * 2);
+            interests = (int64_t *)calloc(maxheight,sizeof(*interests) * 2);
         }
         else
         {
-            interests = (uint64_t *)realloc(interests,(maxheight + incr) * sizeof(*interests) * 2);
+            interests = (int64_t *)realloc(interests,(maxheight + incr) * sizeof(*interests) * 2);
             memset(&interests[maxheight << 1],0,incr * sizeof(*interests) * 2);
             maxheight += incr;
         }
@@ -82,7 +82,7 @@ uint64_t komodo_moneysupply(int32_t height)
 
 uint64_t _komodo_interestnew(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
-    int32_t minutes; uint64_t interest = 0;
+    int32_t minutes; int64_t interest = 0;
     if ( nLockTime >= (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ASSETCHAINS_ACTIVEUSERREWARD[3] : LOCKTIME_THRESHOLD) && tiptime > nLockTime && (minutes= (tiptime - nLockTime) / 60) >= (KOMODO_MAXMEMPOOLTIME/60) )
     {
         if ( minutes > 365 * 24 * 60 )
@@ -95,15 +95,15 @@ uint64_t _komodo_interestnew(int32_t txheight,uint64_t nValue,uint32_t nLockTime
     return(interest);
 }
 
-uint64_t komodo_interestnew(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
+int64_t komodo_interestnew(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
-    uint64_t interest = 0;
+    int64_t interest = 0;
     if ( ( ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 || txheight < KOMODO_ENDOFERA) && nLockTime >= (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ASSETCHAINS_ACTIVEUSERREWARD[3] : LOCKTIME_THRESHOLD) && tiptime != 0 && nLockTime < tiptime && nValue >= (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ASSETCHAINS_ACTIVEUSERREWARD[2] : 10)*COIN ) //komodo_moneysupply(txheight) < MAX_MONEY &&
         interest = _komodo_interestnew(txheight,nValue,nLockTime,tiptime);
     return(interest);
 }
 
-uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
+int64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
     int32_t minutes,exception; uint64_t interestnew,numerator,denominator,interest = 0; uint32_t activation;
     activation = 1491350400;  // 1491350400 5th April

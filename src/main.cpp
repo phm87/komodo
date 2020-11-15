@@ -2849,7 +2849,7 @@ namespace Consensus {
                     if ( (interest= komodo_accrued_interest(&txheight,&locktime,prevout.hash,prevout.n,0,coins->vout[prevout.n].nValue,(int32_t)nSpendHeight-1)) != 0 )
                     {
                         fprintf(stderr,"checkResult %.8f += val %.8f interest = %.8f ht.%d lock.%u tip.%u\n",(double)nValueIn/COIN,(double)coins->vout[prevout.n].nValue/COIN,(double)interest/COIN,txheight,locktime,chainActive.LastTip()->nTime);
-                        nValueIn += interest;
+                        nValueIn += interest; // ?
                     }
                 }
             }

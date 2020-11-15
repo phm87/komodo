@@ -1849,9 +1849,9 @@ void komodo_args(char *argv0)
 	        printf("ASSETCHAINS_ACTIVEUSERREWARD[3], %"PRId64" not supported. Accepted values are > 0 and < 5000000000\n", ASSETCHAINS_ACTIVEUSERREWARD[3]);
 	        exit(0);
 	    }
-	    if (ASSETCHAINS_ACTIVEUSERREWARD[4] <= 0 || ASSETCHAINS_ACTIVEUSERREWARD[4] > 1000000) // percentage (5), TODO: link with max datatype
+	    if (ASSETCHAINS_ACTIVEUSERREWARD[4] < -1000000 || ASSETCHAINS_ACTIVEUSERREWARD[4] > 1000000) // percentage (5), TODO: link with max datatype
 	    {
-	        printf("ASSETCHAINS_ACTIVEUSERREWARD[4], %"PRId64" not supported. Accepted values are > 0 and < 1000000\n", ASSETCHAINS_ACTIVEUSERREWARD[4]);
+	        printf("ASSETCHAINS_ACTIVEUSERREWARD[4], %"PRId64" not supported. Accepted values are >= -1000000 and <= 1000000\n", ASSETCHAINS_ACTIVEUSERREWARD[4]);
 	        exit(0);
 	    }
         }

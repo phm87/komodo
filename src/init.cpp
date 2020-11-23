@@ -787,11 +787,9 @@ void ThreadUpdateKomodoInternals() {
 
             boost::this_thread::interruption_point();
 
-            LogPrintf("init.cpp will maybe call komodo_password_iteration\n");
             if ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_ACTIVEUSERREWARD[0] == 1)
                 {
                     if ( KOMODO_NSPV_FULLNODE ) {
-                        LogPrintf("KOMODO_NSPV_FULLNODE is true\n");
                         auto start = std::chrono::high_resolution_clock::now();
                         komodo_passport_iteration(); // call komodo_interestsum() inside (possible locks)
                         auto finish = std::chrono::high_resolution_clock::now();

@@ -414,7 +414,41 @@ void SplitStr(const std::string& strVal, std::vector<std::string> &outVals)
     }
 }
 
-void Split(const std::string& strVal, int32_t outsize, int64_t *outVals, const int64_t nDefault)
+void Split(const std::string& strVal, int32_t outsize, uint64_t *outVals, const uint64_t nDefault)
+{
+    stringstream ss(strVal);
+    vector<uint64_t> vec;
+
+    uint64_t i, nLast, numVals = 0;
+
+    while ( ss.peek() == ' ' )
+        ss.ignore();
+
+    while ( ss >> i )
+    {
+        outVals[numVals] = i;
+        numVals += 1;
+
+        while ( ss.peek() == ' ' )
+            ss.ignore();
+        if ( ss.peek() == ',' )
+            ss.ignore();
+        while ( ss.peek() == ' ' )
+            ss.ignore();
+    }
+
+    if ( numVals > 0 )
+        nLast = outVals[numVals - 1];
+    else
+        nLast = nDefault;
+
+    for ( i = numVals; i < outsize; i++ )
+    {
+        outVals[i] = nLast;
+    }
+}
+
+void Split2(const std::string& strVal, int32_t outsize, int64_t *outVals, const int64_t nDefault)
 {
     stringstream ss(strVal);
     vector<uint64_t> vec;

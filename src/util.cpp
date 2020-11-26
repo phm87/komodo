@@ -414,7 +414,7 @@ void SplitStr(const std::string& strVal, std::vector<std::string> &outVals)
     }
 }
 
-void Split(const std::string& strVal, int32_t outsize, uint64_t *outVals, const uint64_t nDefault)
+void Split(const std::string& strVal, int32_t outsize, int64_t *outVals, const int64_t nDefault)
 {
     stringstream ss(strVal);
     vector<uint64_t> vec;

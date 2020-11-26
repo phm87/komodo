@@ -1769,7 +1769,7 @@ void komodo_args(char *argv0)
     ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
     KOMODO_SNAPSHOT_INTERVAL = GetArg("-ac_snapshot",0);
     Split(GetArg("-ac_nk",""), sizeof(ASSETCHAINS_NK)/sizeof(*ASSETCHAINS_NK), ASSETCHAINS_NK, 0);
-    Split(GetArg("-ac_aur",""), sizeof(ASSETCHAINS_ACTIVEUSERREWARD)/sizeof(*ASSETCHAINS_ACTIVEUSERREWARD), ASSETCHAINS_ACTIVEUSERREWARD, 0);
+    Split2(GetArg("-ac_aur",""), sizeof(ASSETCHAINS_ACTIVEUSERREWARD)/sizeof(*ASSETCHAINS_ACTIVEUSERREWARD), ASSETCHAINS_ACTIVEUSERREWARD, 0);
     
     // -ac_ccactivateht=evalcode,height,evalcode,height,evalcode,height....
     Split(GetArg("-ac_ccactivateht",""), sizeof(ccEnablesHeight)/sizeof(*ccEnablesHeight), ccEnablesHeight, 0);

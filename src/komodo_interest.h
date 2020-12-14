@@ -113,7 +113,7 @@ int64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint
         return(0);
     if ( nLockTime >= (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ASSETCHAINS_ACTIVEUSERREWARD[3] : LOCKTIME_THRESHOLD) && tiptime != 0 && nLockTime < tiptime && nValue >= (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ASSETCHAINS_ACTIVEUSERREWARD[2] : 10)*COIN ) //komodo_moneysupply(txheight) < MAX_MONEY && 
     {
-        if ( (minutes= (tiptime - nLockTime) / 60) >= 60 ) // ??
+        if ( ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 || (minutes= (tiptime - nLockTime) / 60) >= 60 ) // ?? Hack to test it
         {
             if ( minutes > 365 * 24 * 60 )
                 minutes = 365 * 24 * 60;

@@ -113,7 +113,7 @@ int64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint
         return(0);
     if ( nLockTime >= (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ASSETCHAINS_ACTIVEUSERREWARD[3] : LOCKTIME_THRESHOLD) && tiptime != 0 && nLockTime < tiptime && nValue >= (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ASSETCHAINS_ACTIVEUSERREWARD[2] : 10)*COIN ) //komodo_moneysupply(txheight) < MAX_MONEY && 
     {
-        if ( (minutes= (tiptime - nLockTime) / 60) >= 60 )
+        if ( (minutes= (tiptime - nLockTime) / 60) >= 60 ) // ??
         {
             if ( minutes > 365 * 24 * 60 )
                 minutes = 365 * 24 * 60;
@@ -201,7 +201,9 @@ int64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint
             }
             if ( 0 && numerator == (nValue * (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ASSETCHAINS_ACTIVEUSERREWARD[4] * 1000000 : KOMODO_INTEREST)) )
                 fprintf(stderr,"komodo_interest.%d %lld %.8f nLockTime.%u tiptime.%u minutes.%d interest %lld %.8f (%llu / %llu) prod.%llu\n",txheight,(long long)nValue,(double)nValue/COIN,nLockTime,tiptime,minutes,(long long)interest,(double)interest/COIN,(long long)numerator,(long long)denominator,(long long)(numerator * minutes));
+        fprintf(stderr,"komodo_interest.END1 interest rate %llu", (long long)ASSETCHAINS_ACTIVEUSERREWARD[4]);
         }
+        fprintf(stderr,"komodo_interest.END2 interest rate %llu", (long long)ASSETCHAINS_ACTIVEUSERREWARD[4]);
     }
     fprintf(stderr,"komodo_interest.%d %lld %.8f nLockTime.%u tiptime.%u minutes.%d interest %lld %.8f (%llu / %llu) prod.%llu\n",
             txheight,(long long)nValue,(double)nValue/COIN,nLockTime,tiptime,minutes,

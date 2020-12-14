@@ -148,7 +148,7 @@ int64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint
                 if ( exception == 0 )
                 {
                     numerator = (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ((int64_t) nValue * ASSETCHAINS_ACTIVEUSERREWARD[4] / 100) : (nValue / 20)); // assumes 5%!
-                    fprintf(stderr,"komodo_interest.1");
+                    fprintf(stderr,"komodo_interest.1 interest rate %llu", (long long)ASSETCHAINS_ACTIVEUSERREWARD[4]);
                     if ( txheight < 250000 )
                         interest = (numerator / denominator);
                     else if ( txheight < 1000000 )
@@ -163,7 +163,7 @@ int64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint
                 else if ( txheight < 1000000 )
                 {
                     numerator = ((int64_t) nValue * (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ASSETCHAINS_ACTIVEUSERREWARD[4] * 1000000 : KOMODO_INTEREST));
-                    fprintf(stderr,"komodo_interest.2");
+                    fprintf(stderr,"komodo_interest.2 %llu", (long long)ASSETCHAINS_ACTIVEUSERREWARD[4]);
                     interest = (numerator / denominator) / COIN;
                     interestnew = _komodo_interestnew(txheight,nValue,nLockTime,tiptime);
                     if ( interest < interestnew )
@@ -180,7 +180,7 @@ int64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint
                     else interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60)) / COIN;
                 */
                 numerator = ((int64_t) nValue * (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ASSETCHAINS_ACTIVEUSERREWARD[4] * 1000000 : KOMODO_INTEREST));
-                fprintf(stderr,"komodo_interest.3");
+                fprintf(stderr,"komodo_interest.3 %llu", (long long)ASSETCHAINS_ACTIVEUSERREWARD[4]);
                 if ( txheight < 250000 || tiptime < activation )
                 {
                     if ( txheight < 250000 || numerator * minutes < 365 * 24 * 60 )
@@ -190,7 +190,7 @@ int64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint
                 else if ( txheight < 1000000 )
                 {
                     numerator = (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ? ((int64_t) nValue * ASSETCHAINS_ACTIVEUSERREWARD[4] / 100) : (nValue / 20)); // assumes 5%!
-                    fprintf(stderr,"komodo_interest.4");
+                    fprintf(stderr,"komodo_interest.4 %llu", (long long)ASSETCHAINS_ACTIVEUSERREWARD[4]);
                     interest = ((numerator * minutes) / ((int64_t)365 * 24 * 60));
                     //fprintf(stderr,"interest %llu %.8f <- numerator.%llu minutes.%d\n",(long long)interest,(double)interest/COIN,(long long)numerator,(int32_t)minutes);
                     interestnew = _komodo_interestnew(txheight,nValue,nLockTime,tiptime);

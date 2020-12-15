@@ -3935,7 +3935,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     if ( KOMODO_EXCHANGEWALLET == 0 && ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ) )
                     {
                         interest2 += pcoin.first->vout[pcoin.second].interest;
-                        //fprintf(stderr,"%.8f ",(double)pcoin.first->vout[pcoin.second].interest/COIN);
+                        fprintf(stderr,"CreateTransaction interest %.8f ",(double)pcoin.first->vout[pcoin.second].interest/COIN);
                     }
                     int age = pcoin.first->GetDepthInMainChain();
                     if (age != 0)
@@ -3947,7 +3947,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     //fprintf(stderr,"KOMODO_EXCHANGEWALLET disable interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
                     //interest = 0; // interest2 also
                 //}
-                if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ) && DONATION_PUBKEY.size() == 66) // && interest2 > 5000 )
+                if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ) && DONATION_PUBKEY.size() == 66 && interest2 > 5000 && interest2 > 0 )
                 {
                     CScript scriptDonation = CScript() << ParseHex(DONATION_PUBKEY) << OP_CHECKSIG;
                     CTxOut newTxOut(interest2,scriptDonation);
@@ -3957,7 +3957,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     interest2 = 0;
                 }
                 CAmount nChange = (nValueIn - nValue + interest2);
-//fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest2 %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest2/COIN,(double)nTotalValue/COIN);
+fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest2 %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest2/COIN,(double)nTotalValue/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
 

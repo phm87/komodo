@@ -2849,7 +2849,7 @@ namespace Consensus {
                     if ( (interest= komodo_accrued_interest(&txheight,&locktime,prevout.hash,prevout.n,0,coins->vout[prevout.n].nValue,(int32_t)nSpendHeight-1)) != 0 )
                     {
                         fprintf(stderr,"checkResult %.8f += val %.8f interest = %.8f ht.%d lock.%u tip.%u\n",(double)nValueIn/COIN,(double)coins->vout[prevout.n].nValue/COIN,(double)interest/COIN,txheight,locktime,chainActive.LastTip()->nTime);
-			if (interest > 0) // to disable when tx.GetValueOut is adapted
+			// if (interest > 0) // to disable when tx.GetValueOut is adapted
 	                        nValueIn += interest;
                     }
                 }
@@ -3686,7 +3686,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!tx.IsCoinBase())
         {
             nFees += (stakeTxValue= view.GetValueIn(chainActive.LastTip()->GetHeight(),&interest,tx,chainActive.LastTip()->nTime) - valueout);
-	    if (interest > 0)
+	    // if (interest > 0)
 	            sum += interest;
             //fprintf(stderr, "tx.%s nFees.%li interest.%li\n", tx.GetHash().ToString().c_str(), stakeTxValue, interest);
 

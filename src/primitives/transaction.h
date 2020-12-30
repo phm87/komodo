@@ -445,7 +445,7 @@ class CTxOut
 public:
     CAmount nValue;
     CScript scriptPubKey;
-    uint64_t interest;
+    int64_t interest;
     CTxOut()
     {
         SetNull();

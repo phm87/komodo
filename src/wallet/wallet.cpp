@@ -3427,8 +3427,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                     {
                         uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
                         if ( ( (ASSETCHAINS_SYMBOL[0] == 0 && chainActive.LastTip()->GetHeight() >= 60000) 
-                              || (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 && chainActive.LastTip()->GetHeight() >= ASSETCHAINS_ACTIVEUSERREWARD[1] && pcoin->vout[i].nValue >= ASSETCHAINS_ACTIVEUSERREWARD[2]*COIN) )
-                                 && chainActive.LastTip() != 0  )
+                              || (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 && chainActive.LastTip()->GetHeight() >= ASSETCHAINS_ACTIVEUSERREWARD[1] ) ) )
                         {
                             if ( (ASSETCHAINS_SYMBOL[0] == 0 && pcoin->vout[i].nValue >= 10*COIN ) || ( ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 && pcoin->vout[i].nValue >= ASSETCHAINS_ACTIVEUSERREWARD[2]*COIN) )
                             {

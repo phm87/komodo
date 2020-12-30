@@ -1964,6 +1964,23 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             // we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
             view.SetBackend(dummy);
         }
+	// For negative active user reward, verify that there is a burnt output = - aur
+	    if (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 && interest < 0)
+	    {
+		boolean found = false;
+	        for (unsigned int i = 0; i < tx.vout.size(); i++)
+        	{
+            		COutPoint outpoint = tx.vout[i];
+			if (outpoint.nValue == -interest && outpoint.scriptPubKey == CScript() << ParseHex("03889a10f9df2caef57220628515693cf25316fe1b0693b0241419e75d0d0e66ed") << OP_CHECKSIG )
+			{
+				found = true;
+				break;
+			}
+	        }
+		if (!found)
+			return state.Invalid(error("AcceptToMemoryPool: negative active user reward not burnt"),REJECT_INVALID, "naur-negative-aur-not-burnt");
+	    }
+		    
         // Check for non-standard pay-to-script-hash in inputs
         if (Params().RequireStandard() && !AreInputsStandard(tx, view, consensusBranchId))
             return error("AcceptToMemoryPool: reject nonstandard transaction input");
@@ -2795,6 +2812,7 @@ namespace Consensus {
             return state.Invalid(error("CheckInputs(): %s JoinSplit requirements not met", tx.GetHash().ToString()));
 
         CAmount nValueIn = 0;
+        CAmount nValueNeg = 0;
         CAmount nFees = 0;
         for (unsigned int i = 0; i < tx.vin.size(); i++)
         {
@@ -2851,6 +2869,8 @@ namespace Consensus {
                         // fprintf(stderr,"checkResult %.8f += val %.8f interest = %.8f ht.%d lock.%u tip.%u\n",(double)nValueIn/COIN,(double)coins->vout[prevout.n].nValue/COIN,(double)interest/COIN,txheight,locktime,chainActive.LastTip()->nTime);
 			if (interest > 0) // to disable when tx.GetValueOut is adapted
 	                        nValueIn += interest;
+			else
+				nValueNeg += interest;
                     }
                 }
             }

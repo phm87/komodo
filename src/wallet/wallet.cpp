@@ -3390,7 +3390,7 @@ int64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 h
 
 void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const CCoinControl *coinControl, bool fIncludeZeroValue, bool fIncludeCoinBase) const
 {
-    uint64_t interest,*ptr;
+    int64_t interest,*ptr;
     vCoins.clear();
 
     {
@@ -3453,13 +3453,11 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                                     (*ptr) = 0;
                                 }
                             }
-                            /*
                             else
                             {
                                 ptr = (uint64_t *)&pcoin->vout[i].interest;
                                 (*ptr) = 0;
                             }
-                            */
                         }
                         else
                         {

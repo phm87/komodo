@@ -3954,6 +3954,15 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     txNew.vout.insert(position, newTxOut);
                     interest2 = 0;
                 }
+                if ( ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 ) && interest2 < 0 )
+                { // Burnt address - TODO: handle 0 to -5000
+                    CScript scriptBurn = CScript() << ParseHex("03889a10f9df2caef57220628515693cf25316fe1b0693b0241419e75d0d0e66ed") << OP_CHECKSIG;
+                    CTxOut newTxOut(-interest2,scriptBurn);
+                    int32_t nBurnPosRet = txNew.vout.size() - 1; // dont change first or last
+                    vector<CTxOut>::iterator position2 = txNew.vout.begin()+nBurnPosRet;
+                    txNew.vout.insert(position2, newTxOut);
+                    interest2 = 0;
+                }
                 CAmount nChange = (nValueIn - nValue + interest2);
 fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest2 %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest2/COIN,(double)nTotalValue/COIN);
                 if (nSubtractFeeFromAmount == 0)

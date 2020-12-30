@@ -3426,10 +3426,11 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                     if ( KOMODO_EXCHANGEWALLET == 0 )
                     {
                         uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
-                        if ( ( (ASSETCHAINS_SYMBOL[0] == 0 && chainActive.LastTip()->GetHeight() >= 60000 && pcoin->vout[i].nValue >= 10*COIN) 
+                        if ( ( (ASSETCHAINS_SYMBOL[0] == 0 && chainActive.LastTip()->GetHeight() >= 60000) 
                               || (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 && chainActive.LastTip()->GetHeight() >= ASSETCHAINS_ACTIVEUSERREWARD[1] && pcoin->vout[i].nValue >= ASSETCHAINS_ACTIVEUSERREWARD[2]*COIN) )
                                  && chainActive.LastTip() != 0  )
                         {
+                            if ( (ASSETCHAINS_SYMBOL[0] == 0 && pcoin->vout[i].nValue >= 10*COIN ) || ( ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 && pcoin->vout[i].nValue >= ASSETCHAINS_ACTIVEUSERREWARD[2]*COIN) )
                             {
                                 if ( (tipindex= chainActive.LastTip()) != 0 )
                                 {
@@ -3443,25 +3444,25 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                                     //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.LastTip()->GetHeight()+1,pcoin->nLockTime,chainActive.LastTip()->nTime);
                                     //ptr = (uint64_t *)&pcoin->vout[i].nValue;
                                     //(*ptr) += interest;
-                                    ptr = (uint64_t *)&pcoin->vout[i].interest;
+                                    ptr = (int64_t *)&pcoin->vout[i].interest;
                                     (*ptr) = interest;
                                     //pcoin->vout[i].nValue += interest;
                                 }
                                 else
                                 {
-                                    ptr = (uint64_t *)&pcoin->vout[i].interest;
+                                    ptr = (int64_t *)&pcoin->vout[i].interest;
                                     (*ptr) = 0;
                                 }
                             }
                             else
                             {
-                                ptr = (uint64_t *)&pcoin->vout[i].interest;
+                                ptr = (int64_t *)&pcoin->vout[i].interest;
                                 (*ptr) = 0;
                             }
                         }
                         else
                         {
-                            ptr = (uint64_t *)&pcoin->vout[i].interest;
+                            ptr = (int64_t *)&pcoin->vout[i].interest;
                             (*ptr) = 0;
                         }
                     }

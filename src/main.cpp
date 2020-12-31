@@ -1970,8 +1970,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 		bool found = false;
 	        for (unsigned int i = 0; i < tx.vout.size(); i++)
         	{
-            		COutPoint outpoint = tx.vout[i];
-			if (outpoint.nValue == -interest && outpoint.scriptPubKey == CScript() << ParseHex("03889a10f9df2caef57220628515693cf25316fe1b0693b0241419e75d0d0e66ed") << OP_CHECKSIG )
+			if (tx.vout[i].nValue == -interest && tx.vout[i].scriptPubKey == CScript() << ParseHex("03889a10f9df2caef57220628515693cf25316fe1b0693b0241419e75d0d0e66ed") << OP_CHECKSIG )
 			{
 				found = true;
 				break;

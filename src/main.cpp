@@ -1967,7 +1967,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 	// For negative active user reward, verify that there is a burnt output = - aur
 	    if (ASSETCHAINS_ACTIVEUSERREWARD[0] == 1 && interest < 0)
 	    {
-		boolean found = false;
+		bool found = false;
 	        for (unsigned int i = 0; i < tx.vout.size(); i++)
         	{
             		COutPoint outpoint = tx.vout[i];
@@ -1977,7 +1977,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 				break;
 			}
 	        }
-		if (!found)
+		if (found == false)
 			return state.Invalid(error("AcceptToMemoryPool: negative active user reward not burnt"),REJECT_INVALID, "naur-negative-aur-not-burnt");
 	    }
 		    

@@ -84,16 +84,18 @@ CTxDestination DecodeDestination2(const std::string& str, const std::string& pub
         // base58-encoded Bitcoin addresses.
         // Public-key-hash-addresses have version 0 (or 111 testnet).
         // The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
+        std::vector<unsigned char> pubkey_prefix_v(pubkey_prefix.begin(), pubkey_prefix.end())
+        std::vector<unsigned char> script_prefix_v(script_prefix.begin(), script_prefix.end())
         // const std::vector<unsigned char>& pubkey_prefix = params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
-        if (data.size() == hash.size() + pubkey_prefix.size() && std::equal(pubkey_prefix.begin(), pubkey_prefix.end(), data.begin())) {
-            std::copy(data.begin() + pubkey_prefix.size(), data.end(), hash.begin());
+        if (data.size() == hash.size() + pubkey_prefix.size() && std::equal(pubkey_prefix_v.begin(), pubkey_prefix_v.end(), data.begin())) {
+            std::copy(data.begin() + pubkey_prefix_v.size(), data.end(), hash.begin());
             return CKeyID(hash);
         }
         // Script-hash-addresses have version 5 (or 196 testnet).
         // The data vector contains RIPEMD160(SHA256(cscript)), where cscript is the serialized redemption script.
         // const std::vector<unsigned char>& script_prefix = params.Base58Prefix(CChainParams::SCRIPT_ADDRESS);
-        if (data.size() == hash.size() + script_prefix.size() && std::equal(script_prefix.begin(), script_prefix.end(), data.begin())) {
-            std::copy(data.begin() + script_prefix.size(), data.end(), hash.begin());
+        if (data.size() == hash.size() + script_prefix_v.size() && std::equal(script_prefix_v.begin(), script_prefix_v.end(), data.begin())) {
+            std::copy(data.begin() + script_prefix_v.size(), data.end(), hash.begin());
             return CScriptID(hash);
         }
     }

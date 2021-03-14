@@ -617,8 +617,6 @@ UniValue validateaddressgeneric(const UniValue& params, bool fHelp, const CPubKe
             "  \"account\" : \"account\"         (string) DEPRECATED. The account associated with the address, \"\" is the default account\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("validateaddress", "\"3CDJNfdWX8m2NwuGUV3nhXHXEeLygMXoAj\"", "\"48\"", "\"50\"")
-            + HelpExampleRpc("validateaddress", "\"3CDJNfdWX8m2NwuGUV3nhXHXEeLygMXoAj\"", "\"48\"", "\"50\"") // LTC
         );
 
 #ifdef ENABLE_WALLET

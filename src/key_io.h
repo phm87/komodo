@@ -28,7 +28,7 @@ std::string EncodeExtPubKey(const CExtPubKey& extpubkey);
 
 std::string EncodeDestination(const CTxDestination& dest);
 CTxDestination DecodeDestination(const std::string& str);
-CTxDestination DecodeDestination2(const std::string& str, const std::string& str2, const std::string& str3);
+CTxDestination DecodeDestination2(const std::string& str, const std::string& pubkey_prefix, const std::string& script_prefix)
 bool IsValidDestinationString(const std::string& str);
 bool IsValidDestinationString(const std::string& str, const CChainParams& params);
 

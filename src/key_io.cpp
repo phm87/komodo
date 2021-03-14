@@ -84,8 +84,8 @@ CTxDestination DecodeDestination2(const std::string& str, const std::string& pub
         // base58-encoded Bitcoin addresses.
         // Public-key-hash-addresses have version 0 (or 111 testnet).
         // The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
-        std::vector<unsigned char> pubkey_prefix_v(pubkey_prefix.begin(), pubkey_prefix.end())
-        std::vector<unsigned char> script_prefix_v(script_prefix.begin(), script_prefix.end())
+        std::vector<unsigned char> pubkey_prefix_v(pubkey_prefix.begin(), pubkey_prefix.end());
+        std::vector<unsigned char> script_prefix_v(script_prefix.begin(), script_prefix.end());
         // const std::vector<unsigned char>& pubkey_prefix = params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
         if (data.size() == hash.size() + pubkey_prefix.size() && std::equal(pubkey_prefix_v.begin(), pubkey_prefix_v.end(), data.begin())) {
             std::copy(data.begin() + pubkey_prefix_v.size(), data.end(), hash.begin());

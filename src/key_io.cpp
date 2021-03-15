@@ -332,6 +332,12 @@ CTxDestination DecodeDestination(const std::string& str)
     return DecodeDestination(str, Params());
 }
 
+
+CTxDestination DecodeDestination2(const std::string& str, const std::string& pubkey_prefix, const std::string& script_prefix)
+{
+    return DecodeDestination(str, pubkey_prefix, script_prefix);
+}
+
 bool IsValidDestinationString(const std::string& str, const CChainParams& params)
 {
     return IsValidDestination(DecodeDestination(str, params));

@@ -76,7 +76,7 @@ CTxDestination DecodeDestination(const std::string& str, const CChainParams& par
     return CNoDestination();
 }
 
-CTxDestination DecodeDestination2(const std::string& str, const std::string& pubkey_prefix, const std::string& script_prefix)
+CTxDestination DecodeDestination3(const std::string& str, const std::string& pubkey_prefix, const std::string& script_prefix)
 {
     std::vector<unsigned char> data;
     uint160 hash;
@@ -335,7 +335,7 @@ CTxDestination DecodeDestination(const std::string& str)
 
 CTxDestination DecodeDestination2(const std::string& str, const std::string& pubkey_prefix, const std::string& script_prefix)
 {
-    return DecodeDestination2(str, pubkey_prefix, script_prefix);
+    return DecodeDestination3(str, pubkey_prefix, script_prefix);
 }
 
 bool IsValidDestinationString(const std::string& str, const CChainParams& params)

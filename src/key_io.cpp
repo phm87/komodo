@@ -88,7 +88,7 @@ CTxDestination DecodeDestination3(const std::string& str, const std::string& pub
         // std::vector<unsigned char> script_prefix_v(script_prefix.begin(), script_prefix.end());
         // const std::vector<unsigned char>& pubkey_prefix = params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
         const std::vector<unsigned char>& pubkey_prefix_v = std::vector<unsigned char>(1,atoi(pubkey_prefix));
-        if (data.size() == hash.size() + pubkey_prefix.size() && std::equal(pubkey_prefix_v.begin(), pubkey_prefix_v.end(), data.begin())) {
+        if (data.size() == hash.size() + pubkey_prefix_v.size() && std::equal(pubkey_prefix_v.begin(), pubkey_prefix_v.end(), data.begin())) {
             std::copy(data.begin() + pubkey_prefix_v.size(), data.end(), hash.begin());
             return CKeyID(hash);
         }

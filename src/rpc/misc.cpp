@@ -625,7 +625,7 @@ UniValue validateaddressgeneric(const UniValue& params, bool fHelp, const CPubKe
     LOCK(cs_main);
 #endif
 
-    CTxDestination dest = DecodeDestination2(params[0].get_str(), params[1].get_str(), params[2].get_str());
+    CTxDestination dest = DecodeDestination2(params[0].get_str(), params[1].get_int(), params[2].get_int());
     bool isValid = IsValidDestination(dest);
 
     UniValue ret(UniValue::VOBJ);

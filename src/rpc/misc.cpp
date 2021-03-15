@@ -597,7 +597,7 @@ UniValue validateaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
 
 UniValue validateaddressgeneric(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() != 3)
         throw runtime_error(
             "validateaddressgeneric \"komodoaddress\"\n"
             "\nReturn information about the given Komodo address.\n"

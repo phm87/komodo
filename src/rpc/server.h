@@ -396,6 +396,7 @@ extern UniValue walletpassphrasechange(const UniValue& params, bool fHelp, const
 extern UniValue walletlock(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue encryptwallet(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue validateaddress(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue validateaddressgeneric(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue decodeccopret(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);

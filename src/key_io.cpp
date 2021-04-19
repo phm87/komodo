@@ -76,6 +76,34 @@ CTxDestination DecodeDestination(const std::string& str, const CChainParams& par
     return CNoDestination();
 }
 
+CTxDestination DecodeDestination3(const std::string& str, const std::string& pubkey_prefix, const std::string& script_prefix)
+{
+    std::vector<unsigned char> data;
+    uint160 hash;
+    if (DecodeBase58Check(str, data)) {
+        // base58-encoded Bitcoin addresses.
+        // Public-key-hash-addresses have version 0 (or 111 testnet).
+        // The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
+        // std::vector<unsigned char> pubkey_prefix_v(pubkey_prefix.begin(), pubkey_prefix.end());
+        // std::vector<unsigned char> script_prefix_v(script_prefix.begin(), script_prefix.end());
+        // const std::vector<unsigned char>& pubkey_prefix = params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
+        const std::vector<unsigned char>& pubkey_prefix_v = std::vector<unsigned char>(1,atoi(pubkey_prefix));
+        if (data.size() == hash.size() + pubkey_prefix_v.size() && std::equal(pubkey_prefix_v.begin(), pubkey_prefix_v.end(), data.begin())) {
+            std::copy(data.begin() + pubkey_prefix_v.size(), data.end(), hash.begin());
+            return CKeyID(hash);
+        }
+        // Script-hash-addresses have version 5 (or 196 testnet).
+        // The data vector contains RIPEMD160(SHA256(cscript)), where cscript is the serialized redemption script.
+        // const std::vector<unsigned char>& script_prefix = params.Base58Prefix(CChainParams::SCRIPT_ADDRESS);
+        const std::vector<unsigned char>& script_prefix_v = std::vector<unsigned char>(1,atoi(script_prefix));
+        if (data.size() == hash.size() + script_prefix_v.size() && std::equal(script_prefix_v.begin(), script_prefix_v.end(), data.begin())) {
+            std::copy(data.begin() + script_prefix_v.size(), data.end(), hash.begin());
+            return CScriptID(hash);
+        }
+    }
+    return CNoDestination();
+}
+
 class PaymentAddressEncoder : public boost::static_visitor<std::string>
 {
 private:
@@ -304,6 +332,12 @@ std::string EncodeDestination(const CTxDestination& dest)
 CTxDestination DecodeDestination(const std::string& str)
 {
     return DecodeDestination(str, Params());
+}
+
+
+CTxDestination DecodeDestination2(const std::string& str, const std::string& pubkey_prefix, const std::string& script_prefix)
+{
+    return DecodeDestination3(str, pubkey_prefix, script_prefix);
 }
 
 bool IsValidDestinationString(const std::string& str, const CChainParams& params)

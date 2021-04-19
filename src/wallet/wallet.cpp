@@ -70,6 +70,7 @@ int tx_height( const uint256 &hash );
  * Override with -mintxfee
  */
 CFeeRate CWallet::minTxFee = CFeeRate(1000);
+void komodo_statefname(char *fname,char *symbol,char *str);
 
 /** @defgroup mapWallet
  *
@@ -1747,6 +1748,48 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
     return !unchangedSproutFlag || !unchangedSaplingFlag;
 }
 
+void komodo_loadwalletfilter()
+ {
+     // Read any entries in the conf file first. 
+     std::vector<std::string> vTempAddr;
+     vTempAddr = mapMultiArgs["-whitelistaddress"];
+
+     // Load address's from text file.
+     char fname[512];
+     komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"walletfilterlist");
+     std::string test;
+     std::ifstream in(fname);
+     int i = 0;
+     while ( std::getline(in, test) )
+     {
+         if ( i == 0 )
+             test == "1" ? fWalletFilter = true : fWalletFilter = false;
+         else 
+            vTempAddr.push_back(test);
+         i++;
+     }
+     std::set<std::string> sTempAddr ( vTempAddr.begin(), vTempAddr.end());
+
+     if ( !sTempAddr.empty() )
+     {
+         vWhiteListAddress.clear(); // just in case. 
+         fprintf(stderr, "Wallet Filter is adding saved whitelist address's:\n");
+         for ( auto wladdr : sTempAddr )
+         {
+             // check address is valid
+             if ( IsValidDestination(DecodeDestination(wladdr)) )
+             {
+                 fprintf(stderr, "    %s\n", wladdr.c_str());
+                 vWhiteListAddress.push_back(wladdr);
+             }
+         }
+    }
+    if ( fWalletFilter ) 
+        fprintf(stderr, "Wallet Filter is Enabled.\n");
+    else
+        fprintf(stderr, "Wallet Filter is Disabled.\n");
+ }
+
 /**
  * Add a transaction to the wallet, or update it.
  * pblock is optional, but should be provided if the transaction is known to be in a block.
@@ -1769,6 +1812,48 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 return false;
             }
         }
+        static std::string NotaryAddress = ""; static bool didinit = false;
+        if ( !didinit && NotaryAddress.empty() && NOTARY_PUBKEY33[0] != 0 )
+        {
+            if ( NotaryAddress.empty() && NOTARY_PUBKEY33[0] != 0 )
+            {
+                char Raddress[64]; 
+                pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
+                NotaryAddress.assign(Raddress);
+            }
+            komodo_loadwalletfilter();
+            didinit = true;
+        }
+        if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
+        {
+            // wallet filter for notary nodes. Enables by setting -whitelistaddress= as startup param or in conf file (works same as -addnode byut with R-address's)
+            if ( fWalletFilter && !tx.IsCoinBase() && (!vWhiteListAddress.empty() || !NotaryAddress.empty()) ) 
+            {
+                int numvinIsOurs = 0, numvinIsWhiteList = 0;  
+                for (size_t i = 0; i < tx.vin.size(); i++)
+                {
+                    uint256 hash; CTransaction txin; CTxDestination address;
+                    if ( myGetTransaction(tx.vin[i].prevout.hash,txin,hash) && ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address) )
+                    {
+                        if ( CBitcoinAddress(address).ToString() == NotaryAddress )
+                            numvinIsOurs++;
+                        for ( auto wladdr : vWhiteListAddress )
+                        {
+                            if ( CBitcoinAddress(address).ToString() == wladdr )
+                            {
+                                //fprintf(stderr, "We received from whitelisted address.%s\n", wladdr.c_str());
+                                numvinIsWhiteList++;
+                            }
+                        }
+                    }
+                }
+                // Now we know if it was a tx sent to us, by either a whitelisted address, or ourself.
+                if ( numvinIsOurs != 0 )
+                    fprintf(stderr, "We sent from address: %s vins: %d\n",NotaryAddress.c_str(),numvinIsOurs);
+                if ( numvinIsOurs == 0 && numvinIsWhiteList == 0 )
+                    return false;
+            }
+/*
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
             /**
@@ -1780,7 +1865,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
              * filter. If tx haven't any vin from trusted / whitelisted address it
              * shouldn't be added into wallet.
             */
-
+/*
             if (!mapMultiArgs["-whitelistaddress"].empty())
             {
                 if (IsMine(tx) && !tx.IsCoinBase() && !IsFromMe(tx))
@@ -1812,6 +1897,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     }
                 }
             }
+*/
 
             CWalletTx wtx(this,tx);
 

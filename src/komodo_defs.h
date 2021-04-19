@@ -454,6 +454,7 @@ extern int32_t ASSETCHAINS_EARLYTXIDCONTRACT;
 extern int32_t ASSETCHAINS_STAKED_SPLIT_PERCENTAGE;
 int tx_height( const uint256 &hash );
 extern std::vector<std::string> vWhiteListAddress;
+extern bool fWalletFilter;
 extern std::map <std::int8_t, int32_t> mapHeightEvalActivate;
 void komodo_netevent(std::vector<uint8_t> payload);
 int32_t getacseason(uint32_t timestamp);

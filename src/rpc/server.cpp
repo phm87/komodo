@@ -637,6 +637,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "importprivkey",          &importprivkey,          true  },
     { "wallet",             "importwallet",           &importwallet,           true  },
     { "wallet",             "importaddress",          &importaddress,          true  },
+    { "wallet",             "pubkey2addr",            &pubkey2addr_rpc,        true  },
     { "wallet",             "keypoolrefill",          &keypoolrefill,          true  },
     { "wallet",             "listaccounts",           &listaccounts,           false },
     { "wallet",             "listaddressgroupings",   &listaddressgroupings,   false },

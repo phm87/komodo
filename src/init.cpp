@@ -588,6 +588,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-ac_ccenable", _("Cryptoconditions to enable"));
     strUsage += HelpMessageOpt("-ac_ccactivate", _("Block height to enable Cryptoconditions"));
     strUsage += HelpMessageOpt("-ac_decay", _("Percentage of block reward decrease at each halving"));
+    strUsage += HelpMessageOpt("-ac_easymining", _("Enable/disable easy mining for 64 fixed miners (parameters: path to the pubkey.json file"));
     strUsage += HelpMessageOpt("-ac_end", _("Block height at which block rewards will end"));
     strUsage += HelpMessageOpt("-ac_eras", _("Block reward eras"));
     strUsage += HelpMessageOpt("-ac_founders", _("Number of blocks between founders reward payouts"));

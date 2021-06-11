@@ -1700,7 +1700,7 @@ void komodo_args(char *argv0)
     std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0;
     FILE *fp; uint64_t val; uint16_t port, dest_rpc_port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0}; CTransaction earlytx; uint256 hashBlock;
 
-    std::string ntz_dest_path;
+    std::string ntz_dest_path, ac_easymining_path;
     ntz_dest_path = GetArg("-notary", "");
     IS_KOMODO_NOTARY = ntz_dest_path == "" ? 0 : 1;
 
@@ -1890,6 +1890,22 @@ void komodo_args(char *argv0)
         ASSETCHAINS_CBOPRET = GetArg("-ac_cbopret",0);
         ASSETCHAINS_CBMATURITY = GetArg("-ac_cbmaturity",0);
         ASSETCHAINS_ADAPTIVEPOW = GetArg("-ac_adaptivepow",0);
+	ac_easymining_path = GetArg("-ac_easymining", "");
+	IS_AC_EASYMINING = ac_easymining_path == "" ? 0 : 1;
+	if (IS_AC_EASYMINING)
+	{
+//	    char * ASSETCHAINS_EASYMINING[64][2];
+	    char fname2[512];
+	    FILE *fp2;
+	    sprintf(fname2,"%s",ac_easymining_path);
+	   if ( (fpZ= fopen(fname2,"rb")) != 0 )
+            {
+                dest_rpc_port = _komodo_userpass(username,password,fp2);
+                DEST_PORT = iter == 1 ? dest_rpc_port : 0;
+                sprintf(iter == 0 ? KMDUSERPASS : BTCUSERPASS,"%s:%s",username,password);
+                fclose(fp);
+            } else printf("couldnt open.(%s) will not validate dest notarizations\n",fname);
+	}
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
